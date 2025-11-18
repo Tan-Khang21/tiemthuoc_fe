@@ -1,13 +1,21 @@
 <template>
-  <div class="admin-layout">
+  <div class="admin-layout" :style="{ '--sidebar-width': sidebarWidth }">
     <el-container style="min-height: 100vh">
       <!-- Sidebar -->
-      <el-aside width="280px" class="sidebar">
-        <div class="logo">
-          <i class="fas fa-hospital-symbol"></i>
-          <h2>MEDION ADMIN</h2>
-          <p>Quản Trị Hệ Thống</p>
-        </div>
+      <el-aside :width="sidebarWidth" :class="['sidebar', { collapsed }]">
+        <el-tooltip placement="right" effect="dark">
+          <template #content>
+            <div style="text-align:left; line-height:1.2">
+              <strong style="display:block; font-size:14px; color:#0d3d47">MEDION ADMIN</strong>
+              <span style="font-size:12px; color:#6c757d">Quản Trị Hệ Thống</span>
+            </div>
+          </template>
+          <div class="logo logo-with-img" slot="reference">
+            <img class="logo-img" :src="logoImage" alt="Medion Logo" />
+            <h2>MEDION ADMIN</h2>
+            <p>Quản Trị Hệ Thống</p>
+          </div>
+        </el-tooltip>
         <el-menu
           :default-active="activeMenu"
           class="admin-menu"
@@ -56,10 +64,15 @@
         <el-header class="header" height="70px">
           <div class="header-content">
             <div class="header-left">
-              <h3>Dashboard</h3>
-              <div class="breadcrumb">
-                <i class="fas fa-home"></i>
-                <span>{{ currentPageName }}</span>
+              <el-button class="collapse-toggle" type="text" @click="toggleCollapse">
+                <i class="fas fa-bars"></i>
+              </el-button>
+              <div class="header-title">
+                <h3>Dashboard</h3>
+                <div class="breadcrumb">
+                  <i class="fas fa-home"></i>
+                  <span>{{ currentPageName }}</span>
+                </div>
               </div>
             </div>
             <div class="header-right">
@@ -84,7 +97,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import logoImg from '@/assets/img/logo/logo.png';
+// Load logo images from `src/assets/img/logo/` if present.
+const logoModules = import.meta.glob('../../assets/img/logo/*', { eager: true, as: 'url' });
+const logoList = Object.values(logoModules || {});
+const logoImage = logoList.length ? logoList[0] : logoImg;
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store';
 import { ElMessage } from 'element-plus';
@@ -115,6 +133,13 @@ const handleLogout = () => {
   ElMessage.success('Đã đăng xuất');
   router.push('/login');
 };
+
+// Sidebar collapse state
+const collapsed = ref(false);
+const sidebarWidth = computed(() => (collapsed.value ? '70px' : '280px'));
+const toggleCollapse = () => {
+  collapsed.value = !collapsed.value;
+};
 </script>
 
 <style scoped>
@@ -134,14 +159,29 @@ const handleLogout = () => {
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  transition: width 260ms cubic-bezier(.4,0,.2,1);
 }
 
 .logo {
-  padding: 30px 20px;
+  padding: 20px 10px;
   text-align: center;
   color: #0d3d47;
   border-bottom: 2px solid rgba(13, 61, 71, 0.1);
   background: rgba(255, 255, 255, 0.3);
+  transition: padding 260ms cubic-bezier(.4,0,.2,1), border 260ms ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo {
+  /* remove horizontal padding so content centers exactly inside narrow sidebar */
+  padding: 14px 0;
+  border-bottom: none;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .logo i {
@@ -150,11 +190,28 @@ const handleLogout = () => {
   margin-bottom: 10px;
 }
 
+.logo-img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto 12px;
+  transition: width 260ms cubic-bezier(.4,0,.2,1), margin 260ms cubic-bezier(.4,0,.2,1);
+}
+
+.sidebar.collapsed .logo-img {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 4px;
+}
+
 .logo h2 {
   margin: 10px 0 5px;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 1px;
+  display: inline-block;
+  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
 }
 
 .logo p {
@@ -163,6 +220,58 @@ const handleLogout = () => {
   color: #0d3d47;
   opacity: 0.8;
   font-weight: 500;
+  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
+}
+
+.collapse-btn {
+  position: absolute;
+  right: 10px;
+  top: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d3d47;
+}
+
+.sidebar.collapsed .logo h2,
+.sidebar.collapsed .logo p,
+.sidebar.collapsed .admin-menu span,
+.sidebar.collapsed .sidebar-footer {
+  opacity: 0;
+  transform: translateX(-6px);
+  /* keep inline-block so opacity transition works; limit width for animation */
+  max-width: 0;
+  overflow: hidden;
+  position: absolute;
+  pointer-events: none;
+}
+
+.sidebar.collapsed .logo i {
+  margin-bottom: 0;
+}
+
+.sidebar.collapsed .admin-menu .el-menu-item {
+  justify-content: center;
+}
+
+/* Header hamburger toggle */
+.collapse-toggle {
+  margin-right: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #0d3d47;
+  padding-left: 4px;
+}
+
+.collapse-toggle i {
+  font-size: 16px;
 }
 
 .admin-menu {
@@ -187,6 +296,14 @@ const handleLogout = () => {
   font-size: 18px;
   width: 20px;
   text-align: center;
+}
+
+.admin-menu .el-menu-item span {
+  display: inline-block;
+  white-space: nowrap;
+  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
+  max-width: 240px;
+  overflow: hidden;
 }
 
 .admin-menu .el-menu-item:hover {
@@ -271,7 +388,18 @@ const handleLogout = () => {
   padding: 0 30px;
 }
 
-.header-left h3 {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title h3 {
   margin: 0 0 5px;
   color: #0d3d47;
   font-size: 24px;

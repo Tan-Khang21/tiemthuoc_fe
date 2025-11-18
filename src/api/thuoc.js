@@ -43,24 +43,32 @@ export default {
 
   // Tạo thuốc mới
   create(formData) {
-    return axios.post('/Thuoc', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Let the browser/axios set the Content-Type (with boundary) for FormData
+    return axios.post('/Thuoc', formData);
   },
 
   // Cập nhật thuốc
   update(maThuoc, formData) {
-    return axios.put(`/Thuoc/${maThuoc}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Let the browser/axios set the Content-Type (with boundary) for FormData
+    return axios.put(`/Thuoc/${maThuoc}`, formData);
   },
 
   // Xóa thuốc
   delete(maThuoc) {
     return axios.delete(`/Thuoc/${maThuoc}`);
+  },
+
+  // Upload ảnh sản phẩm
+  uploadImage(formData) {
+    return axios.post('/Images/UploadToProduct', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Lấy danh sách ảnh có sẵn
+  getExistingImages() {
+    return axios.get('/Images/List');
   },
 };
