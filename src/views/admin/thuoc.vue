@@ -1,35 +1,28 @@
 <template>
   <div class="admin-thuoc">
     <el-card class="admin-card">
-      <template #header>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0">
-          <h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937">💊 Quản lý thuốc</h3>
-          <el-button type="primary" @click="addNewThuoc">
-            ➕ Thêm thuốc mới
-          </el-button>
-        </div>
-      </template>
+      <!-- Header removed per request; add button moved into search area -->
 
-      <!-- Filters -->
-      <el-row :gutter="20" style="margin-bottom: 24px; background: #f9fafb; padding: 16px; border-radius: 8px">
-        <el-col :span="12">
+      <!-- Filters: search + type + add button (button moved into search area) -->
+      <el-row :gutter="12" style="margin-bottom: 24px; background: #f9fafb; padding: 12px; border-radius: 8px; align-items:center">
+        <el-col :span="14">
           <div style="margin-bottom: 4px; font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase">Tìm kiếm</div>
           <el-input
+            class="search-input"
             v-model="searchKeyword"
-            placeholder="Nhập tên hoặc mã thuốc..."
+            placeholder="🔍 Nhập tên hoặc mã thuốc..."
             clearable
-            size="large"
-          >
-            <template #prefix>🔍</template>
-          </el-input>
+            size="medium"
+            style="width:100%"
+          />
         </el-col>
-        <el-col :span="12">
+        <el-col :span="6">
           <div style="margin-bottom: 4px; font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase">Loại thuốc</div>
           <el-select
             v-model="selectedCategory"
             placeholder="Chọn loại thuốc..."
             clearable
-            size="large"
+            size="medium"
             style="width: 100%"
           >
             <el-option
@@ -39,6 +32,12 @@
               :value="cat.maLoaiThuoc"
             />
           </el-select>
+        </el-col>
+        <el-col :span="4" style="display:flex; justify-content:flex-end; align-items:center">
+          <el-button type="primary" @click="addNewThuoc" size="medium" style="height:40px; padding:0 14px; display:inline-flex; align-items:center;">
+            <span style="margin-right:8px; font-size:16px">➕</span>
+            <span>Thêm thuốc mới</span>
+          </el-button>
         </el-col>
       </el-row>
 
@@ -62,18 +61,24 @@
             {{ truncateText(row.moTa, 20) }}
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="280" fixed="right">
+        <el-table-column label="Thao tác" width="140" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button class="btn-view" size="small" type="primary" @click="viewDetails(row)">
-                <i class="el-icon-view"></i> Xem chi tiết
-              </el-button>
-              <el-button class="btn-edit" size="small" type="warning" @click="editThuoc(row)">
-                <i class="el-icon-edit"></i> Sửa
-              </el-button>
-              <el-button class="btn-delete" size="small" type="danger" @click="deleteThuoc(row)">
-                <i class="el-icon-delete"></i> Xóa
-              </el-button>
+            <div class="action-buttons-row">
+              <el-tooltip content="Xem chi tiết" placement="top">
+                <button class="btn-action btn-view" @click="viewDetails(row)">
+                  <el-icon><View /></el-icon>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="Sửa" placement="top">
+                <button class="btn-action btn-edit" @click="editThuoc(row)">
+                  <el-icon><Edit /></el-icon>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="Xóa" placement="top">
+                <button class="btn-action btn-delete" @click="deleteThuoc(row)">
+                  <el-icon><Delete /></el-icon>
+                </button>
+              </el-tooltip>
             </div>
           </template>
         </el-table-column>
@@ -116,8 +121,8 @@
           <div style="flex:1">
             <!-- Basic info fields - 3 fields on same row -->
             <div style="display:grid; grid-template-columns:1fr 2fr 1fr; gap:16px; margin-bottom:16px">
-              <el-form-item label="🏷️ Mã thuốc" label-width="100px">
-                <el-input v-model="formData.maThuoc" :disabled="editingThuoc" size="small" />
+              <el-form-item v-if="editingThuoc" label="🏷️ Mã thuốc" label-width="100px">
+                <el-input v-model="formData.maThuoc" disabled size="small" />
               </el-form-item>
               <el-form-item label="📝 Tên thuốc" label-width="100px">
                 <el-input v-model="formData.tenThuoc" size="small" />
@@ -380,6 +385,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import api from '@/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { View, Edit, Delete } from '@element-plus/icons-vue';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -741,7 +747,12 @@ const deleteThuoc = async (thuoc) => {
     }
   ).then(async () => {
     try {
-      await api.thuoc.delete(thuoc.maThuoc);
+      const resp = await api.thuoc.delete(thuoc.maThuoc);
+      const apiResp = (resp && resp.data && typeof resp.data === 'object') ? resp.data : resp;
+      if (apiResp && apiResp.status === -1) {
+        ElMessage.error(apiResp.message || 'Xóa thất bại');
+        return;
+      }
       ElMessage.success('Xóa thành công');
       await loadThuocList();
     } catch (error) {
@@ -785,16 +796,28 @@ const saveThuoc = async () => {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i] || {};
       fd.append(`GiaThuocs[${i}].MaLoaiDonVi`, r.maLoaiDonVi || '');
+      // include MaGiaThuoc when present so backend can identify existing price rows
+      fd.append(`GiaThuocs[${i}].MaGiaThuoc`, r.maGiaThuoc || '');
       fd.append(`GiaThuocs[${i}].SoLuong`, (r.soLuong ?? 1).toString());
       fd.append(`GiaThuocs[${i}].DonGia`, (r.donGia ?? 0).toString());
       fd.append(`GiaThuocs[${i}].TrangThai`, (r.trangThai ? 'true' : 'false'));
     }
 
     if (editingThuoc.value) {
-      await api.thuoc.update(formData.value.maThuoc, fd);
+      const resp = await api.thuoc.update(formData.value.maThuoc, fd);
+      const apiResp = (resp && resp.data && typeof resp.data === 'object') ? resp.data : resp;
+      if (apiResp && apiResp.status === -1) {
+        ElMessage.error(apiResp.message || 'Cập nhật thất bại');
+        return;
+      }
       ElMessage.success('Cập nhật thành công');
     } else {
-      await api.thuoc.create(fd);
+      const resp = await api.thuoc.create(fd);
+      const apiResp = (resp && resp.data && typeof resp.data === 'object') ? resp.data : resp;
+      if (apiResp && apiResp.status === -1) {
+        ElMessage.error(apiResp.message || 'Thêm thất bại');
+        return;
+      }
       ElMessage.success('Thêm thành công');
     }
 
@@ -825,6 +848,130 @@ const formatPrice = (price) => {
 <style scoped>
 .admin-thuoc {
   padding: 12px 0;
+}
+
+.action-buttons .el-button {
+  min-width: 36px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-buttons .el-button i {
+  font-size: 14px;
+}
+
+/* Action buttons row styling */
+.action-buttons-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  min-height: 36px;
+  min-width: 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-action .el-icon {
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.btn-action:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+  z-index: -1;
+}
+
+.btn-action:active:before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-view {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-view:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-edit:hover {
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-edit:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete:hover {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-delete:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Make the search input inner element match button height */
+.search-input ::v-deep .el-input__inner {
+  height: 40px;
+  line-height: 40px;
+}
+
+.search-input ::v-deep .el-input__inner::placeholder {
+  line-height: 40px;
 }
 
 .product-thumb {

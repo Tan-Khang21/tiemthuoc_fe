@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-layout" :style="{ '--sidebar-width': sidebarWidth }">
+  <div class="admin-layout" :class="{ 'sidebar-collapsed': collapsed }" :style="{ '--sidebar-width': sidebarWidth }">
     <el-container style="min-height: 100vh">
       <!-- Sidebar -->
       <el-aside :width="sidebarWidth" :class="['sidebar', { collapsed }]">

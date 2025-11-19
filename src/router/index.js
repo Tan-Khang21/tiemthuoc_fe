@@ -83,6 +83,12 @@ const routes = [
         component: () => import("@/views/admin/phieunhap.vue"),
       },
       {
+        // allow maPN containing slashes (e.g. "PN0001/25-11") by matching the rest of the path
+        path: "phieunhap/:maPN(.*)",
+        name: "admin-phieunhap-detail",
+        component: () => import("@/views/admin/phieunhap-detail.vue"),
+      },
+      {
         path: "phieunhap/them",
         name: "admin-them-phieunhap",
         component: () => import("@/views/admin/them-phieunhap.vue"),
