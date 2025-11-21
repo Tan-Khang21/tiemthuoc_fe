@@ -108,6 +108,26 @@ const routes = [
         name: "admin-kho",
         component: () => import("@/views/admin/kho.vue"),
       },
+      {
+        path: "lieudung",
+        name: "admin-lieudung",
+        component: () => import("@/views/admin/lieudung.vue"),
+      },
+      {
+        path: "loaidonvi",
+        name: "admin-loaidonvi",
+        component: () => import("@/views/admin/loaidonvi.vue"),
+      },
+      {
+        path: "loaithuoc",
+        name: "admin-loaithuoc",
+        component: () => import("@/views/admin/loaithuoc.vue"),
+      },
+      {
+        path: "nhomloai",
+        name: "admin-nhomloai",
+        component: () => import("@/views/admin/nhomloai.vue"),
+      },
     ],
   },
 ];

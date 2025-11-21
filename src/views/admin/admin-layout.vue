@@ -16,47 +16,93 @@
             <p>Quản Trị Hệ Thống</p>
           </div>
         </el-tooltip>
-        <el-menu
-          :default-active="activeMenu"
-          class="admin-menu"
-          background-color="transparent"
-          text-color="#0d3d47"
-          active-text-color="#17a2b8"
-          router
-        >
-          <el-menu-item index="/admin/thuoc">
-            <i class="fas fa-pills"></i>
-            <span>Quản Lý Thuốc</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/nhacungcap">
-            <i class="fas fa-building"></i>
-            <span>Nhà Cung Cấp</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/phieunhap">
-            <i class="fas fa-file-import"></i>
-            <span>Phiếu Nhập</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/hoadon">
-            <i class="fas fa-receipt"></i>
-            <span>Hóa Đơn</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/kho">
-            <i class="fas fa-warehouse"></i>
-            <span>Kho Thuốc</span>
-          </el-menu-item>
-        </el-menu>
-        
-        <div class="sidebar-footer">
-          <div class="user-info">
-            <div class="avatar">
-              <i class="fas fa-user-shield"></i>
+        <div class="menu-list">
+          <el-menu
+            :default-active="activeMenu"
+            :default-openeds="['sub-tonghop']"
+            :unique-opened="false"
+            class="admin-menu"
+            background-color="transparent"
+            text-color="#0d3d47"
+            active-text-color="#17a2b8"
+            router
+          >
+            <el-menu-item index="/admin/thuoc">
+              <i class="fas fa-pills"></i>
+              <span>Quản Lý Thuốc</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/nhacungcap">
+              <i class="fas fa-building"></i>
+              <span>Nhà Cung Cấp</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/phieunhap">
+              <i class="fas fa-file-import"></i>
+              <span>Phiếu Nhập</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/hoadon">
+              <i class="fas fa-receipt"></i>
+              <span>Hóa Đơn</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/kho">
+              <i class="fas fa-warehouse"></i>
+              <span>Kho Thuốc</span>
+            </el-menu-item>
+          </el-menu>
+
+          <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
+          <div class="menu-item-custom" @click="toggleSummary">
+            <i class="fas fa-chart-pie"></i>
+            <span>Tổng Hợp</span>
+            <i :class="['fas', summaryOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
+          </div>
+
+          <!-- Custom submenu items -->
+          <div v-show="summaryOpen" class="custom-submenu">
+            <div
+              class="submenu-item"
+              :class="{ 'is-active': activeMenu === '/admin/lieudung' }"
+              @click="goToPage('/admin/lieudung')"
+            >
+              <i class="fas fa-capsules"></i>
+              <span>Liều dùng</span>
             </div>
-            <div class="user-details">
-              <p class="user-name">{{ authStore.user?.TenDangNhap || 'Admin' }}</p>
-              <p class="user-role">Quản Trị Viên</p>
+            <div
+              class="submenu-item"
+              :class="{ 'is-active': activeMenu === '/admin/loaidonvi' }"
+              @click="goToPage('/admin/loaidonvi')"
+            >
+              <i class="fas fa-layer-group"></i>
+              <span>Loại đơn vị</span>
+            </div>
+            <div
+              class="submenu-item"
+              :class="{ 'is-active': activeMenu === '/admin/loaithuoc' }"
+              @click="goToPage('/admin/loaithuoc')"
+            >
+              <i class="fas fa-tags"></i>
+              <span>Loại thuốc</span>
+            </div>
+            <div
+              class="submenu-item"
+              :class="{ 'is-active': activeMenu === '/admin/nhomloai' }"
+              @click="goToPage('/admin/nhomloai')"
+            >
+              <i class="fas fa-sitemap"></i>
+              <span>Nhóm loại</span>
             </div>
           </div>
         </div>
+          <div class="sidebar-footer">
+            <div class="user-info">
+              <div class="avatar">
+                <i class="fas fa-user-shield"></i>
+              </div>
+              <div class="user-details">
+                <p class="user-name">{{ authStore.user?.TenDangNhap || 'Admin' }}</p>
+                <p class="user-role">Quản Trị Viên</p>
+              </div>
+            </div>
+          </div>
       </el-aside>
 
       <!-- Main Content -->
@@ -119,7 +165,11 @@ const currentPageName = computed(() => {
     '/admin/nhacungcap': 'Nhà Cung Cấp',
     '/admin/phieunhap': 'Phiếu Nhập',
     '/admin/hoadon': 'Hóa Đơn',
-    '/admin/kho': 'Kho Thuốc'
+    '/admin/kho': 'Kho Thuốc',
+        '/admin/nhomloai': 'Nhóm Loại',
+    '/admin/lieudung': 'Liều Dùng',
+    '/admin/loaidonvi': 'Loại Đơn Vị',
+    '/admin/loaithuoc': 'Loại Thuốc'
   };
   return names[route.path] || 'Admin';
 });
@@ -139,6 +189,17 @@ const collapsed = ref(false);
 const sidebarWidth = computed(() => (collapsed.value ? '70px' : '280px'));
 const toggleCollapse = () => {
   collapsed.value = !collapsed.value;
+};
+
+// Summary toggle state
+const summaryOpen = ref(false); // Hidden by default
+const toggleSummary = () => {
+  summaryOpen.value = !summaryOpen.value;
+  console.log('Toggle summary clicked, summaryOpen is now:', summaryOpen.value);
+};
+
+const goToPage = (path) => {
+  router.push(path);
 };
 </script>
 
@@ -160,6 +221,7 @@ const toggleCollapse = () => {
   display: flex;
   flex-direction: column;
   transition: width 260ms cubic-bezier(.4,0,.2,1);
+  overflow-y: auto;
 }
 
 .logo {
@@ -276,8 +338,13 @@ const toggleCollapse = () => {
 
 .admin-menu {
   border: none;
-  padding: 20px 10px;
+  padding: 0; /* padding moved to .menu-list */
+}
+
+.menu-list {
   flex: 1;
+  padding: 20px 10px 0 10px;
+  overflow: auto;
 }
 
 .admin-menu .el-menu-item {
@@ -464,6 +531,102 @@ const toggleCollapse = () => {
   background: #f5f7fa;
   padding: 25px;
   min-height: calc(100vh - 70px);
+}
+
+/* Custom menu item styling - match Element Plus menu item */
+.menu-item-custom {
+  height: 50px;
+  line-height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin: 0 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #0d3d47;
+  border-radius: 12px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.menu-item-custom:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #17a2b8;
+  transform: translateX(5px);
+}
+
+.menu-item-custom i:first-child {
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+  margin-right: 12px;
+  display: inline-block;
+}
+
+.menu-item-custom span {
+  flex: 1;
+  font-size: 15px;
+  line-height: normal;
+}
+
+.menu-item-custom i:last-child {
+  font-size: 12px;
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.custom-submenu {
+  padding: 0;
+  margin: -5px 10px 0 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #17a2b8;
+  margin-left: 30px;
+  border-radius: 0 8px 8px 0;
+  padding-right: 0;
+}
+
+.submenu-item {
+  height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  margin: 4px 0;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.2);
+  color: #0d3d47;
+}
+
+.submenu-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #17a2b8;
+  transform: translateX(5px);
+}
+
+/* active style for submenu items to match el-menu-item.is-active */
+.submenu-item.is-active {
+  background: white;
+  color: #17a2b8;
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+  font-weight: 600;
+}
+
+.submenu-item.is-active i {
+  color: #17a2b8;
+}
+
+.submenu-item i {
+  font-size: 16px;
+  width: 18px;
+  text-align: center;
+}
+
+.submenu-item span {
+  font-size: 14px;
 }
 
 /* Responsive */
