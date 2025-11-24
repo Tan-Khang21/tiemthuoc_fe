@@ -5,12 +5,14 @@
     <el-tabs v-model="activeTab">
       <el-tab-pane label="Chưa tách lẻ" name="chuaTachLe">
           <div class="controls">
-            <el-select
-              class="status-select"
-              v-model="selectedChua"
-              placeholder="Trạng thái"
-              size="small"
-              @change="fetchChuaTachLe"
+            <div class="control-with-label">
+              <div class="control-label">Trạng thái</div>
+              <el-select
+                class="status-select"
+                v-model="selectedChua"
+                placeholder="Trạng thái"
+                size="small"
+                @change="fetchChuaTachLe"
               placement="bottom-start"
               :teleported="true"
               :popper-options="{
@@ -26,12 +28,18 @@
               <el-option label="Lô đã hết" :value="'0'" />
             </el-select>
 
-            <el-select
-              class="drug-select"
-              v-model="selectedDrugChua"
-              placeholder="Chọn thuốc"
-              size="small"
-              placement="bottom-start"
+            </div>
+
+            <!-- removed: search moved next to unit select -->
+           
+            <div class="control-with-label">
+              <div class="control-label">Loại thuốc</div>
+              <el-select
+                class="type-select"
+                v-model="selectedTypeChua"
+                placeholder="Loại thuốc"
+                size="small"
+                placement="bottom-start"
               :teleported="true"
               :popper-options="{
                 modifiers: [
@@ -42,10 +50,13 @@
               popper-class="kho-select-popper"
             >
               <el-option label="Tất cả" :value="'all'" />
-              <el-option v-for="d in chuaDrugs" :key="d.maThuoc" :label="d.tenThuoc" :value="d.maThuoc" />
+              <el-option v-for="t in chuaTypes" :key="t.code" :label="t.name" :value="t.code" />
             </el-select>
+            </div>
            
-             <el-select class="unit-select" v-model="selectedUnitChua" placeholder="Chọn đơn vị" size="small" placement="bottom-start" :teleported="true" :popper-options="{
+            <div class="control-with-label">
+              <div class="control-label">Đơn vị</div>
+              <el-select class="unit-select" v-model="selectedUnitChua" placeholder="Chọn đơn vị" size="small" placement="bottom-start" :teleported="true" :popper-options="{
                  modifiers: [
                    { name: 'flip', options: { fallbackPlacements: [] } },
                    { name: 'preventOverflow', options: { boundary: 'viewport' } }
@@ -54,16 +65,41 @@
                <el-option label="Tất cả" :value="'all'" />
                <el-option v-for="u in chuaUnits" :key="u.code" :label="u.name" :value="u.code" />
              </el-select>
-            <el-tooltip content="Tách lô" placement="top">
-              <el-button size="small" class="split-btn" @click="openSplitDialog">
-                <i class="fas fa-cut"></i>
-              </el-button>
-            </el-tooltip>
+            </div>
+            <div class="control-with-label">
+              <div class="control-label">Tìm kiếm</div>
+              <el-input
+                class="search-input"
+                v-model="searchChua"
+                placeholder="Tìm theo tên / mã / loại thuốc"
+                clearable
+                size="small"
+                @clear="searchChua = ''"
+              />
+            </div>
+            <div class="control-with-label control-action">
+              <div class="control-label">Hành động</div>
+              <div style="display:flex; gap:6px; align-items:center">
+                    <el-button size="small" class="split-btn" @click="openSplitDialog">
+                      <i class="fas fa-cut"></i>
+                      Tách lô
+                    </el-button>
+                <el-button type="primary" size="small" @click="printChua">
+                  <i class="fas fa-print"></i>
+                  In
+                </el-button>
+                <el-button type="warning" size="small" @click="exportChua">
+                  <i class="fas fa-file-excel"></i>
+                  Xuất Excel
+                </el-button>
+              </div>
+            </div>
           </div>
 
           <el-table :data="paginatedChua" style="width: 100%" v-loading="loadingChua" stripe>
-          <el-table-column prop="maLo" label="Mã Lô" width="180" />
+          <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
+          <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
           <el-table-column label="Tên Thuốc" min-width="420">
             <template #default="{ row }">
               <el-tooltip :content="row.tenThuoc" placement="top">
@@ -78,14 +114,9 @@
               <span>{{ formatDate(row.hanSuDung) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="trangThaiSeal" label="Seal" width="90">
-            <template #default="{ row }">
-              <el-tag type="info" v-if="row.trangThaiSeal">Đóng</el-tag>
-              <el-tag v-else>Thường</el-tag>
-            </template>
-          </el-table-column>
+          
           <el-table-column prop="ghiChu" label="Ghi chú" width="160" />
-          <el-table-column label="Thao Tác" width="120" align="center">
+          <el-table-column label="Thao Tác" width="120" align="center" fixed="right">
             <template #default="{ row }">
               <el-tooltip :content="(row.soLuongCon ?? row.soLuongConLe ?? 0) > 0 ? 'Đổi nhanh' : 'Lô đã hết'" placement="top">
                 <el-button size="small" type="text" @click="quickChange(row)" :disabled="!canQuickChange(row)">
@@ -114,65 +145,103 @@
       </el-tab-pane>
 
       <el-tab-pane label="Đã tách lẻ" name="daTachLe">
-        <div class="controls">
-          <el-select
-            class="status-select"
-            v-model="selectedDa"
-            placeholder="Trạng thái"
-            size="small"
-            @change="fetchDaTachLe"
-            placement="bottom-start"
-            :teleported="true"
-            :popper-options="{
-              modifiers: [
-                { name: 'flip', options: { fallbackPlacements: [] } },
-                { name: 'preventOverflow', options: { boundary: 'viewport' } }
-              ]
-            }"
-            popper-class="kho-select-popper"
-          >
-            <el-option label="Tất cả" :value="'all'" />
-            <el-option label="Lô đang dùng" :value="'1'" />
-            <el-option label="Lô đã hết" :value="'0'" />
-          </el-select>
+          <div class="controls">
+            <div class="control-with-label">
+              <div class="control-label">Trạng thái</div>
+              <el-select
+                class="status-select"
+                v-model="selectedDa"
+                placeholder="Trạng thái"
+                size="small"
+                @change="fetchDaTachLe"
+                placement="bottom-start"
+                :teleported="true"
+                :popper-options="{
+                  modifiers: [
+                    { name: 'flip', options: { fallbackPlacements: [] } },
+                    { name: 'preventOverflow', options: { boundary: 'viewport' } }
+                  ]
+                }"
+                popper-class="kho-select-popper"
+              >
+                <el-option label="Tất cả" :value="'all'" />
+                <el-option label="Lô đang dùng" :value="'1'" />
+                <el-option label="Lô đã hết" :value="'0'" />
+              </el-select>
+            </div>
 
-          <el-select
-            class="drug-select"
-            v-model="selectedDrugDa"
-            placeholder="Chọn thuốc"
-            size="small"
-            placement="bottom-start"
-            :teleported="true"
-            :popper-options="{
-              modifiers: [
-                { name: 'flip', options: { fallbackPlacements: [] } },
-                { name: 'preventOverflow', options: { boundary: 'viewport' } }
-              ]
-            }"
-            popper-class="kho-select-popper"
-          >
-            <el-option label="Tất cả" :value="'all'" />
-            <el-option v-for="d in daDrugs" :key="d.maThuoc" :label="d.tenThuoc" :value="d.maThuoc" />
-          </el-select>
+          <!-- removed: search moved next to unit select -->
+           
+            <div class="control-with-label">
+              <div class="control-label">Loại thuốc</div>
+              <el-select
+                class="type-select"
+              v-model="selectedTypeDa"
+              placeholder="Loại thuốc"
+              size="small"
+              placement="bottom-start"
+              :teleported="true"
+              :popper-options="{
+                modifiers: [
+                  { name: 'flip', options: { fallbackPlacements: [] } },
+                  { name: 'preventOverflow', options: { boundary: 'viewport' } }
+                ]
+              }"
+              popper-class="kho-select-popper"
+            >
+              <el-option label="Tất cả" :value="'all'" />
+              <el-option v-for="t in daTypes" :key="t.code" :label="t.name" :value="t.code" />
+            </el-select>
+            </div>
          
-           <el-select class="unit-select" v-model="selectedUnitDa" placeholder="Chọn đơn vị" size="small" placement="bottom-start" :teleported="true" :popper-options="{
-               modifiers: [
-                 { name: 'flip', options: { fallbackPlacements: [] } },
-                 { name: 'preventOverflow', options: { boundary: 'viewport' } }
-               ]
-             }" popper-class="kho-select-popper">
-             <el-option label="Tất cả" :value="'all'" />
-             <el-option v-for="u in daUnits" :key="u.code" :label="u.name" :value="u.code" />
-           </el-select>
-          <el-button type="success" @click="openSplitDialog" size="small">
-            <i class="fas fa-cut"></i>
-            Tách lô
-          </el-button>
+           <div class="control-with-label">
+             <div class="control-label">Đơn vị</div>
+             <el-select class="unit-select" v-model="selectedUnitDa" placeholder="Chọn đơn vị" size="small" placement="bottom-start" :teleported="true" :popper-options="{
+                 modifiers: [
+                   { name: 'flip', options: { fallbackPlacements: [] } },
+                   { name: 'preventOverflow', options: { boundary: 'viewport' } }
+                 ]
+               }" popper-class="kho-select-popper">
+               <el-option label="Tất cả" :value="'all'" />
+               <el-option v-for="u in daUnits" :key="u.code" :label="u.name" :value="u.code" />
+             </el-select>
+           </div>
+           <div class="control-with-label">
+             <div class="control-label">Tìm kiếm</div>
+             <el-input
+               class="search-input"
+               v-model="searchDa"
+               placeholder="Tìm theo tên / mã / loại thuốc"
+               clearable
+               size="small"
+               @clear="searchDa = ''"
+             />
+           </div>
+          <div class="control-with-label control-action">
+            <div class="control-label">Hành động</div>
+            <div style="display:flex; gap:6px; align-items:center">
+              <el-tooltip content="Không thể tách lô ở tab 'Đã tách lẻ'" placement="top">
+                <el-button type="success" size="small" :disabled="true">
+                  <i class="fas fa-cut"></i>
+                  Tách lô
+                </el-button>
+              </el-tooltip>
+              <el-button type="primary" size="small" @click="printDa">
+                <i class="fas fa-print"></i>
+                In
+              </el-button>
+              <el-button type="warning" size="small" @click="exportDa">
+                <i class="fas fa-file-excel"></i>
+                Xuất Excel
+              </el-button>
+            </div>
+          </div>
         </div>
 
         <el-table :data="paginatedDa" style="width: 100%" v-loading="loadingDa" stripe>
-          <el-table-column prop="maLo" label="Mã Lô" width="180" />
+          <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
+          <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
           <el-table-column label="Tên Thuốc" min-width="420">
             <template #default="{ row }">
               <el-tooltip :content="row.tenThuoc" placement="top">
@@ -187,14 +256,9 @@
               <span>{{ formatDate(row.hanSuDung) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="trangThaiSeal" label="Seal" width="90">
-            <template #default="{ row }">
-              <el-tag type="info" v-if="row.trangThaiSeal">Đóng</el-tag>
-              <el-tag v-else>Thường</el-tag>
-            </template>
-          </el-table-column>
+          
           <el-table-column prop="ghiChu" label="Ghi chú" width="260" />
-          <el-table-column label="Thao Tác" width="120" align="center">
+          <el-table-column label="Thao Tác" width="120" align="center" fixed="right">
             <template #default="{ row }">
               <el-tooltip content="Đổi nhanh" placement="top">
                 <el-button size="small" type="text" @click="quickChange(row)" :disabled="true">
@@ -504,6 +568,7 @@
                 :key="idx" 
                 class="history-card"
                 :style="{ borderLeftColor: getEventColor(it.Type||it.type) }"
+                @click="handleHistoryClick(it)"
               >
                 <div class="card-header">
                   <div class="event-type">
@@ -555,6 +620,42 @@
         <el-button type="primary" @click="closeView" size="large">Đóng</el-button>
       </template>
     </el-dialog>
+    
+    <!-- Dialog: Chi tiết phiếu nhập -->
+    <el-dialog v-model="phieuDialog" width="80%" title="Chi tiết phiếu nhập" :close-on-click-modal="false">
+      <template #default>
+        <div v-if="phieuLoading" style="text-align:center;padding:20px">Đang tải...</div>
+        <div v-else-if="phieuDetail && phieuDetail.phieuNhap">
+          <div style="margin-bottom:12px">
+            <strong>Mã phiếu:</strong> {{ phieuDetail.phieuNhap.maPN }} &nbsp; 
+            <strong>Ngày nhập:</strong> {{ formatDate(phieuDetail.phieuNhap.ngayNhap) }} &nbsp; 
+            <strong>Nhà cung cấp:</strong> {{ phieuDetail.phieuNhap.tenNCC }} &nbsp; 
+            <strong>Nhân viên:</strong> {{ phieuDetail.phieuNhap.tenNV }}
+          </div>
+          <el-table :data="phieuDetail.chiTiet || []" stripe style="width:100%">
+            <el-table-column prop="maCTPN" label="Mã CTPN" width="160" />
+            <el-table-column prop="maThuoc" label="Mã Thuốc" width="100" />
+            <el-table-column label="Tên Thuốc" min-width="420" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.tenThuoc }}</template>
+            </el-table-column>
+            <el-table-column prop="tenLoaiDonVi" label="Đơn vị" width="120" />
+            <el-table-column prop="soLuong" label="Số lượng" width="100" />
+            <el-table-column prop="donGia" label="Đơn giá" width="120" />
+            <el-table-column prop="thanhTien" label="Thành tiền" width="140" />
+            <el-table-column prop="hanSuDung" label="Hạn sử dụng" width="140">
+              <template #default="{ row }">{{ formatDate(row.hanSuDung) }}</template>
+            </el-table-column>
+            <el-table-column prop="maLo" label="Mã lô" width="180" />
+          </el-table>
+        </div>
+        <div v-else>
+          <div>Không có dữ liệu phiếu nhập</div>
+        </div>
+      </template>
+      <template #footer>
+        <el-button type="primary" @click="phieuDialog = false">Đóng</el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -564,6 +665,23 @@ import api from '@/api/axios';
 import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/store';
 import nhanvienApi from '@/api/nhanvien';
+
+// Resolve logo assets (Vite) for print — primary favicon, fallback logo
+const logoPrimary = (() => {
+  try {
+    return new URL('../../assets/img/logo/favicon.png', import.meta.url).href;
+  } catch (e) {
+    return '';
+  }
+})();
+const logoFallback = (() => {
+  try {
+    return new URL('../../assets/img/logo/logo.png', import.meta.url).href;
+  } catch (e) {
+    return '';
+  }
+})();
+const logoUrl = logoPrimary || logoFallback || '';
 
 const activeTab = ref('chuaTachLe');
 
@@ -585,6 +703,13 @@ const selectedDrugDa = ref('all');
 // Unit selects per tab
 const selectedUnitChua = ref('all');
 const selectedUnitDa = ref('all');
+
+// Type selects per tab (loại thuốc)
+const selectedTypeChua = ref('all');
+const selectedTypeDa = ref('all');
+// Text search per tab (search by tên thuốc / mã / loại)
+const searchChua = ref('');
+const searchDa = ref('');
 
 // Derive unique drug options from the lists
 const chuaDrugs = computed(() => {
@@ -628,6 +753,23 @@ const daUnits = computed(() => {
   return Array.from(map.values());
 });
 
+// Derive unique type options (maLoaiThuoc / tenLoaiThuoc)
+const chuaTypes = computed(() => {
+  const map = new Map();
+  (chuaList.value || []).forEach((r) => {
+    if (r.maLoaiThuoc) map.set(r.maLoaiThuoc, { code: r.maLoaiThuoc, name: r.tenLoaiThuoc || r.maLoaiThuoc });
+  });
+  return Array.from(map.values());
+});
+
+const daTypes = computed(() => {
+  const map = new Map();
+  (daList.value || []).forEach((r) => {
+    if (r.maLoaiThuoc) map.set(r.maLoaiThuoc, { code: r.maLoaiThuoc, name: r.tenLoaiThuoc || r.maLoaiThuoc });
+  });
+  return Array.from(map.values());
+});
+
 // Per-drug unit options (fetched from /Thuoc/{maThuoc}/GiaThuocs)
 const quickUnits = ref([]);
 
@@ -638,12 +780,18 @@ const fetchQuickUnits = async (maThuoc) => {
       return;
     }
     const res = await api.get(`/Thuoc/${maThuoc}/GiaThuocs`);
-    const list = (res.data && res.data.data) || res.data || [];
+    const r = (res && res.data) ? res.data : res;
+    // API sometimes returns { data: { giaThuocs: [...] } } or { giaThuocs: [...] }
+    let list = [];
+    if (r && r.data && Array.isArray(r.data.giaThuocs)) list = r.data.giaThuocs;
+    else if (r && Array.isArray(r.giaThuocs)) list = r.giaThuocs;
+    else if (Array.isArray(r)) list = r;
+
     // Map API items to { code, name, soLuong }
     quickUnits.value = (list || []).map((it) => ({
-      code: it.maLoaiDonVi || it.maLoaiDonViMoi || it.maLoaiDonViMoi,
-      name: it.tenLoaiDonVi || it.tenLoaiDonViMoi || it.tenLoaiDonVi,
-      soLuong: it.soLuong ?? 1,
+      code: it.maLoaiDonVi || it.maLoaiDonViMoi || it.maLoaiDonVi || it.maGiaThuoc || null,
+      name: it.tenLoaiDonVi || it.tenLoaiDonViMoi || it.tenLoaiDonVi || it.tenDonVi || '',
+      soLuong: (it.soLuong ?? it.SoLuong) ?? 1,
     }));
   } catch (err) {
     console.error('fetchQuickUnits error', err);
@@ -659,23 +807,69 @@ const quickSelectedConversion = computed(() => {
 // Filtered lists for display
 const filteredChuaList = computed(() => {
   let list = chuaList.value || [];
-  if (selectedDrugChua.value && selectedDrugChua.value !== 'all') {
-    list = list.filter((r) => r.maThuoc === selectedDrugChua.value);
+  if (searchChua.value && searchChua.value.trim() !== '') {
+    const q = searchChua.value.trim().toLowerCase();
+    list = list.filter((r) => {
+      return (
+        (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q)
+      );
+    });
+  }
+  if (selectedTypeChua.value && selectedTypeChua.value !== 'all') {
+    list = list.filter((r) => (r.maLoaiThuoc || '').toString() === selectedTypeChua.value);
   }
   if (selectedUnitChua.value && selectedUnitChua.value !== 'all') {
     list = list.filter((r) => r.donViGoc === selectedUnitChua.value);
   }
+  // sort by maThuoc then by hanSuDung (expiry) ascending
+  list = list.slice().sort((a, b) => {
+    const aCode = (a.maThuoc || '').toString().toLowerCase();
+    const bCode = (b.maThuoc || '').toString().toLowerCase();
+    if (aCode < bCode) return -1;
+    if (aCode > bCode) return 1;
+    const aDate = new Date(a.hanSuDung || a.HanSuDung || null);
+    const bDate = new Date(b.hanSuDung || b.HanSuDung || null);
+    const aTime = Number.isNaN(aDate.getTime()) ? 0 : aDate.getTime();
+    const bTime = Number.isNaN(bDate.getTime()) ? 0 : bDate.getTime();
+    return aTime - bTime;
+  });
   return list;
 });
 
 const filteredDaList = computed(() => {
   let list = daList.value || [];
-  if (selectedDrugDa.value && selectedDrugDa.value !== 'all') {
-    list = list.filter((r) => r.maThuoc === selectedDrugDa.value);
+  if (searchDa.value && searchDa.value.trim() !== '') {
+    const q = searchDa.value.trim().toLowerCase();
+    list = list.filter((r) => {
+      return (
+        (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q)
+      );
+    });
+  }
+  if (selectedTypeDa.value && selectedTypeDa.value !== 'all') {
+    list = list.filter((r) => (r.maLoaiThuoc || '').toString() === selectedTypeDa.value);
   }
   if (selectedUnitDa.value && selectedUnitDa.value !== 'all') {
     list = list.filter((r) => r.donViLe === selectedUnitDa.value);
   }
+  // sort by maThuoc then by hanSuDung ascending
+  list = list.slice().sort((a, b) => {
+    const aCode = (a.maThuoc || '').toString().toLowerCase();
+    const bCode = (b.maThuoc || '').toString().toLowerCase();
+    if (aCode < bCode) return -1;
+    if (aCode > bCode) return 1;
+    const aDate = new Date(a.hanSuDung || a.HanSuDung || null);
+    const bDate = new Date(b.hanSuDung || b.HanSuDung || null);
+    const aTime = Number.isNaN(aDate.getTime()) ? 0 : aDate.getTime();
+    const bTime = Number.isNaN(bDate.getTime()) ? 0 : bDate.getTime();
+    return aTime - bTime;
+  });
   return list;
 });
 
@@ -959,6 +1153,363 @@ const fetchLotHistory = async (maLo) => {
   }
 };
 
+// Dialog & fetch for PhieuNhap details
+const phieuDialog = ref(false);
+const phieuDetail = ref(null);
+const phieuLoading = ref(false);
+
+const fetchPhieuNhapByMaPN = async (maPN) => {
+  if (!maPN) {
+    ElMessage.error('Không có mã phiếu');
+    return;
+  }
+  phieuLoading.value = true;
+  phieuDetail.value = null;
+  try {
+    const res = await api.get('/PhieuNhap/GetChiTietPhieuNhapByMaPN', { params: { maPN } });
+    phieuDetail.value = res.data?.data || res.data || null;
+    phieuDialog.value = true;
+  } catch (err) {
+    console.error('fetchPhieuNhapByMaPN error', err);
+    ElMessage.error('Lấy chi tiết phiếu nhập thất bại');
+  } finally {
+    phieuLoading.value = false;
+  }
+};
+
+// Handle click on history item: show related data depending on event type
+const handleHistoryClick = (it) => {
+  const type = (it.Type || it.type || '').toString();
+  // PhieuQuyDoi -> if current view is original, show the new-lot voucher/history; if current is new, show original
+  if (/PhieuQuyDoi|QuyDoi/i.test(type)) {
+    const chiTiet = it.ChiTiet || it.chiTiet || {};
+    const loGoc = getLoGoc(chiTiet);
+    const loMoi = getLoMoi(chiTiet);
+    const currentLo = viewRowData.value?.maLo;
+
+    // Determine target: if current is loGoc -> target loMoi; if current is loMoi -> target loGoc; otherwise default to loGoc
+    let targetLo = null;
+    if (currentLo && loGoc && currentLo.toString() === loGoc.toString() && loMoi && loMoi !== '-') targetLo = loMoi;
+    else if (currentLo && loMoi && currentLo.toString() === loMoi.toString() && loGoc && loGoc !== '-') targetLo = loGoc;
+    else targetLo = loGoc || loMoi;
+
+    if (targetLo && targetLo !== '-') {
+      // Try to find the lot in current lists first
+      const findInLists = (maLo) => {
+        const all = (chuaList.value || []).concat(daList.value || []);
+        return all.find((r) => (r.maLo || '').toString() === maLo.toString());
+      };
+
+      const targetRow = findInLists(targetLo);
+      if (targetRow) {
+        viewRowData.value = targetRow;
+      } else {
+        // If not present locally, set minimal info so header shows maLo, and fetch history
+        viewRowData.value = { maLo: targetLo };
+      }
+      fetchLotHistory(targetLo);
+      ElMessage.info('Hiển thị thông tin cho lô: ' + targetLo);
+    } else {
+      ElMessage.warning('Không tìm thấy lô liên quan để hiển thị');
+    }
+    return;
+  }
+
+  // PhieuNhap -> fetch and show phieu details
+  if (/PhieuNhap/i.test(type)) {
+    const maPN = getPhieuCode(it.Phieu || it.phieu);
+    if (maPN && maPN !== '-') {
+      fetchPhieuNhapByMaPN(maPN);
+    } else {
+      ElMessage.warning('Không tìm thấy mã phiếu nhập');
+    }
+    return;
+  }
+
+  // fallback: try to show history by lo goc if present
+  const lo = getLoGoc(it.ChiTiet || it.chiTiet);
+  if (lo && lo !== '-') {
+    fetchLotHistory(lo);
+    ElMessage.info('Hiển thị lịch sử cho lô: ' + lo);
+    return;
+  }
+
+  ElMessage.info('Không có hành động cho mục lịch sử này');
+};
+
+// Helpers: print and export CSV for the current filtered lists
+const formatCell = (v) => (v === null || v === undefined ? '' : (typeof v === 'string' ? v : String(v)));
+
+  const buildPrintableHtml = (list, title) => {
+  const headers = ['Mã Lô','Mã Thuốc','Loại Thuốc','Tên Thuốc','Đơn Vị','Số Lượng','Hạn sử dụng','Ghi chú'];
+  const rows = (list || []).map((r) => ([
+    formatCell(r.maLo),
+    formatCell(r.maThuoc),
+    formatCell(r.tenLoaiThuoc),
+    formatCell(r.tenThuoc),
+    formatCell(r.tenLoaiDonViGoc || r.tenLoaiDonViLe),
+    formatCell(r.soLuongCon ?? r.soLuongConLe ?? ''),
+    formatCell(formatDate(r.hanSuDung)),
+    formatCell(r.ghiChu || '')
+  ]));
+
+  const tableRows = [
+    `<tr>${headers.map(h => `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f7fa">${h}</th>`).join('')}</tr>`,
+    ...rows.map(cols => `<tr>${cols.map(c=>`<td style="border:1px solid #eee;padding:6px 8px">${c}</td>`).join('')}</tr>`)
+  ].join('');
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial,Helvetica,sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}</style></head><body><h3>${title}</h3><table>${tableRows}</table></body></html>`;
+};
+
+const printHtml = (html) => {
+  const w = window.open('', '_blank');
+  if (!w) { ElMessage.error('Trình duyệt chặn pop-up, vui lòng cho phép để in.'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 250);
+};
+
+const downloadCsv = (list, filename) => {
+  const cols = ['MaLo','MaThuoc','TenLoaiThuoc','TenThuoc','DonVi','SoLuong','HanSuDung','GhiChu'];
+  const lines = [cols.join(',')];
+  (list || []).forEach((r) => {
+    const vals = [
+      `"${(r.maLo||'').toString().replace(/"/g,'""')}"`,
+      `"${(r.maThuoc||'').toString().replace(/"/g,'""')}"`,
+      `"${(r.tenLoaiThuoc||'').toString().replace(/"/g,'""')}"`,
+      `"${(r.tenThuoc||'').toString().replace(/"/g,'""')}"`,
+      `"${(r.tenLoaiDonViGoc||r.tenLoaiDonViLe||'').toString().replace(/"/g,'""')}"`,
+      `"${(r.soLuongCon ?? r.soLuongConLe ?? '').toString().replace(/"/g,'""')}"`,
+      `"${formatDate(r.hanSuDung)}"`,
+      `"${(r.ghiChu||'').toString().replace(/"/g,'""')}"`
+    ];
+    lines.push(vals.join(','));
+  });
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const printChua = async () => {
+  const list = filteredChuaList.value || [];
+  const totalQuantity = list.reduce((sum, r) => sum + (Number(r.soLuongCon) || 0), 0);
+  const tableRows = list.map((r, idx) => `<tr><td class="text-center">${idx + 1}</td><td>${r.maLo || ''}</td><td class="text-center">${r.maThuoc || ''}</td><td>${r.tenLoaiThuoc || ''}</td><td>${r.tenThuoc || ''}</td><td class="text-center">${r.tenLoaiDonViGoc || ''}</td><td class="text-right">${r.soLuongCon ?? ''}</td><td class="text-center">${formatDate(r.hanSuDung) || ''}</td></tr>`).join('');
+  
+  // Fetch the employee full name from API
+  const printerName = await fetchEmployeeFullName();
+  console.log('Printer name:', printerName);
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <title>Danh sách Thuốc Chưa tách lẻ</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 0; padding: 20px; font-size: 13px; line-height: 1.4; }
+        .container { max-width: 1200px; margin: 0 auto; border: 2px solid #000; padding: 20px; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+        .logo { width: 80px; height: 80px; flex-shrink: 0; }
+        .logo img { width: 100%; height: 100%; object-fit: contain; }
+        .header-content { flex: 1; }
+        .company-name { font-size: 26px; font-weight: bold; text-transform: uppercase; margin: 0; text-align: left; }
+        .company-info { font-size: 12px; margin: 3px 0; text-align: left; }
+        .title { font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 20px 0; text-align: center; }
+        .info-section { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 12px; }
+        .info-label { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+        th { background-color: #e8e8e8; font-weight: bold; text-align: center; font-size: 12px; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .total-section { margin: 15px 0; padding: 8px; border: 1px solid #000; background-color: #f5f5f5; }
+        .total-row { font-weight: bold; font-size: 14px; }
+        .signature-section { margin-top: 30px; display: flex; justify-content: space-between; }
+        .signature-box { width: 30%; text-align: center; font-size: 12px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 35px; padding-top: 3px; }
+        .print-info { margin-top: 15px; font-size: 11px; text-align: right; border-top: 1px dashed #000; padding-top: 5px; line-height: 1.6; }
+        @media print { body { margin: 0; } .container { border: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo">
+            <img src="${logoUrl}" alt="Logo" />
+          </div>
+          <div class="header-content">
+            <div class="company-name">NHÀ THUỐC MEDION</div>
+            <div class="company-info">Địa chỉ: 140 Lê Trọng Tấn, Tân Phú, TP. Hồ Chí Minh</div>
+            <div class="company-info">Điện thoại: (028) 1234-5678 | Email: medion@thuoc.com</div>
+          </div>
+        </div>
+        <div class="title">DANH SÁCH THUỐC CHƯA TÁCH LẺ</div>
+        <div class="info-section">
+          <div><span class="info-label">Tổng số lô:</span> ${list.length}</div>
+          <div><span class="info-label">Tổng số lượng:</span> ${totalQuantity}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 4%;">STT</th>
+              <th style="width: 12%;">Mã Lô</th>
+              <th style="width: 8%;">Mã Thuốc</th>
+              <th style="width: 15%;">Loại Thuốc</th>
+              <th style="width: 35%;">Tên Thuốc</th>
+              <th style="width: 10%;">Đơn Vị</th>
+              <th style="width: 8%;">Số Lượng</th>
+              <th style="width: 12%;">Hạn sử dụng</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+        <div class="total-section">
+          <div class="total-row text-right">Tổng số lượng: ${totalQuantity}</div>
+        </div>
+        <div class="signature-section">
+          <div class="signature-box"><div>Người lập danh sách</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+          <div class="signature-box"><div>Thủ kho</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+          <div class="signature-box"><div>Kế toán</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+        </div>
+        <div class="print-info">
+          <div>Người in: ${printerName}</div>
+          <div>Thời gian in: ${new Date().toLocaleString('vi-VN')}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 250);
+  }
+};
+
+const exportChua = () => {
+  const list = filteredChuaList.value || [];
+  downloadCsv(list, `kho-chua-${new Date().toISOString().slice(0,10)}.csv`);
+};
+
+const printDa = async () => {
+  const list = filteredDaList.value || [];
+  const totalQuantity = list.reduce((sum, r) => sum + (Number(r.soLuongConLe) || 0), 0);
+  const tableRows = list.map((r, idx) => `<tr><td class="text-center">${idx + 1}</td><td>${r.maLo || ''}</td><td class="text-center">${r.maThuoc || ''}</td><td>${r.tenLoaiThuoc || ''}</td><td>${r.tenThuoc || ''}</td><td class="text-center">${r.tenLoaiDonViLe || ''}</td><td class="text-right">${r.soLuongConLe ?? ''}</td><td class="text-center">${formatDate(r.hanSuDung) || ''}</td></tr>`).join('');
+  
+  // Fetch the employee full name from API
+  const printerName = await fetchEmployeeFullName();
+  console.log('Printer name:', printerName);
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <title>Danh sách Thuốc Đã tách lẻ</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 0; padding: 20px; font-size: 13px; line-height: 1.4; }
+        .container { max-width: 1200px; margin: 0 auto; border: 2px solid #000; padding: 20px; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+        .logo { width: 80px; height: 80px; flex-shrink: 0; }
+        .logo img { width: 100%; height: 100%; object-fit: contain; }
+        .header-content { flex: 1; }
+        .company-name { font-size: 26px; font-weight: bold; text-transform: uppercase; margin: 0; text-align: left; }
+        .company-info { font-size: 12px; margin: 3px 0; text-align: left; }
+        .title { font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 20px 0; text-align: center; }
+        .info-section { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 12px; }
+        .info-label { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+        th { background-color: #e8e8e8; font-weight: bold; text-align: center; font-size: 12px; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .total-section { margin: 15px 0; padding: 8px; border: 1px solid #000; background-color: #f5f5f5; }
+        .total-row { font-weight: bold; font-size: 14px; }
+        .signature-section { margin-top: 30px; display: flex; justify-content: space-between; }
+        .signature-box { width: 30%; text-align: center; font-size: 12px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 35px; padding-top: 3px; }
+        .print-info { margin-top: 15px; font-size: 11px; text-align: right; border-top: 1px dashed #000; padding-top: 5px; line-height: 1.6; }
+        @media print { body { margin: 0; } .container { border: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo">
+            <img src="${logoUrl}" alt="Logo" />
+          </div>
+          <div class="header-content">
+            <div class="company-name">NHÀ THUỐC MEDION</div>
+            <div class="company-info">Địa chỉ: 140 Lê Trọng Tấn, Tân Phú, TP. Hồ Chí Minh</div>
+            <div class="company-info">Điện thoại: (028) 1234-5678 | Email: medion@thuoc.com</div>
+          </div>
+        </div>
+        <div class="title">DANH SÁCH THUỐC ĐÃ TÁCH LẺ</div>
+        <div class="info-section">
+          <div><span class="info-label">Tổng số lô:</span> ${list.length}</div>
+          <div><span class="info-label">Tổng số lượng:</span> ${totalQuantity}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 4%;">STT</th>
+              <th style="width: 12%;">Mã Lô</th>
+              <th style="width: 8%;">Mã Thuốc</th>
+              <th style="width: 15%;">Loại Thuốc</th>
+              <th style="width: 35%;">Tên Thuốc</th>
+              <th style="width: 10%;">Đơn Vị</th>
+              <th style="width: 8%;">Số Lượng</th>
+              <th style="width: 12%;">Hạn sử dụng</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+        <div class="total-section">
+          <div class="total-row text-right">Tổng số lượng: ${totalQuantity}</div>
+        </div>
+        <div class="signature-section">
+          <div class="signature-box"><div>Người lập danh sách</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+          <div class="signature-box"><div>Thủ kho</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+          <div class="signature-box"><div>Kế toán</div><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
+        </div>
+        <div class="print-info">
+          <div>Người in: ${printerName}</div>
+          <div>Thời gian in: ${new Date().toLocaleString('vi-VN')}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 250);
+  }
+};
+
+const exportDa = () => {
+  const list = filteredDaList.value || [];
+  downloadCsv(list, `kho-da-${new Date().toISOString().slice(0,10)}.csv`);
+};
+
 // Helper functions for timeline display
 const getEventColor = (type) => {
   const colors = {
@@ -1129,8 +1680,44 @@ const submitSplitForm = async () => {
 .controls {
   margin: 12px 0;
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.control-with-label {
+  display: flex;
+  flex-direction: row;
   align-items: center;
+  gap: 10px;
+  min-width: 120px;
+}
+
+.control-label {
+  width: 100px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-align: left;
+}
+
+.control-action {
+  margin-left: auto;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.status-select { min-width: 180px; }
+.type-select { min-width: 150px; }
+.unit-select { min-width: 160px; }
+.search-input { min-width: 260px; }
+.control-action .el-button { white-space: nowrap; }
+
+/* compact label styling for small screens */
+@media (max-width: 980px) {
+  .control-with-label { flex-direction: column; align-items: stretch; }
+  .control-label { width: auto; margin-left: 6px; }
+  .search-input { min-width: 100%; }
 }
 
 .status-select {
@@ -1407,6 +1994,8 @@ const submitSplitForm = async () => {
   display: flex;
   flex-direction: column;
 }
+
+.history-card { cursor: pointer; }
 
 .history-card:hover {
   transform: translateY(-3px);

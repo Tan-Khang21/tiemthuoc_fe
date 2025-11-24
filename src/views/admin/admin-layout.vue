@@ -39,14 +39,62 @@
               <i class="fas fa-file-import"></i>
               <span>Phiếu Nhập</span>
             </el-menu-item>
-            <el-menu-item index="/admin/hoadon">
+            <!-- Hóa Đơn submenu: Hóa đơn / Xử lý hóa đơn online -->
+            <div class="menu-item-custom" @click="hoadonOpen = !hoadonOpen" style="margin-bottom:6px">
               <i class="fas fa-receipt"></i>
               <span>Hóa Đơn</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/kho">
+              <i :class="['fas', hoadonOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
+            </div>
+            <div v-show="hoadonOpen" class="custom-submenu">
+              <div
+                class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/hoadon' }"
+                @click="goToPage('/admin/hoadon')"
+              >
+                <i class="fas fa-file-invoice"></i>
+                <span>Hóa đơn</span>
+              </div>
+              <div
+                class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/hoadon/online' }"
+                @click="goToPage('/admin/hoadon/online')"
+              >
+                <i class="fas fa-globe"></i>
+                <span>Xử lý hóa đơn online</span>
+              </div>
+            </div>
+            <!-- Kho Thuốc with submenu: Kho Thuốc / Quy đổi / Hủy thuốc -->
+            <div class="menu-item-custom" @click="khoOpen = !khoOpen" style="margin-bottom:6px">
               <i class="fas fa-warehouse"></i>
               <span>Kho Thuốc</span>
-            </el-menu-item>
+              <i :class="['fas', khoOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
+            </div>
+            <div v-show="khoOpen" class="custom-submenu">
+              <div
+                class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/kho' }"
+                @click="goToPage('/admin/kho')"
+              >
+                <i class="fas fa-boxes"></i>
+                <span>Kho Thuốc</span>
+              </div>
+              <div
+                class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/quydoi' }"
+                @click="goToPage('/admin/quydoi')"
+              >
+                <i class="fas fa-exchange-alt"></i>
+                <span>Quy đổi</span>
+              </div>
+              <div
+                class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/huythuoc' }"
+                @click="goToPage('/admin/huythuoc')"
+              >
+                <i class="fas fa-trash-alt"></i>
+                <span>Hủy thuốc</span>
+              </div>
+            </div>
           </el-menu>
 
           <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
@@ -197,6 +245,12 @@ const toggleSummary = () => {
   summaryOpen.value = !summaryOpen.value;
   console.log('Toggle summary clicked, summaryOpen is now:', summaryOpen.value);
 };
+
+// Kho submenu state
+const khoOpen = ref(false);
+
+// Hoá Đơn submenu state
+const hoadonOpen = ref(false);
 
 const goToPage = (path) => {
   router.push(path);

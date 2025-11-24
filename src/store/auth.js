@@ -40,12 +40,15 @@ export const useAuthStore = defineStore('auth', {
         
         // Backend trả về response.data chứa LoginResponse
         if (response.data) {
+          // Lấy hoTen từ employee data hoặc từ response trực tiếp
+          const employeeData = response.data.nhanVien || response.data.employee || response.data;
           const userData = {
             MaTK: response.data.maTK || response.data.MaTK,
             TenDangNhap: response.data.tenDangNhap || response.data.TenDangNhap,
+            HoTen: employeeData.hoTen || employeeData.HoTen || response.data.hoTen || response.data.HoTen || 'Không xác định',
             Email: response.data.email || response.data.Email,
             MaKH: response.data.maKH || response.data.MaKH,
-            MaNV: response.data.maNV || response.data.MaNV,
+            MaNV: response.data.maNV || response.data.MaNV || employeeData.maNV || employeeData.MaNV,
             VaiTro: response.data.vaiTro || response.data.VaiTro,
             HasCustomerInfo: response.data.hasCustomerInfo || response.data.HasCustomerInfo,
             IsAdmin: response.data.isAdmin || response.data.IsAdmin

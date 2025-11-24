@@ -27,11 +27,14 @@
         />
 
         <el-select v-model="status" class="filter-small" placeholder="Trạng thái" clearable size="small">
+          <el-option :value="null" label="Tất cả" />
           <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
 
         <el-select v-model="type" class="filter-small" placeholder="Loại" clearable size="small">
-          <el-option v-for="opt in typeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          <el-option value="" label="Tất cả" />
+          <el-option value="HD" label="Hóa đơn trực tiếp" />
+          <el-option value="HDOL" label="Hóa đơn online" />
         </el-select>
 
         <el-input v-model="searchKeyword" class="filter-search" placeholder="Tìm kiếm..." clearable size="small" />
@@ -47,12 +50,12 @@
     <!-- Table results -->
     <div style="margin-top:18px">
       <el-table :data="pagedList" v-loading="loading" element-loading-text="Đang tải..." style="width:100%" :stripe="false">
-        <el-table-column type="index" label="STT" width="60" />
-        <el-table-column prop="MaHD" label="Mã HĐ" min-width="120" show-overflow-tooltip class-name="col-ellipsis" />
+        <el-table-column type="index" label="STT" width="60" fixed="left" />
+        <el-table-column prop="MaHD" label="Mã HĐ" min-width="220" width="190" show-overflow-tooltip class-name="col-ellipsis" fixed="left" />
         <el-table-column prop="NgayLap" label="Ngày lập" width="120">
           <template #default="{ row }">{{ formatDate(row.NgayLap) }}</template>
         </el-table-column>
-        <el-table-column prop="TenKH" label="Khách hàng" min-width="110" show-overflow-tooltip class-name="col-ellipsis" />
+        <el-table-column prop="TenKH" label="Khách hàng" min-width="200" show-overflow-tooltip class-name="col-ellipsis" />
         <el-table-column prop="TenNV" label="Nhân viên" width="180" show-overflow-tooltip class-name="col-ellipsis" />
         <el-table-column prop="TongTien" label="Tổng tiền" width="120">
           <template #default="{ row }">{{ formatPrice(row.TongTien) }}</template>
@@ -123,20 +126,19 @@ const dd = String(now.getDate()).padStart(2, '0');
 const startDate = ref(`${yyyy}-${mm}-01`);
 const endDate = ref(`${yyyy}-${mm}-${dd}`);
 const status = ref(null);
-const type = ref(null);
+const type = ref('HD');
 const searchKeyword = ref('');
 
 // Example options (adjust to your backend values)
 // Backend expects numeric status and 'loai' values like 'HD' or 'HDOL'
 const statusOptions = [
-  { value: 1, label: 'Chưa xử lý (1)' },
-  { value: 2, label: 'Đang giao (2)' },
-  { value: 3, label: 'Hoàn tất (3)' },
-];
-
-const typeOptions = [
-  { value: 'HD', label: 'Hóa đơn trực tiếp (HD)' },
-  { value: 'HDOL', label: 'Hóa đơn online (HDOL)' },
+  { value: -3, label: 'Chưa hoàn tất xử lý huỷ' },
+  { value: -2, label: 'Đã hoàn tất xử lý huỷ' },
+  { value: -1, label: 'Hủy' },
+  { value: 0, label: 'Đã đặt' },
+  { value: 1, label: 'Đã xác nhận' },
+  { value: 2, label: 'Đã giao' },
+  { value: 3, label: 'Đã nhận' },
 ];
 
 const applyFilters = () => {

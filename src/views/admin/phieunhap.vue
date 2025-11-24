@@ -11,77 +11,95 @@
       </template>
 
       <!-- Search and Filter Row -->
-      <div class="search-row">
-        <el-date-picker
-          class="field-date"
-          v-model="startDate"
-          type="date"
-          placeholder="Từ ngày"
-          format="DD/MM/YYYY"
-          size="small"
-        />
-        <el-date-picker
-          class="field-date"
-          v-model="endDate"
-          type="date"
-          placeholder="Đến ngày"
-          format="DD/MM/YYYY"
-          size="small"
-        />
-        <el-select
-          class="field-supplier"
-          v-model="supplierFilter"
-          placeholder="Chọn nhà cung cấp"
-          clearable
-          size="small"
-          style="width: 200px"
-        >
-          <el-option
-            v-for="supplier in suppliers"
-            :key="supplier.maNCC || supplier.id || supplier.MaNCC"
-            :label="supplier.tenNCC || supplier.tenNhaCungCap || supplier.TenNCC || supplier.ten || ''"
-            :value="supplier.maNCC || supplier.id || supplier.MaNCC"
-          />
-        </el-select>
-        <el-select
-          class="field-employee"
-          v-model="employeeFilter"
-          placeholder="Chọn nhân viên"
-          clearable
-          size="small"
-          style="width: 200px"
-        >
-          <el-option
-            v-for="employee in employees"
-            :key="employee.maNV || employee.id || employee.MaNV"
-            :label="employee.tenNV || employee.hoTen || employee.hoTen || employee.ten || ''"
-            :value="employee.maNV || employee.id || employee.MaNV"
-          />
-        </el-select>
-        <el-input
-          class="field-search"
-          v-model="searchKeyword"
-          placeholder="Tìm kiếm..."
-          size="small"
-          style="width: 200px"
-          clearable
-        />
-        <el-button
-          class="export-button"
-          type="success"
-          @click="exportExcel"
-          :icon="Document"
-        >
-          Xuất Excel
-        </el-button>
-        <el-button
-          class="print-button"
-          type="info"
-          @click="printList"
-          :icon="Printer"
-        >
-          In
-        </el-button>
+      <div class="filter-container">
+        <div class="filter-group">
+          <div class="filter-item">
+            <label class="filter-label">Từ ngày</label>
+            <el-date-picker
+              v-model="startDate"
+              type="date"
+              placeholder="Chọn ngày"
+              format="DD/MM/YYYY"
+              size="small"
+              class="filter-input"
+            />
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">Đến ngày</label>
+            <el-date-picker
+              v-model="endDate"
+              type="date"
+              placeholder="Chọn ngày"
+              format="DD/MM/YYYY"
+              size="small"
+              class="filter-input"
+            />
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">Nhà cung cấp</label>
+            <el-select
+              v-model="supplierFilter"
+              placeholder="Chọn..."
+              clearable
+              size="small"
+              class="filter-input"
+            >
+              <el-option
+                v-for="supplier in suppliers"
+                :key="supplier.maNCC || supplier.id || supplier.MaNCC"
+                :label="supplier.tenNCC || supplier.tenNhaCungCap || supplier.TenNCC || supplier.ten || ''"
+                :value="supplier.maNCC || supplier.id || supplier.MaNCC"
+              />
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">Nhân viên</label>
+            <el-select
+              v-model="employeeFilter"
+              placeholder="Chọn..."
+              clearable
+              size="small"
+              class="filter-input"
+            >
+              <el-option
+                v-for="employee in employees"
+                :key="employee.maNV || employee.id || employee.MaNV"
+                :label="employee.tenNV || employee.hoTen || employee.hoTen || employee.ten || ''"
+                :value="employee.maNV || employee.id || employee.MaNV"
+              />
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">Tìm kiếm</label>
+            <el-input
+              v-model="searchKeyword"
+              placeholder="Mã phiếu, nhà cung cấp..."
+              size="small"
+              class="filter-input"
+              clearable
+            />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <el-button
+            type="success"
+            @click="exportExcel"
+            :icon="Document"
+            size="small"
+            class="action-btn export-btn"
+          >
+            Xuất Excel
+          </el-button>
+          <el-button
+            type="info"
+            @click="printList"
+            :icon="Printer"
+            size="small"
+            class="action-btn print-btn"
+          >
+            In
+          </el-button>
+        </div>
       </div>
 
       <!-- Table -->
@@ -653,10 +671,207 @@ const printList = async () => {
   margin: 0;
 }
 
-.export-button, .print-button {
-  height: 42px;
-  margin-left: 12px;
+/* Filter Container - Clean, modern design */
+.filter-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex-wrap: nowrap;
 }
+
+.filter-group {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 0 auto;
+  min-width: 130px;
+}
+
+.filter-item:nth-child(1),
+.filter-item:nth-child(2) {
+  min-width: 95px;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.filter-input {
+  width: 100% !important;
+}
+
+.filter-input :deep(.el-input__wrapper),
+.filter-input :deep(.el-date-editor__wrapper),
+.filter-input :deep(.el-select__wrapper) {
+  height: 34px !important;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  padding: 0 6px !important;
+}
+
+.filter-item:nth-child(1) .filter-input :deep(.el-input__wrapper),
+.filter-item:nth-child(1) .filter-input :deep(.el-date-editor__wrapper),
+.filter-item:nth-child(2) .filter-input :deep(.el-input__wrapper),
+.filter-item:nth-child(2) .filter-input :deep(.el-date-editor__wrapper) {
+  padding: 0 4px !important;
+}
+
+.filter-input :deep(.el-input__wrapper:hover),
+.filter-input :deep(.el-date-editor__wrapper:hover),
+.filter-input :deep(.el-select__wrapper:hover) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.filter-input :deep(.el-input__wrapper.is-focus),
+.filter-input :deep(.el-date-editor__wrapper.is-focus),
+.filter-input :deep(.el-select__wrapper.is-focus) {
+  border-color: #17a2b8;
+  box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.1);
+  background: white;
+}
+
+.filter-input :deep(.el-input__inner),
+.filter-input :deep(.el-date-editor__editor),
+.filter-input :deep(.el-select .el-input__inner) {
+  height: 34px !important;
+  line-height: 34px !important;
+  font-size: 11px;
+  color: #334155;
+}
+
+.filter-item:nth-child(1) .filter-input :deep(.el-date-editor__editor),
+.filter-item:nth-child(2) .filter-input :deep(.el-date-editor__editor) {
+  font-size: 10px;
+}
+
+.filter-input :deep(.el-input__inner::placeholder),
+.filter-input :deep(.el-date-editor__editor::placeholder) {
+  color: #94a3b8;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+.action-btn {
+  height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 6px !important;
+  font-weight: 500;
+  font-size: 11px;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+  border: none !important;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.export-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+}
+
+.export-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.print-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+}
+
+.print-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+  .filter-item {
+    min-width: 130px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .filter-container {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .filter-group {
+    gap: 8px;
+    flex: 0 0 100%;
+    margin-bottom: 8px;
+  }
+
+  .filter-actions {
+    flex: 0 0 100%;
+    gap: 6px;
+  }
+
+  .filter-item {
+    min-width: 120px;
+    flex: 1 1 auto;
+  }
+
+  .action-btn {
+    height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 11px;
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-item {
+    min-width: 100%;
+    flex: 0 0 calc(50% - 6px);
+  }
+
+  .filter-actions {
+    flex: 0 0 100%;
+  }
+
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 .action-buttons-row { display:flex; gap:8px; align-items:center; }
 .btn-action { background: #fff; border-radius:6px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; box-shadow: 0 1px 2px rgba(0,0,0,0.06); border: 1px solid #e8eef2; cursor:pointer; }
 .btn-action .el-icon { font-size:16px; }
@@ -684,93 +899,5 @@ const printList = async () => {
 .table-btn.btn-delete { background: linear-gradient(135deg,#ef4444 0%,#dc2626 100%) !important; }
 
 .table-action-cell { display:flex; gap:8px; align-items:center; }
-.search-row {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 12px;
-  align-items: end;
-  margin-bottom: 16px;
-  box-sizing: border-box;
-  overflow-x: auto;
-}
-
-.search-row > * {
-  flex: 0 0 auto;
-  min-width: 120px;
-}
-
-/* When global sidebar is collapsed/pushed, keep search row controls on one line */
-.admin-layout.sidebar-collapsed .search-row {
-  gap: 12px;
-}
-
-.admin-layout.sidebar-collapsed .search-row > * {
-
-  max-width: 80px;
-}
-
-/* Also force one-line layout when the sidebar is expanded (no .collapsed class) */
-.admin-layout:not(.sidebar-collapsed) .search-row {
-  gap: 2px;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .field-date {
-  min-width: 55px;
-  max-width: 55px;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .field-supplier,
-.admin-layout:not(.sidebar-collapsed) .search-row .field-employee {
-  min-width: 90px;
-  max-width: 90px;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .field-search {
-  min-width: 120px;
-  flex: 1 1 120px;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .export-button,
-.admin-layout:not(.sidebar-collapsed) .search-row .print-button {
-  min-width: 50px;
-  max-width: 50px;
-}
-
-.search-row :deep(.el-input__inner) { height: 42px !important; line-height: 42px !important; }
-.search-row :deep(.el-date-editor__editor) { height: 42px !important; }
-.search-row :deep(.el-select .el-input__inner) { height: 42px !important; line-height: 42px !important; }
-.search-row :deep(.el-select .el-input__wrapper) { height: 42px !important; }
-.search-row :deep(.el-select .el-input) { height: 42px !important; }
-.search-row :deep(.el-select) { height: 42px !important; }
-.search-row :deep(.el-date-editor) { height: 42px !important; }
-.search-row :deep(.el-input) { height: 42px !important; }
-.search-row :deep(.el-input__wrapper) { height: 42px !important; min-height: 42px !important; }
-
-/* When global sidebar is collapsed/pushed, keep search row controls on one line */
-.admin-layout.sidebar-collapsed .search-row {
-  grid-template-columns: minmax(120px, auto) minmax(120px, auto) minmax(150px, auto) minmax(150px, auto) 1fr minmax(120px, auto) minmax(100px, auto) !important;
-  gap: 12px !important;
-}
-
-/* Also force one-line layout when the sidebar is expanded (no .collapsed class) */
-.admin-layout:not(.sidebar-collapsed) .search-row {
-  grid-template-columns: minmax(70px, auto) minmax(70px, auto) minmax(90px, auto) minmax(90px, auto) 1fr minmax(70px, auto) minmax(50px, auto) !important;
-  gap: 2px !important;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .field-date,
-.admin-layout:not(.sidebar-collapsed) .search-row .field-supplier,
-.admin-layout:not(.sidebar-collapsed) .search-row .field-employee,
-.admin-layout:not(.sidebar-collapsed) .search-row .field-search {
-  max-width: none !important;
-}
-
-.admin-layout:not(.sidebar-collapsed) .search-row .field-date :deep(.el-date-editor),
-.admin-layout:not(.sidebar-collapsed) .search-row .field-supplier :deep(.el-select),
-.admin-layout:not(.sidebar-collapsed) .search-row .field-employee :deep(.el-select),
-.admin-layout:not(.sidebar-collapsed) .search-row .field-search :deep(.el-input) {
-  width: 100% !important;
-  max-width: none !important;
-}
 </style>
 

@@ -99,14 +99,35 @@ const routes = [
         component: () => import("@/views/admin/hoadon.vue"),
       },
       {
+        // detail view for an invoice (allow /admin/hoadon/:maHD)
+        path: "hoadon/:maHD(.*)",
+        name: "admin-hoadon-detail",
+        component: () => import("@/views/admin/hoadon-detail-fixed.vue"),
+      },
+      {
+        path: "hoadon/online",
+        name: "admin-hoadon-online",
+        component: () => import("@/views/admin/hoadon-online.vue"),
+      },
+      {
         path: "hoadon/them",
         name: "admin-them-hoadon",
-        component: () => import("@/views/admin/them-hoadon.vue"),
+        component: () => import("@/views/admin/hoadon-create.vue"),
       },
       {
         path: "kho",
         name: "admin-kho",
         component: () => import("@/views/admin/kho.vue"),
+      },
+      {
+        path: "quydoi",
+        name: "admin-quydoi",
+        component: () => import("@/views/admin/quydoi.vue"),
+      },
+      {
+        path: "huythuoc",
+        name: "admin-huythuoc",
+        component: () => import("@/views/admin/huythuoc.vue"),
       },
       {
         path: "lieudung",
