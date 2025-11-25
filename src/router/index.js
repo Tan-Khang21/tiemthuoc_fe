@@ -125,6 +125,11 @@ const routes = [
         component: () => import("@/views/admin/quydoi.vue"),
       },
       {
+        path: "thuoc-can-xu-ly",
+        name: "admin-thuoc-can-xu-ly",
+        component: () => import("@/views/admin/thuoc-can-xu-ly.vue"),
+      },
+      {
         path: "huythuoc",
         name: "admin-huythuoc",
         component: () => import("@/views/admin/huythuoc.vue"),

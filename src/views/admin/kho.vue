@@ -1,6 +1,6 @@
 <template>
   <el-card>
-    <h3>📦 Quản lý kho</h3>
+    <h3> Quản lý kho</h3>
 
     <el-tabs v-model="activeTab">
       <el-tab-pane label="Chưa tách lẻ" name="chuaTachLe">
@@ -1107,11 +1107,13 @@ const doQuickChange = () => {
   // Call backend quick-convert endpoint
   quickLoading.value = true;
   (async () => {
-    try {
+      try {
       const body = {
         maThuoc: quickRow.value.maThuoc,
+        maLoaiDonViGoc: quickRow.value.maLoaiDonViGoc || quickRow.value.donViGoc || quickRow.value.maLoaiDonVi || quickRow.value.maDonViGoc || undefined,
         maLoaiDonViMoi: quickNewUnit.value || undefined,
         hanSuDungMoi: quickNewExpiry.value ? new Date(quickNewExpiry.value).toISOString() : undefined,
+        maLoGoc: quickRow.value.maLo || undefined,
       };
       await api.post('/PhieuQuyDoi/QuickByMa', body);
       ElMessage.success('Đổi nhanh thành công');

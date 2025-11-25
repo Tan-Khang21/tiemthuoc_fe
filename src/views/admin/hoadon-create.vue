@@ -584,6 +584,17 @@ const fetchEmployeeById = async (maNV) => {
   }
 };
 
+// Detect placeholder or unknown names returned from some auth payloads
+const isPlaceholderName = (name) => {
+  if (!name) return true;
+  const s = String(name).trim().toLowerCase();
+  // common placeholder values to treat as missing
+  if (!s) return true;
+  if (s === 'không xác định' || s === 'khong xac dinh' || s === 'unknown') return true;
+  if (/không.*xác.*định/.test(s)) return true;
+  return false;
+};
+
 onMounted(async () => {
   // Load medicines list first
   await loadMedicines();
@@ -596,14 +607,21 @@ onMounted(async () => {
     if (u) {
       name = u.HoTen || u.hoTen || u.tenNV || u.TenNV || null;
       const ma = u.MaNV || u.maNV;
-      if (!name && ma) name = await fetchEmployeeById(ma);
+      // if name missing or a placeholder, fetch authoritative name from API
+      if (ma && ( !name || isPlaceholderName(name) )) {
+        const fetched = await fetchEmployeeById(ma);
+        if (fetched) name = fetched;
+      }
     } else {
       const ustr = localStorage.getItem('user');
       if (ustr) {
         const uu = JSON.parse(ustr);
         name = uu?.hoTen || uu?.HoTen || uu?.tenNV || uu?.TenNV || null;
         const ma = uu?.MaNV || uu?.maNV;
-        if (!name && ma) name = await fetchEmployeeById(ma);
+        if (ma && ( !name || isPlaceholderName(name) )) {
+          const fetched = await fetchEmployeeById(ma);
+          if (fetched) name = fetched;
+        }
       }
     }
     if (name) form.value.tenNV = name;

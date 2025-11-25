@@ -88,6 +88,14 @@
               </div>
               <div
                 class="submenu-item"
+                :class="{ 'is-active': activeMenu === '/admin/thuoc-can-xu-ly' }"
+                @click="goToPage('/admin/thuoc-can-xu-ly')"
+              >
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Thuốc cần xử lý</span>
+              </div>
+              <div
+                class="submenu-item"
                 :class="{ 'is-active': activeMenu === '/admin/huythuoc' }"
                 @click="goToPage('/admin/huythuoc')"
               >
@@ -218,6 +226,7 @@ const currentPageName = computed(() => {
     '/admin/lieudung': 'Liều Dùng',
     '/admin/loaidonvi': 'Loại Đơn Vị',
     '/admin/loaithuoc': 'Loại Thuốc'
+    ,'/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý'
   };
   return names[route.path] || 'Admin';
 });
