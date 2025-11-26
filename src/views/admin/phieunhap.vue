@@ -707,6 +707,12 @@ const printList = async () => {
   min-width: 95px;
 }
 
+/* Ô tìm kiếm (item thứ 5) - tự động giãn rộng khi có không gian */
+.filter-item:nth-child(5) {
+  flex: 1 1 auto;
+  min-width: 180px;
+}
+
 .filter-label {
   font-size: 11px;
   font-weight: 600;

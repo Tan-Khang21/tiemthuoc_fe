@@ -71,7 +71,7 @@
               <el-input
                 class="search-input"
                 v-model="searchChua"
-                placeholder="Tìm theo tên / mã / loại thuốc"
+                placeholder="Tìm theo tên / mã / mã lô / loại thuốc"
                 clearable
                 size="small"
                 @clear="searchChua = ''"
@@ -211,7 +211,7 @@
              <el-input
                class="search-input"
                v-model="searchDa"
-               placeholder="Tìm theo tên / mã / loại thuốc"
+               placeholder="Tìm theo tên / mã / mã lô / loại thuốc"
                clearable
                size="small"
                @clear="searchDa = ''"
@@ -814,7 +814,8 @@ const filteredChuaList = computed(() => {
         (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maThuoc || '').toString().toLowerCase().includes(q) ||
         (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
-        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q)
+        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maLo || '').toString().toLowerCase().includes(q)
       );
     });
   }
@@ -848,7 +849,8 @@ const filteredDaList = computed(() => {
         (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maThuoc || '').toString().toLowerCase().includes(q) ||
         (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
-        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q)
+        (r.maLoaiThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.maLo || '').toString().toLowerCase().includes(q)
       );
     });
   }
@@ -1146,7 +1148,26 @@ const fetchLotHistory = async (maLo) => {
   lotHistory.value = [];
   try {
     const res = await api.get(`/ThuocView/LichSuLo/${maLo}`);
-    lotHistory.value = res.data || [];
+    // New structure: { phieu: {...}, lichSu: [...] }
+    if (res.data && res.data.lichSu) {
+      lotHistory.value = res.data.lichSu || [];
+      
+      // Update viewRowData with fresh info from 'phieu' if available
+      if (res.data.phieu && viewRowData.value) {
+        // Merge fresh data but keep existing display names (tenThuoc, tenLoaiDonVi, etc.)
+        // The API 'phieu' has: maLo, maThuoc, soLuongCon, hanSuDung, ghiChu, etc.
+        viewRowData.value = {
+          ...viewRowData.value,
+          soLuongCon: res.data.phieu.soLuongCon ?? viewRowData.value.soLuongCon,
+          soLuongConLe: res.data.phieu.soLuongCon ?? viewRowData.value.soLuongConLe, // update both just in case
+          hanSuDung: res.data.phieu.hanSuDung || viewRowData.value.hanSuDung,
+          ghiChu: res.data.phieu.ghiChu || viewRowData.value.ghiChu
+        };
+      }
+    } else {
+      // Fallback for old structure (array)
+      lotHistory.value = Array.isArray(res.data) ? res.data : [];
+    }
   } catch (err) {
     console.error('fetchLotHistory', err);
     ElMessage.error('Lấy lịch sử lô thất bại');
@@ -1682,24 +1703,32 @@ const submitSplitForm = async () => {
 .controls {
   margin: 12px 0;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .control-with-label {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
-  min-width: 120px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.control-with-label:has(.search-input) {
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 200px;
 }
 
 .control-label {
-  width: 100px;
   font-size: 13px;
   color: var(--el-text-color-secondary);
   text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .control-action {
@@ -1707,12 +1736,13 @@ const submitSplitForm = async () => {
   justify-content: center;
   display: flex;
   align-items: center;
+  gap: 6px;
 }
 
-.status-select { min-width: 180px; }
-.type-select { min-width: 150px; }
-.unit-select { min-width: 160px; }
-.search-input { min-width: 260px; }
+.status-select { min-width: 130px; width: 130px; }
+.type-select { min-width: 110px; width: 110px; }
+.unit-select { min-width: 110px; width: 110px; }
+.search-input { width: 100%; min-width: 200px; }
 .control-action .el-button { white-space: nowrap; }
 
 /* compact label styling for small screens */

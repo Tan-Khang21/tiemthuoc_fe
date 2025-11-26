@@ -139,33 +139,35 @@
       </template>
     </el-dialog>
 
-    <div class="controls" style="margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:8px 0">
-      <div class="field" style="display:flex; align-items:center; gap:8px; min-width:0">
-          <div class="label">Từ ngày</div>
-          <el-date-picker class="control-el" v-model="start" type="date" placeholder="Từ ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+    <div class="controls">
+      <div class="control-with-label">
+        <div class="control-label">Từ ngày</div>
+        <el-date-picker class="date-input" v-model="start" type="date" placeholder="Từ ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
       </div>
 
-      <div class="field" style="display:flex; align-items:center; gap:8px; min-width:0">
-          <div class="label">Đến ngày</div>
-          <el-date-picker class="control-el" v-model="end" type="date" placeholder="Đến ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+      <div class="control-with-label">
+        <div class="control-label">Đến ngày</div>
+        <el-date-picker class="date-input" v-model="end" type="date" placeholder="Đến ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
       </div>
 
-      <div class="field" style="display:flex; align-items:center; gap:8px; min-width:0">
-          <div class="label">Mã NV</div>
-          <el-select class="control-el" v-model="filterMaNV" placeholder="Chọn nhân viên" clearable>
-            <el-option v-for="e in employees" :key="e.MaNV" :label="e.HoTen || e.MaNV" :value="e.MaNV" />
-          </el-select>
+      <div class="control-with-label">
+        <div class="control-label">Mã NV</div>
+        <el-select class="employee-select" v-model="filterMaNV" placeholder="Chọn nhân viên" clearable>
+          <el-option v-for="e in employees" :key="e.MaNV" :label="e.HoTen || e.MaNV" :value="e.MaNV" />
+        </el-select>
       </div>
 
-      <div class="field" style="display:flex; align-items:center; gap:8px; min-width:0">
-          <div class="label">Mã Lô</div>
-          <el-input class="control-el" v-model="searchMaLo" placeholder="Tìm theo mã lô" clearable />
+      <div class="control-with-label search-control">
+        <div class="control-label">Mã Lô</div>
+        <el-input class="search-input" v-model="searchMaLo" placeholder="Tìm theo mã lô" clearable />
       </div>
 
-      <div class="actions" style="display:flex; align-items:center; gap:8px; margin-left:auto">
-        <el-button type="warning" @click="exportCsv" :disabled="displayedItems.length===0">Xuất CSV</el-button>
+      <div class="control-action">
+        <el-button type="warning" @click="exportCsv" :disabled="displayedItems.length===0">
+          <i class="fas fa-file-excel"></i>
+          Xuất CSV
+        </el-button>
       </div>
-
     </div>
 
     <div style="margin-top:12px">
@@ -777,27 +779,54 @@ watch(() => displayedItems.value.length, () => { currentPage.value = 1; });
 <style scoped>
 .page-header h3 { margin: 0; }
 
-.controls { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-.controls .field { min-width:180px; display:flex; gap:8px; align-items:center; flex: 0 1 240px }
-.controls .label { font-weight:600; color:var(--el-text-color-secondary); flex:0 0 72px; margin-right:8px; white-space:nowrap }
-.controls .actions { margin-left:auto }
-.control-el { width:100%; box-sizing:border-box }
-
-@media (max-width: 1200px) {
-  .controls { gap:10px }
-  .controls .field { flex: 1 1 45%; min-width:150px }
-  .controls .label { flex:0 0 62px }
-  .controls .actions { margin-left:0; width:100%; display:flex; justify-content:flex-end; padding-top:6px }
+/* Controls Layout */
+.controls {
+  margin: 12px 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
-@media (max-width: 600px) {
-  .controls .field { flex-direction:column; align-items:flex-start }
-  .controls .label { margin-bottom:6px; flex:0 0 auto }
-  .controls .actions { justify-content:flex-start }
+.control-with-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
+
+.control-with-label.search-control {
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 180px;
+}
+
+.control-label {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.control-action {
+  margin-left: auto;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-input { min-width: 140px; width: 140px; }
+.employee-select { min-width: 150px; width: 150px; }
+.search-input { width: 100%; min-width: 180px; }
+.control-action .el-button { white-space: nowrap; }
 
 /* When sidebar overlaps, ensure header and controls remain visible */
 .page-header, .controls { position:relative; z-index:2 }
+
 /* add a small left offset so labels don't sit under a fixed sidebar */
 .page-header { padding-left: 16px }
 .controls { padding-left: 8px }

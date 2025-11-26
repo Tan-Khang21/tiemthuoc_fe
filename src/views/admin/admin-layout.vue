@@ -106,7 +106,7 @@
           </el-menu>
 
           <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
-          <div class="menu-item-custom" @click="toggleSummary">
+          <div class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
             <i class="fas fa-chart-pie"></i>
             <span>Tổng Hợp</span>
             <i :class="['fas', summaryOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
@@ -364,6 +364,7 @@ const goToPage = (path) => {
 .sidebar.collapsed .logo h2,
 .sidebar.collapsed .logo p,
 .sidebar.collapsed .admin-menu span,
+.sidebar.collapsed .menu-item-custom span,
 .sidebar.collapsed .sidebar-footer {
   opacity: 0;
   transform: translateX(-6px);
@@ -380,6 +381,22 @@ const goToPage = (path) => {
 
 .sidebar.collapsed .admin-menu .el-menu-item {
   justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .admin-menu .el-menu-item i {
+  margin-right: 0;
+}
+
+.sidebar.collapsed .menu-item-custom {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .menu-item-custom i:first-child {
+  margin-right: 0;
 }
 
 /* Header hamburger toggle */
@@ -419,13 +436,15 @@ const goToPage = (path) => {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding-left: 16px;
 }
 
 .admin-menu .el-menu-item i {
   font-size: 18px;
   width: 20px;
   text-align: center;
+  margin-right: 4px;
 }
 
 .admin-menu .el-menu-item span {
@@ -602,7 +621,7 @@ const goToPage = (path) => {
   line-height: 50px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 20px 0 12px;
   margin: 0 10px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -623,7 +642,7 @@ const goToPage = (path) => {
   font-size: 18px;
   width: 20px;
   text-align: center;
-  margin-right: 12px;
+  margin-right: 4px;
   display: inline-block;
 }
 
