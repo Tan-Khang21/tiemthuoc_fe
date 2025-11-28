@@ -10,7 +10,7 @@
           <el-input
             class="search-input"
             v-model="searchKeyword"
-            placeholder="🔍 Nhập tên hoặc mã thuốc..."
+            placeholder=" Nhập tên hoặc mã thuốc..."
             clearable
             size="medium"
             style="width:100%"
@@ -119,28 +119,49 @@
           </div>
 
           <div style="flex:1">
-            <!-- Basic info fields - 3 fields on same row -->
-            <div style="display:grid; grid-template-columns:1fr 2fr 1fr; gap:16px; margin-bottom:16px">
-              <el-form-item v-if="editingThuoc" label="🏷️ Mã thuốc" label-width="100px">
-                <el-input v-model="formData.maThuoc" disabled size="small" />
-              </el-form-item>
-              <el-form-item label="📝 Tên thuốc" label-width="100px">
-                <el-input v-model="formData.tenThuoc" size="small" />
-              </el-form-item>
-              <el-form-item label="🏷️ Loại thuốc" label-width="100px">
-                <el-select v-model="formData.maLoaiThuoc" style="width: 100%" size="small">
-                  <el-option
-                    v-for="cat in categories"
-                    :key="cat.maLoaiThuoc"
-                    :label="cat.tenLoaiThuoc"
-                    :value="cat.maLoaiThuoc"
-                  />
-                </el-select>
-              </el-form-item>
-            </div>
+            <!-- Basic info fields - render differently for Add vs Edit -->
+            <template v-if="!editingThuoc">
+              <!-- Add mode: two columns, labels on top so inputs can use full width -->
+              <div style="display:grid; grid-template-columns: 3fr 1fr; gap:16px; margin-bottom:16px">
+                <el-form-item label="Tên thuốc" label-width="0" label-position="top">
+                  <el-input v-model="formData.tenThuoc" size="small" style="width:100%" />
+                </el-form-item>
+                <el-form-item label="Loại thuốc" label-width="0" label-position="top">
+                  <el-select v-model="formData.maLoaiThuoc" placeholder="Chọn loại thuốc" size="small" style="width:100%">
+                    <el-option
+                      v-for="cat in categories"
+                      :key="cat.maLoaiThuoc"
+                      :label="cat.tenLoaiThuoc"
+                      :value="cat.maLoaiThuoc"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </template>
+            <template v-else>
+              <!-- Edit mode: show Ma, Ten, Loai inline as before -->
+              <div :style="basicInfoGridStyle">
+                <el-form-item label=" Mã thuốc" label-width="100px">
+                  <el-input v-model="formData.maThuoc" disabled size="small" style="width:100%" />
+                </el-form-item>
+                <el-form-item label=" Tên thuốc" label-width="100px">
+                  <el-input v-model="formData.tenThuoc" size="small" style="width:100%" />
+                </el-form-item>
+                <el-form-item label=" Loại thuốc" label-width="100px">
+                  <el-select v-model="formData.maLoaiThuoc" style="width: 100%" size="small">
+                    <el-option
+                      v-for="cat in categories"
+                      :key="cat.maLoaiThuoc"
+                      :label="cat.tenLoaiThuoc"
+                      :value="cat.maLoaiThuoc"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </template>
 
             <div style="margin-bottom:12px; display:flex; align-items:center; gap:12px;">
-              <div style="min-width:120px; font-weight:600; color:#374151">🏢 Nhà cung cấp</div>
+              <div style="min-width:120px; font-weight:600; color:#374151"> Nhà cung cấp</div>
               <el-select v-model="formData.maNCC" placeholder="Chọn nhà cung cấp" size="small" style="flex:1; min-width:0">
                 <el-option v-for="s in suppliers" :key="s.maNCC" :label="s.tenNCC" :value="s.maNCC" />
               </el-select>
@@ -151,7 +172,7 @@
               <!-- Price list replaces single 'Đơn giá' field -->
               <div style="border-right: 1px solid #e5e7eb; padding-right: 16px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-                  <strong>💲 Giá thuốc (thêm nhiều hàng)</strong>
+                  <strong> Giá thuốc (thêm nhiều hàng)</strong>
                   <el-button size="small" type="primary" @click="formData.giaThuocs.push({ maLoaiDonVi: unitTypes[0]?.maLoaiDonVi || '', soLuong: 1, donGia: 0, trangThai: true })">Thêm hàng</el-button>
                 </div>
 
@@ -171,7 +192,7 @@
 
               <!-- Image selection area -->
               <div>
-                <label class="detail-label" style="display:block; margin-bottom:8px"><strong>🖼️ Ảnh thuốc</strong></label>
+                <label class="detail-label" style="display:block; margin-bottom:8px"><strong> Ảnh thuốc</strong></label>
 
                 <!-- Radio buttons for image choice -->
                 <div style="display:flex; gap:12px; margin-bottom:8px">
@@ -225,12 +246,12 @@
         <div style="margin-top:24px; padding-top:20px; border-top:1px solid #e5e7eb">
           <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:16px">
             <div style="flex:1 1 48%">
-              <el-form-item label="📋 Thành phần" label-width="120px">
+              <el-form-item label=" Thành phần" label-width="120px">
                 <el-input v-model="formData.thanhPhan" type="textarea" :rows="3" size="small" />
               </el-form-item>
             </div>
             <div style="flex:1 1 48%">
-              <el-form-item label="✨ Công dụng" label-width="120px">
+              <el-form-item label=" Công dụng" label-width="120px">
                 <el-input v-model="formData.congDung" type="textarea" :rows="3" size="small" />
               </el-form-item>
             </div>
@@ -238,18 +259,18 @@
 
           <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:16px">
             <div style="flex:1 1 48%">
-              <el-form-item label="💊 Cách dùng" label-width="120px">
+              <el-form-item label=" Cách dùng" label-width="120px">
                 <el-input v-model="formData.cachDung" type="textarea" :rows="3" size="small" />
               </el-form-item>
             </div>
             <div style="flex:1 1 48%">
-              <el-form-item label="⚠️ Lưu ý" label-width="120px">
+              <el-form-item label=" Lưu ý" label-width="120px">
                 <el-input v-model="formData.luuY" type="textarea" :rows="3" size="small" />
               </el-form-item>
             </div>
           </div>
 
-          <el-form-item label="📝 Mô tả" label-width="120px">
+          <el-form-item label=" Mô tả" label-width="120px">
             <el-input v-model="formData.moTa" type="textarea" :rows="4" size="small" />
           </el-form-item>
         </div>
@@ -450,6 +471,13 @@ const pagedThuocList = computed(() => {
   const list = filteredThuocList.value || [];
   const start = (currentPage.value - 1) * pageSize.value;
   return list.slice(start, start + pageSize.value);
+});
+
+// Grid style for the top basic-info row: when adding (editingThuoc === null)
+const basicInfoGridStyle = computed(() => {
+  // If editing an existing item, keep balanced columns; when adding, make 'Mã thuốc' small and 'Tên thuốc' large
+  const cols = editingThuoc.value ? '1fr 2fr 1fr' : '0.6fr 5fr 0.8fr';
+  return `display: grid; grid-template-columns: ${cols}; gap: 16px; margin-bottom: 16px;`;
 });
 
 // Ensure current page is valid when filtered list or pageSize changes

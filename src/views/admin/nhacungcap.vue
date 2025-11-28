@@ -10,7 +10,7 @@
           <el-input
             class="search-input"
             v-model="searchKeyword"
-            placeholder="🔍 Nhập tên hoặc mã nhà cung cấp..."
+            placeholder=" Nhập tên hoặc mã nhà cung cấp..."
             clearable
             size="medium"
             style="width:100%"

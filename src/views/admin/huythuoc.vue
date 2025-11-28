@@ -1,7 +1,7 @@
 <template>
   <el-card>
     <div class="page-header">
-      <h3>🗑️ Danh sách phiếu huỷ</h3>
+      <h3> Danh sách phiếu huỷ</h3>
       <p class="subtitle">Danh sách các phiếu huỷ đã tạo</p>
     </div>
 

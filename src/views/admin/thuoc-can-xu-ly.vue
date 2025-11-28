@@ -292,7 +292,17 @@
 
           <el-table :data="ycDetailChiTiets" style="width:100%; margin-top:12px" size="small">
             <el-table-column prop="maLo" label="Lô" width="160" />
-            <el-table-column prop="maThuoc" label="Mã thuốc" width="140" />
+            <el-table-column prop="maThuoc" label="Mã thuốc" width="120" />
+            <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="220">
+              <template #default="{ row }">
+                {{ row.tenThuoc || row.TenThuoc || '' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Đơn vị" width="120">
+              <template #default="{ row }">
+                {{ row.tenLoaiDonVi || row.tenLoaiDonViGoc || row.donVi || row.maLoaiDonVi || '' }}
+              </template>
+            </el-table-column>
             <el-table-column prop="soLuong" label="Số lượng" width="120" />
             <el-table-column prop="loaiXuLy" label="Loại xử lý" width="140">
               <template #default="{ row }">{{ row.loaiXuLy ? 'Nhập lại' : 'Huỷ' }}</template>
@@ -315,7 +325,13 @@
           <el-table :data="ycEditChiTiets" style="width:100%; margin-top:12px" size="small">
             <el-table-column prop="maCTPXH" label="Mã CT" width="180" />
             <el-table-column prop="maLo" label="Lô" width="160" />
-            <el-table-column prop="maThuoc" label="Mã thuốc" width="140" />
+            <el-table-column prop="maThuoc" label="Mã thuốc" width="120" />
+            <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="220">
+              <template #default="{ row }">{{ row.tenThuoc || row.TenThuoc || '' }}</template>
+            </el-table-column>
+            <el-table-column label="Đơn vị" width="120">
+              <template #default="{ row }">{{ row.tenLoaiDonVi || row.tenLoaiDonViGoc || row.donVi || row.maLoaiDonVi || '' }}</template>
+            </el-table-column>
             <el-table-column label="Số lượng" width="140">
               <template #default="{ row, $index }">
                 <el-input-number v-model="ycEditChiTiets[$index].soLuong" :min="0" :max="999999" size="small" />
