@@ -96,7 +96,7 @@
             </div>
           </div>
 
-          <el-table :data="paginatedChua" style="width: 100%" v-loading="loadingChua" stripe>
+          <el-table :data="paginatedChua" style="width: 100%" v-loading="loadingChua" stripe :row-style="tableRowStyle">
           <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
@@ -111,7 +111,7 @@
           <el-table-column prop="soLuongCon" label="Số Lượng" width="100" />
           <el-table-column label="Hạn sử dụng" width="140">
             <template #default="{ row }">
-              <span>{{ formatDate(row.hanSuDung) }}</span>
+              <span :style="getExpiryStyle(row.hanSuDung)">{{ formatDate(row.hanSuDung) }}</span>
             </template>
           </el-table-column>
           
@@ -238,7 +238,7 @@
           </div>
         </div>
 
-        <el-table :data="paginatedDa" style="width: 100%" v-loading="loadingDa" stripe>
+        <el-table :data="paginatedDa" style="width: 100%" v-loading="loadingDa" stripe :row-style="tableRowStyle">
           <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
@@ -253,7 +253,7 @@
           <el-table-column prop="soLuongConLe" label="Số Lượng (lẻ)" width="110" />
           <el-table-column label="Hạn sử dụng" width="140">
             <template #default="{ row }">
-              <span>{{ formatDate(row.hanSuDung) }}</span>
+              <span :style="getExpiryStyle(row.hanSuDung)">{{ formatDate(row.hanSuDung) }}</span>
             </template>
           </el-table-column>
           
@@ -968,6 +968,34 @@ const formatDate = (d) => {
   } catch (e) {
     return d;
   }
+};
+
+const getExpiryStyle = (d) => {
+  if (!d) return {};
+  try {
+    const expiry = new Date(d);
+    const now = new Date();
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = diffTime / (1000 * 3600 * 24);
+
+    // Expired or within 10 days
+    if (diffDays <= 10) {
+      return { color: 'red', fontWeight: 'bold' };
+    }
+    
+    // Within 2 months (approx 60 days)
+    if (diffDays <= 60) {
+      return { color: 'purple', fontWeight: 'bold' };
+    }
+    
+    return {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const tableRowStyle = ({ row }) => {
+  return getExpiryStyle(row.hanSuDung);
 };
 
 const truncateWords = (text, maxWords = 15) => {

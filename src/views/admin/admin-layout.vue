@@ -737,3 +737,44 @@ const goToPage = (path) => {
   }
 }
 </style>
+
+<!-- Global overrides to fix top-gap when scrolling -->
+<style>
+/* Quick global override to prevent unexpected top gap when scrolling */
+html, body, #app {
+  padding-top: 0 !important;
+  margin: 0 !important;
+}
+body[style] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+/* Keep theme navbar fixed when needed, but make admin header sticky
+   so toggling classes doesn't remove it from document flow and cause
+   a gap/slide effect when the page is overscrolled. */
+.navbar.fixed-top {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1030 !important;
+}
+
+/* Admin header: use sticky so it remains in flow and won't create gaps */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background: white; /* ensure background covers content when sticky */
+}
+
+.header.fixed-top {
+  /* if JS toggles .fixed-top, keep header sticky instead of changing to fixed */
+  position: sticky !important;
+  top: 0 !important;
+}
+/* Prevent transform-based scroll wrappers from displaying a visible gap */
+html, body {
+  transform: none !important;
+}
+</style>

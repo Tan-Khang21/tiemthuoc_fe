@@ -394,9 +394,15 @@ const onMedicineChange = (row) => {
 
   // load unit/pricing info for this medicine
   api.thuoc.getGiaThuocs(row.maThuoc).then((resp) => {
-    // support both {status,message,data:[...]} and direct array
-    const raw = (resp && resp.data && resp.data.data) ? resp.data.data : (resp.data || resp);
-    const list = Array.isArray(raw) ? raw : [];
+    // support several response shapes:
+    // - direct array
+    // - { status, message, data: [...] }
+    // - { status, message, data: { giaThuocs: [...] } }
+    const candidate = (resp && resp.data && resp.data.data) ? resp.data.data : (resp.data || resp);
+    // if candidate is an object containing giaThuocs, use that
+    const list = Array.isArray(candidate)
+      ? candidate
+      : (Array.isArray(candidate?.giaThuocs) ? candidate.giaThuocs : []);
     // normalize entries
     row.giaThuocs = list.map(x => ({
       maGiaThuoc: x.maGiaThuoc || x.MaGiaThuoc || null,
@@ -798,6 +804,33 @@ onMounted(async () => {
         ghiChu: it.ghiChu || it.GhiChu || it.note || '',
         giaThuocs: []
       })) : [];
+
+      // For edit mode, fetch giaThuocs for each item so unit select has options
+      await Promise.all(items.map(async (it) => {
+        try {
+          const resp = await api.thuoc.getGiaThuocs(it.maThuoc);
+          const candidate = (resp && resp.data && resp.data.data) ? resp.data.data : (resp.data || resp);
+          const list = Array.isArray(candidate) ? candidate : (Array.isArray(candidate?.giaThuocs) ? candidate.giaThuocs : []);
+          it.giaThuocs = list.map(x => ({
+            maGiaThuoc: x.maGiaThuoc || x.MaGiaThuoc || null,
+            maLoaiDonVi: x.maLoaiDonVi || x.maLoaiDonVi || x.maLoaiDonVi || null,
+            tenLoaiDonVi: x.tenLoaiDonVi || x.TenLoaiDonVi || x.tenLoaiDonVi || x.tenLoaiDonVi || '',
+            soLuong: x.soLuong ?? x.SoLuong ?? null,
+            donGia: x.donGia ?? x.DonGia ?? 0,
+            trangThai: x.trangThai ?? x.TrangThai ?? true,
+            soLuongCon: x.soLuongCon ?? x.SoLuongCon ?? 0,
+            raw: x
+          }));
+          const first = it.giaThuocs.find(g => g.trangThai) || it.giaThuocs[0];
+          if (first) {
+            it.maLoaiDonViNhap = it.maLoaiDonViNhap || first.maLoaiDonVi;
+            it.donGiaBan = first.donGia ?? it.donGiaBan ?? null;
+            it.soLuongCon = first.soLuongCon ?? it.soLuongCon ?? 0;
+          }
+        } catch (e) {
+          console.warn('prefetch giaThuocs failed', e);
+        }
+      }));
 
       form.value.items = items.length ? items : form.value.items;
 

@@ -79,8 +79,12 @@
       <el-row :gutter="24">
         <el-col :span="12">
           <el-form label-position="top" label-width="auto">
-            <el-form-item label="Đơn vị mới">
-              <el-select v-model="tachNewUnit" placeholder="Chọn đơn vị" clearable style="width:100%">
+            <el-form-item label="Đơn vị đích (Hiện tại)">
+              <el-input :value="tachTargetUnitName" disabled />
+            </el-form-item>
+
+            <el-form-item label="Đơn vị nguồn (Tách từ)">
+              <el-select v-model="tachNewUnit" placeholder="Chọn đơn vị nguồn" clearable style="width:100%">
                 <el-option
                   v-for="g in (items[tachIndex]?.giaThuocs || [])"
                   :key="g.maGiaThuoc"
@@ -118,6 +122,24 @@
         <div style="display:flex;justify-content:flex-end;gap:12px">
           <el-button @click="tachDialog = false">Hủy</el-button>
           <el-button type="primary" :loading="tachLoading" @click="doTachSubmit">Cập nhật</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- Quick-cancel dialog -->
+    <el-dialog title="Hủy thuốc nhanh" v-model="huyDialog" width="500px" :close-on-click-modal="false">
+      <el-form label-position="top">
+        <el-form-item label="Số lượng hủy">
+          <el-input-number v-model="huyForm.soLuong" :min="1" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="Lý do hủy">
+          <el-input v-model="huyForm.lyDo" type="textarea" :rows="3" placeholder="Nhập lý do hủy (ví dụ: Hỏng, Hết hạn...)" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div style="display:flex;justify-content:flex-end;gap:12px">
+          <el-button @click="huyDialog = false">Đóng</el-button>
+          <el-button type="danger" :loading="huyLoading" @click="doHuySubmit">Xác nhận hủy</el-button>
         </div>
       </template>
     </el-dialog>
@@ -220,7 +242,14 @@
         </el-table-column>
         <el-table-column label="Liều dùng" min-width="180">
           <template #default="{ row }">
-            <el-input v-model="row.tenLD" size="small" placeholder="Ví dụ: 2 viên/ngày" clearable />
+            <el-autocomplete
+              v-model="row.tenLD"
+              size="small"
+              :fetch-suggestions="querySearchLieuDung"
+              placeholder="Ví dụ: 2 viên/ngày"
+              clearable
+              style="width:100%"
+            />
           </template>
         </el-table-column>
         <el-table-column label="Hành động" width="140" align="center" fixed="right">
@@ -230,13 +259,9 @@
                 <el-icon><CopyDocument /></el-icon>
               </el-button>
 
-              <el-popconfirm title="Xuất / huỷ thuốc?" @confirm="xuatItem($index)" confirm-button-text="Xuất" cancel-button-text="Hủy">
-                <template #reference>
-                  <el-button type="warning" size="small" link title="Xuất (huỷ)">
-                    <el-icon><Upload /></el-icon>
-                  </el-button>
-                </template>
-              </el-popconfirm>
+              <el-button type="warning" size="small" link title="Xuất (huỷ)" @click="openHuyDialog($index)">
+                <el-icon><Upload /></el-icon>
+              </el-button>
 
               <el-popconfirm title="Xóa dòng này?" @confirm="removeItem($index)" confirm-button-text="Xóa" cancel-button-text="Hủy">
                 <template #reference>
@@ -287,9 +312,13 @@
 
       <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px">
         <el-button size="default" @click="$router.back()">Hủy</el-button>
+        <el-button type="success" size="default" @click="payWithQR" :loading="qrLoading">
+          <el-icon><FullScreen /></el-icon>
+          Thanh toán QR
+        </el-button>
         <el-button type="primary" size="default" @click="submitInvoice">
           <el-icon><Check /></el-icon>
-          Lưu hóa đơn
+          Lưu hóa đơn (Tiền mặt)
         </el-button>
       </div>
     </el-card>
@@ -298,20 +327,22 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { Document, Calendar, User, Avatar, InfoFilled, Printer, List, Search, Plus, Close, Delete, EditPen, Check, Phone, CopyDocument, Upload } from '@element-plus/icons-vue';
+import { Document, Calendar, User, Avatar, InfoFilled, Printer, List, Search, Plus, Close, Delete, EditPen, Check, Phone, CopyDocument, Upload, FullScreen } from '@element-plus/icons-vue';
 import api from '@/api';
 import http from '@/api/axios';
 import { useAuthStore } from '@/store/auth';
 import { numberToWords } from '@/utils/numberUtils';
 
 const router = useRouter();
+const route = useRoute();
 // Pinia auth store instance used to read logged-in employee
 const auth = useAuthStore();
 
 const form = ref({
   ngayLap: new Date().toISOString().slice(0,10),
+  maKH: '', // Add maKH to store selected customer ID
   tenKH: '',
   soDienThoai: '',
   tenNV: '',
@@ -361,8 +392,8 @@ const remoteSearchMedicine = (query) => {
   medLoading.value = false;
 };
 
-const loadGiaThuocsForMedicine = async (m) => {
-  if (!m || m.giaThuocs) return;
+const loadGiaThuocsForMedicine = async (m, force = false) => {
+  if (!m || (m.giaThuocs && !force)) return;
   try {
     const resp = await api.thuoc.getGiaThuocs(m.maThuoc);
     const r = resp && resp.data ? resp.data : resp;
@@ -436,6 +467,7 @@ const tachIndex = ref(-1);
 const tachDialog = ref(false);
 const tachLoading = ref(false);
 const tachNewUnit = ref('');
+const tachTargetUnitName = ref('');
 const tachNewExpiry = ref(null);
 const tachExpiryOption = ref('custom');
 
@@ -445,7 +477,8 @@ const applyTachExpiryOption = (opt) => {
   const months = Number(opt) || 0;
   const d = new Date();
   d.setMonth(d.getMonth() + months);
-  tachNewExpiry.value = d;
+  // Format to YYYY-MM-DD to match value-format of date-picker
+  tachNewExpiry.value = d.toISOString().split('T')[0];
 };
 
 const tachItem = (idx) => {
@@ -453,9 +486,15 @@ const tachItem = (idx) => {
   if (!row) return;
   // Always open dialog; allow user to quick-split even if soLuong <= 1
   tachIndex.value = idx;
-  // prefill unit & expiry from the row's giaThuocs or current values
-  tachNewUnit.value = row.giaThuocs && row.giaThuocs.length ? (row.giaThuocs.find(g => g.trangThai) || row.giaThuocs[0]).maLoaiDonVi : '';
-  tachNewExpiry.value = row.hanSuDung ? new Date(row.hanSuDung) : null;
+  
+  // Set target unit name for display
+  tachTargetUnitName.value = row.tenLoaiDonVi || 'Đơn vị hiện tại';
+  
+  // Reset source unit selection (user must choose)
+  tachNewUnit.value = '';
+  
+  // Use existing string value (YYYY-MM-DD)
+  tachNewExpiry.value = row.hanSuDung || '';
   tachDialog.value = true;
 };
 
@@ -463,61 +502,149 @@ const doTachSubmit = async () => {
   if (tachIndex.value < 0) return;
   const row = items.value[tachIndex.value];
   if (!row) return;
-  if (!tachNewUnit.value) { ElMessage.error('Vui lòng chọn đơn vị mới'); return; }
+  if (!tachNewUnit.value) { ElMessage.error('Vui lòng chọn đơn vị nguồn'); return; }
+
+  // Determine Target Unit (Current Row's Unit)
+  const currentGiaThuoc = (row.giaThuocs || []).find(g => g.maGiaThuoc === row.maGiaThuoc);
+  const targetUnitId = currentGiaThuoc?.maLoaiDonVi;
+
+  if (!targetUnitId) {
+    ElMessage.error('Không xác định được đơn vị hiện tại');
+    return;
+  }
 
   // Build API body
-    const body = {
-      maThuoc: row.maThuoc,
-      maLoaiDonViMoi: tachNewUnit.value,
-      hanSuDungMoi: tachNewExpiry.value ? new Date(tachNewExpiry.value).toISOString() : undefined,
-    };
+  // maLoaiDonViGoc: Source Unit (Selected in Dialog)
+  // maLoaiDonViMoi: Target Unit (Current Row)
+  const body = {
+    maThuoc: row.maThuoc,
+    maLoaiDonViGoc: tachNewUnit.value,
+    maLoaiDonViMoi: targetUnitId,
+    hanSuDungMoi: tachNewExpiry.value ? new Date(tachNewExpiry.value).toISOString() : undefined,
+    maLoGoc: null
+  };
 
   tachLoading.value = true;
   try {
     await http.post('/PhieuQuyDoi/QuickByMa', body);
-    // on success, perform local split
-    const q = Number(row.soLuong) || 0;
-    // prepare new row object copying selected giaThuoc info
-    const g = (row.giaThuocs || []).find(x => x.maLoaiDonVi === tachNewUnit.value) || null;
-    const newRow = {
-      maThuoc: row.maThuoc,
-      tenThuoc: row.tenThuoc,
-      tenLoaiDonVi: g?.tenLoaiDonVi || row.tenLoaiDonVi || '',
-      maGiaThuoc: g?.maGiaThuoc || '',
-      soLuongCon: g?.soLuongCon ?? g?.soLuong ?? 0,
-      hanSuDung: tachNewExpiry.value ? new Date(tachNewExpiry.value).toISOString().slice(0,10) : (g?.nearestHanSuDung || ''),
-      soLuong: 1,
-      donGia: g?.donGia || row.donGia || 0,
-      thanhTien: (g?.donGia || row.donGia || 0) * 1,
-      tenLD: row.tenLD || '',
-      thanhPhan: row.thanhPhan || ''
-    };
-
-    if (q > 1) {
-      row.soLuong = q - 1;
-      recalcRow(row);
-      items.value.splice(tachIndex.value + 1, 0, newRow);
-    } else {
-      // replace the original row with the new row when original quantity <= 1
-      items.value.splice(tachIndex.value, 1, newRow);
+    
+    // On success, refresh the medicine data to update quantities
+    const m = medicines.value.find(t => t.maThuoc === row.maThuoc);
+    if (m) {
+      await loadGiaThuocsForMedicine(m, true);
+      
+      // Update the current row's data with new quantities
+      row.giaThuocs = m.giaThuocs || [];
+      const g = row.giaThuocs.find(x => x.maGiaThuoc === row.maGiaThuoc);
+      if (g) {
+        row.soLuongCon = g.soLuongCon ?? g.soLuongTon ?? 0;
+        // Optionally update expiry if it changed or if we want to reflect the nearest one
+        // row.hanSuDung = g.nearestHanSuDung || row.hanSuDung; 
+      }
+      
+      // Also update any other rows that might be using the same medicine
+      items.value.forEach(item => {
+        if (item.maThuoc === row.maThuoc && item !== row) {
+          item.giaThuocs = m.giaThuocs || [];
+          const ig = item.giaThuocs.find(x => x.maGiaThuoc === item.maGiaThuoc);
+          if (ig) {
+            item.soLuongCon = ig.soLuongCon ?? ig.soLuongTon ?? 0;
+          }
+        }
+      });
     }
+
     ElMessage.success('Tách nhanh thành công');
     tachDialog.value = false;
   } catch (err) {
     console.error('doTachSubmit err', err);
-    ElMessage.error('Tách nhanh thất bại');
+    const msg = (err.response && err.response.data && err.response.data.message) ? err.response.data.message : 'Tách nhanh thất bại';
+    ElMessage.error(msg);
   } finally {
     tachLoading.value = false;
   }
 };
 
 const xuatItem = (idx) => {
+  // Legacy function, kept if needed or redirected
+  openHuyDialog(idx);
+};
+
+// Huy (Quick Cancel) flow
+const huyDialog = ref(false);
+const huyLoading = ref(false);
+const huyIndex = ref(-1);
+const huyForm = ref({ soLuong: 1, lyDo: '' });
+
+const openHuyDialog = (idx) => {
   const row = items.value[idx];
+  if (!row || !row.maThuoc) {
+    ElMessage.warning('Vui lòng chọn thuốc trước khi hủy');
+    return;
+  }
+  huyIndex.value = idx;
+  huyForm.value = { soLuong: 1, lyDo: '' };
+  huyDialog.value = true;
+};
+
+const doHuySubmit = async () => {
+  if (huyIndex.value < 0) return;
+  const row = items.value[huyIndex.value];
   if (!row) return;
-  // perform export/cancel action: mark as cancelled and remove from list
-  // here we remove the item and show message; adapt to real API if needed
-  items.value.splice(idx, 1);
-  ElMessage.success('Đã xuất / huỷ thuốc');
+
+  if (!huyForm.value.lyDo) {
+    ElMessage.warning('Vui lòng nhập lý do hủy');
+    return;
+  }
+
+  // Find unit ID
+  let maLoaiDonVi = null;
+  if (row.giaThuocs && row.giaThuocs.length) {
+    const g = row.giaThuocs.find(x => x.maGiaThuoc === row.maGiaThuoc);
+    if (g) maLoaiDonVi = g.maLoaiDonVi;
+  }
+  // Fallback if not found in giaThuocs (rare)
+  if (!maLoaiDonVi && row.raw) maLoaiDonVi = row.raw.maLoaiDonVi || row.raw.maDonVi;
+
+  const user = auth.user || auth.currentUser;
+  const maNV = user?.MaNV || user?.maNV || '';
+
+  const payload = {
+    maNV: maNV,
+    maThuoc: row.maThuoc,
+    maLoaiDonVi: maLoaiDonVi,
+    soLuong: huyForm.value.soLuong,
+    lyDo: huyForm.value.lyDo
+  };
+
+  huyLoading.value = true;
+  try {
+    await http.post('/PhieuXuLyHoanHuy/QuickCreate', payload);
+    ElMessage.success('Hủy thuốc thành công');
+    huyDialog.value = false;
+    
+    // Refresh data to update quantity
+    const m = medicines.value.find(t => t.maThuoc === row.maThuoc);
+    if (m) {
+      await loadGiaThuocsForMedicine(m, true);
+      // Update local rows
+      items.value.forEach(item => {
+        if (item.maThuoc === row.maThuoc) {
+          item.giaThuocs = m.giaThuocs || [];
+          const ig = item.giaThuocs.find(x => x.maGiaThuoc === item.maGiaThuoc);
+          if (ig) {
+            item.soLuongCon = ig.soLuongCon ?? ig.soLuongTon ?? 0;
+          }
+        }
+      });
+    }
+  } catch (err) {
+    console.error('doHuySubmit err', err);
+    const msg = (err.response && err.response.data && err.response.data.message) ? err.response.data.message : 'Hủy thuốc thất bại';
+    ElMessage.error(msg);
+  } finally {
+    huyLoading.value = false;
+  }
 };
 
 const recalcRow = (row) => {
@@ -534,21 +661,53 @@ const formatPrice = (v) => {
   return Number(v).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 };
 
+// Helper to ensure maKH is set if possible
+const ensureMaKH = async () => {
+  if (form.value.maKH) return; // Already set
+  const phone = (form.value.soDienThoai || '').trim();
+  if (!phone) return;
+
+  // Ensure customers are loaded
+  if (!customers.value.length) await fetchCustomers();
+
+  // Try to find exact match by phone
+  const match = customers.value.find(c => c.dienThoai === phone);
+  if (match) {
+    form.value.maKH = match.makh;
+    // Update other fields if empty
+    if (!form.value.tenKH) form.value.tenKH = match.hoTen;
+  }
+};
+
 const submitInvoice = async () => {
   // basic validation
   if (!form.value.tenKH) { ElMessage.warning('Vui lòng nhập tên khách hàng'); return; }
   if (!items.value.length) { ElMessage.warning('Vui lòng thêm ít nhất 1 mặt hàng'); return; }
 
+  // Try to resolve maKH if missing
+  await ensureMaKH();
+
+  const user = auth.user || auth.currentUser;
+  const maNV = user?.MaNV || user?.maNV || '';
+
   const payload = {
+    maKH: form.value.maKH || null, // Send maKH if available
+    maNV: maNV,
     ngayLap: form.value.ngayLap,
     tenKH: form.value.tenKH,
     soDienThoai: form.value.soDienThoai,
     tenNV: form.value.tenNV,
     ghiChu: form.value.ghiChu,
     items: items.value.map(it => ({
-      maThuoc: it.maThuoc, tenThuoc: it.tenThuoc, tenLoaiDonVi: it.tenLoaiDonVi, soLuongCon: it.soLuongCon,
-      hanSuDung: it.hanSuDung, soLuong: it.soLuong, donGia: it.donGia,
-      thanhTien: it.thanhTien, tenLD: it.tenLD
+      maThuoc: it.maThuoc, 
+      tenThuoc: it.tenThuoc, 
+      tenLoaiDonVi: it.tenLoaiDonVi, 
+      soLuongCon: it.soLuongCon,
+      hanSuDung: it.hanSuDung ? it.hanSuDung : null, 
+      soLuong: it.soLuong, 
+      donGia: it.donGia,
+      thanhTien: it.thanhTien, 
+      tenLD: it.tenLD
     })),
     tongTien: totalAmount.value
   };
@@ -561,6 +720,9 @@ const submitInvoice = async () => {
       return;
     }
     ElMessage.success('Tạo hóa đơn thành công');
+    // Clear draft if exists
+    localStorage.removeItem('invoice_draft');
+    
     // redirect to detail page if id returned
     const maHD = r && (r.maHD || r.MaHD || r.data && (r.data.maHD || r.data.MaHD)) ? (r.maHD || r.MaHD || r.data.maHD || r.data.MaHD) : null;
     if (maHD) router.push(`/admin/hoadon/${encodeURIComponent(maHD)}`);
@@ -568,6 +730,93 @@ const submitInvoice = async () => {
   } catch (err) {
     console.error('create hoadon err', err);
     ElMessage.error('Lỗi khi tạo hóa đơn');
+  }
+};
+
+// --- QR Payment Flow ---
+const qrLoading = ref(false);
+
+const saveDraft = () => {
+  const draft = {
+    form: form.value,
+    items: items.value
+  };
+  localStorage.setItem('invoice_draft', JSON.stringify(draft));
+};
+
+const restoreDraft = () => {
+  const draftStr = localStorage.getItem('invoice_draft');
+  if (draftStr) {
+    try {
+      const draft = JSON.parse(draftStr);
+      if (draft.form) form.value = { ...form.value, ...draft.form };
+      if (draft.items) items.value = draft.items;
+      // Re-calculate totals or side effects if needed
+      items.value.forEach(row => recalcRow(row));
+    } catch (e) {
+      console.error('Error restoring draft', e);
+    }
+  }
+};
+
+const payWithQR = async () => {
+  if (!form.value.tenKH) { ElMessage.warning('Vui lòng nhập tên khách hàng'); return; }
+  if (!items.value.length) { ElMessage.warning('Vui lòng thêm ít nhất 1 mặt hàng'); return; }
+
+  // Try to resolve maKH if missing before saving draft
+  await ensureMaKH();
+
+  qrLoading.value = true;
+  saveDraft(); // Save state before redirect
+
+  const returnUrl = window.location.origin + window.location.pathname + '?paymentResult=success';
+  const cancelUrl = window.location.origin + window.location.pathname + '?paymentResult=cancel';
+
+  // PayOS requires description max 25 chars
+  // Create a short description: "HD " + customer name, then truncate
+  let desc = `HD ${form.value.tenKH}`;
+  // Remove accents/diacritics to be safe and ensure standard characters (optional but good for banking APIs)
+  desc = desc.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Truncate to 25 chars
+  if (desc.length > 25) {
+    desc = desc.slice(0, 25);
+  }
+
+  const payload = {
+    amount: totalAmount.value,
+    description: desc,
+    returnUrl: returnUrl,
+    cancelUrl: cancelUrl
+  };
+
+  try {
+    const resp = await http.post('/SimplePayment/Create', payload);
+    const r = resp.data || resp;
+    console.log('QR Create resp:', r); // Debug log
+
+    // Extract URL based on observed structure: r.data.paymentUrl
+    let checkoutUrl = null;
+    if (r.data && r.data.paymentUrl) {
+      checkoutUrl = r.data.paymentUrl;
+    } else if (r.checkoutUrl) {
+      checkoutUrl = r.checkoutUrl;
+    } else if (r.url) {
+      checkoutUrl = r.url;
+    } else if (typeof r.data === 'string') {
+      checkoutUrl = r.data;
+    }
+    
+    if (checkoutUrl && typeof checkoutUrl === 'string') {
+      window.location.href = checkoutUrl;
+    } else {
+      console.error('Invalid checkoutUrl:', checkoutUrl);
+      ElMessage.error('Không nhận được link thanh toán');
+      qrLoading.value = false;
+    }
+  } catch (err) {
+    console.error('QR payment err', err);
+    ElMessage.error('Lỗi khởi tạo thanh toán QR');
+    qrLoading.value = false;
   }
 };
 
@@ -596,8 +845,21 @@ const isPlaceholderName = (name) => {
 };
 
 onMounted(async () => {
-  // Load medicines list first
-  await loadMedicines();
+  // Check for payment return
+  if (route.query.paymentResult) {
+    restoreDraft();
+    if (route.query.paymentResult === 'success') {
+      // Auto submit invoice
+      await submitInvoice();
+    } else if (route.query.paymentResult === 'cancel') {
+      ElMessage.info('Đã hủy thanh toán QR. Bạn có thể tiếp tục chỉnh sửa.');
+    }
+    // Clean URL
+    router.replace({ query: null });
+  }
+
+  // Load medicines and dosages
+  await Promise.all([loadMedicines(), loadLieuDung()]);
   
   // populate current employee name from auth store (fallback to localStorage)
   try {
@@ -677,6 +939,7 @@ const onPhoneInput = async () => {
   if (!q) {
     matchedCustomers.value = [];
     selectedCustomer.value = '';
+    form.value.maKH = ''; // Clear maKH
     form.value.tenKH = form.value.tenKH || '';
     return;
   }
@@ -699,6 +962,7 @@ const onPhoneInput = async () => {
 const onSelectCustomer = (maKh) => {
   const c = customers.value.find(x => x.makh === maKh);
   if (c) {
+    form.value.maKH = c.makh; // Set maKH
     form.value.tenKH = c.hoTen || '';
     // optionally fill phone to normalized value
     form.value.soDienThoai = c.dienThoai || form.value.soDienThoai;
@@ -726,9 +990,32 @@ const querySearch = async (queryString, cb) => {
 
 const onSelectSuggestion = (item) => {
   if (!item) return;
+  form.value.maKH = item.makh || ''; // Set maKH
   form.value.tenKH = item.hoTen || '';
   form.value.soDienThoai = item.dienThoai || form.value.soDienThoai;
   selectedCustomer.value = item.makh || '';
+};
+
+// --- Dosage (Lieu Dung) Suggestions ---
+const lieuDungList = ref([]);
+
+const loadLieuDung = async () => {
+  try {
+    const resp = await http.get('/LieuDung');
+    const d = resp.data || resp;
+    if (d && d.data && Array.isArray(d.data)) {
+      lieuDungList.value = d.data.map(x => ({ value: x.tenLieuDung }));
+    }
+  } catch (err) {
+    console.error('loadLieuDung err', err);
+  }
+};
+
+const querySearchLieuDung = (queryString, cb) => {
+  const results = queryString
+    ? lieuDungList.value.filter(i => i.value.toLowerCase().includes(queryString.toLowerCase()))
+    : lieuDungList.value;
+  cb(results);
 };
 
 </script>

@@ -17,11 +17,42 @@ Version         : 1.0
 
 
     // navbar fixed top
-    $(window).scroll(function () {
-        if ($(this).scrollTop() > 100) {
-            $('.navbar').addClass("fixed-top");
+    // navbar / header fixed top — set offset on .main-content to avoid layout jumps
+    $(window).on('scroll', function () {
+        var scrollTop = $(this).scrollTop();
+        var headerEl = $('.header');
+        var navbarEl = $('.navbar');
+        var mainContent = $('.main-content');
+
+        if (scrollTop > 100) {
+            if (navbarEl.length) {
+                navbarEl.addClass('fixed-top');
+            }
+            if (headerEl.length) {
+                headerEl.addClass('fixed-top');
+            }
+
+            // compute offset using header if present else navbar
+            var offset = 0;
+            try {
+                if (headerEl.length) offset = headerEl.outerHeight();
+                else if (navbarEl.length) offset = navbarEl.outerHeight();
+            } catch (e) {
+                offset = 0;
+            }
+
+            if (mainContent.length) {
+                mainContent.css('padding-top', offset + 'px');
+            } else {
+                // fallback to body if .main-content not found
+                $('body').css('padding-top', offset + 'px');
+            }
         } else {
-            $('.navbar').removeClass("fixed-top");
+            if (navbarEl.length) navbarEl.removeClass('fixed-top');
+            if (headerEl.length) headerEl.removeClass('fixed-top');
+
+            if (mainContent.length) mainContent.css('padding-top', '');
+            else $('body').css('padding-top', '');
         }
     });
 

@@ -7,6 +7,7 @@ import nhacungcapApi from './nhacungcap';
 import nhanvienApi from './nhanvien';
 import taikhoanApi from './taikhoan';
 import thuocviewApi from './thuocview';
+import phieuxulyApi from './phieuxulyhoanhuy';
 
 export default {
   thuoc: thuocApi,
@@ -17,4 +18,5 @@ export default {
   nhanvien: nhanvienApi,
   taikhoan: taikhoanApi,
   thuocview: thuocviewApi,
+  phieuxuly: phieuxulyApi,
 };
