@@ -75,10 +75,10 @@
           <div class="row g-4 mt-3">
             <div 
               v-for="category in categories.slice(0, 8)" 
-              :key="category.maLoaiThuoc"
+              :key="category?.maLoaiThuoc || Math.random()"
               class="col-6 col-md-4 col-lg-3"
             >
-              <div class="category-item">
+              <div class="category-item" v-if="category">
                 <router-link :to="`/user/thuoc?category=${category.maLoaiThuoc}`">
                   <div class="category-info">
                     <div class="icon">
@@ -150,45 +150,57 @@
           <div class="row g-4 mt-3">
             <div 
               v-for="product in trendingProducts.slice(0, 8)" 
-              :key="product.maThuoc"
+              :key="product?.maThuoc || Math.random()"
               class="col-6 col-md-4 col-lg-3"
             >
-              <div class="product-item">
-                <div class="product-img">
-                  <router-link :to="`/user/thuoc/${product.maThuoc}`">
-                    <img :src="getProductImage(product)" :alt="product.tenThuoc">
+              <div class="product-item" v-if="product">
+                <div class="product-img-wrapper">
+                  <router-link :to="`/user/thuoc/${product.maThuoc}`" class="product-img-link">
+                    <img :src="getProductImage(product)" :alt="product.tenThuoc" class="product-img">
                   </router-link>
-                  <div class="product-action-wrap">
-                    <div class="product-action">
-                      <a href="#" @click.prevent="quickView(product)" data-tooltip="tooltip" title="Xem nhanh">
-                        <i class="far fa-eye"></i>
-                      </a>
-                      <a href="#" @click.prevent="addToCart(product)" data-tooltip="tooltip" title="Thêm vào giỏ">
-                        <i class="far fa-shopping-bag"></i>
-                      </a>
-                    </div>
+                  <div class="product-badges">
+                    <span class="badge badge-hot">HOT</span>
+                  </div>
+                  <div class="product-overlay">
+                    <button class="quick-action-btn" @click.prevent="quickView(product)" title="Xem nhanh">
+                      <i class="far fa-eye"></i>
+                    </button>
+                    <button class="quick-action-btn" @click.prevent="addToCart(product)" title="Thêm vào giỏ">
+                      <i class="far fa-shopping-cart"></i>
+                    </button>
                   </div>
                 </div>
-                <div class="product-content">
-                  <h3 class="product-title">
+                <div class="product-info">
+                  <h3 class="product-name">
                     <router-link :to="`/user/thuoc/${product.maThuoc}`">
                       {{ product.tenThuoc }}
                     </router-link>
                   </h3>
-                  <div class="product-rate">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="far fa-star"></i>
-                  </div>
-                  <div class="product-bottom">
-                    <div class="product-price">
-                      <span>{{ formatPrice(product.donGiaSi) }}</span>
+                  <div class="product-rating">
+                    <div class="stars">
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star-half-alt"></i>
                     </div>
-                    <button type="button" class="product-cart-btn" @click="addToCart(product)" data-bs-placement="left" data-tooltip="tooltip" title="Thêm vào giỏ">
-                      <i class="far fa-shopping-bag"></i>
-                    </button>
+                    <span class="rating-count">(4.5)</span>
+                  </div>
+                  
+                  <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
+                    <div class="price-row">
+                      <div class="price-info">
+                        <span class="unit-label">{{ product.giaThuocs[0].tenLoaiDonVi }}</span>
+                        <span class="price-tag">{{ formatPriceShort(product.giaThuocs[0].donGia) }}</span>
+                      </div>
+                      <button class="add-cart-btn" @click="addToCart(product)">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+                    <div class="stock-info">
+                      <i class="fas fa-box-open"></i>
+                      <span>Còn {{ product.giaThuocs[0].soLuongCon }} sản phẩm</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -197,6 +209,82 @@
         </div>
       </div>
       <!-- trending item end -->
+
+
+      
+      <!-- inventory products -->
+      <div class="product-area pb-100" v-if="inventoryProducts.length > 0">
+        <div class="container">
+          <div class="row">
+            <div class="col-12 wow fadeInDown" data-wow-delay=".25s">
+              <div class="site-heading-inline">
+                <h2 class="site-title">Sản phẩm tồn kho</h2>
+                <router-link to="/user/thuoc">Xem thêm <i class="fas fa-angle-double-right"></i></router-link>
+              </div>
+            </div>
+          </div>
+          <div class="row g-4 mt-3">
+            <div 
+              v-for="product in inventoryProducts.slice(0, 8)" 
+              :key="product?.maThuoc || Math.random()"
+              class="col-6 col-md-4 col-lg-3"
+            >
+              <div class="product-item" v-if="product">
+                <div class="product-img-wrapper">
+                  <router-link :to="`/user/thuoc/${product.maThuoc}`" class="product-img-link">
+                    <img :src="getProductImage(product)" :alt="product.tenThuoc" class="product-img">
+                  </router-link>
+                  <div class="product-badges">
+                    <span class="badge badge-stock">Tồn kho</span>
+                  </div>
+                  <div class="product-overlay">
+                    <button class="quick-action-btn" @click.prevent="quickView(product)" title="Xem nhanh">
+                      <i class="far fa-eye"></i>
+                    </button>
+                    <button class="quick-action-btn" @click.prevent="addToCart(product)" title="Thêm vào giỏ">
+                      <i class="far fa-shopping-cart"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="product-info">
+                  <h3 class="product-name">
+                    <router-link :to="`/user/thuoc/${product.maThuoc}`">
+                      {{ product.tenThuoc }}
+                    </router-link>
+                  </h3>
+                  <div class="product-rating">
+                    <div class="stars">
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star"></i>
+                      <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <span class="rating-count">(4.5)</span>
+                  </div>
+                  
+                  <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
+                    <div class="price-row">
+                      <div class="price-info">
+                        <span class="unit-label">{{ product.giaThuocs[0].tenLoaiDonVi }}</span>
+                        <span class="price-tag">{{ formatPriceShort(product.giaThuocs[0].donGia) }}</span>
+                      </div>
+                      <button class="add-cart-btn" @click="addToCart(product)">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+                    <div class="stock-info">
+                      <i class="fas fa-box-open"></i>
+                      <span>Còn {{ product.giaThuocs[0].soLuongCon }} sản phẩm</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- inventory products end -->
 
       <!-- feature area -->
       <div class="feature-area pb-100">
@@ -288,16 +376,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import { useCartStore } from '@/store'
 
 const router = useRouter()
+const cartStore = useCartStore()
 
 // Data
 const categories = ref([])
 const trendingProducts = ref([])
+const inventoryProducts = ref([])
 const searchForm = ref({
   category: '',
   keyword: ''
@@ -307,19 +398,88 @@ const emailSubscribe = ref('')
 // Methods
 const loadCategories = async () => {
   try {
-    const response = await api.thuoc.getTopLoaiThuoc()
-    categories.value = response.data || []
+    const response = await fetch('https://localhost:7283/api/Thuoc/TopLoaiThuoc', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      mode: 'cors'
+    })
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    
+    const result = await response.json()
+    console.log('Categories API response:', result)
+    
+    if (result.status === 1 && result.data) {
+      categories.value = result.data.filter(cat => cat && cat.maLoaiThuoc)
+    } else {
+      categories.value = []
+    }
+    console.log('Categories loaded:', categories.value.length)
   } catch (error) {
     console.error('Lỗi tải danh mục:', error)
+    categories.value = []
   }
 }
 
 const loadTrendingProducts = async () => {
   try {
     const response = await api.thuoc.getAll()
-    trendingProducts.value = response.data || []
+    trendingProducts.value = (response.data || []).filter(p => p && p.maThuoc)
+    console.log('Trending products loaded:', trendingProducts.value.length)
   } catch (error) {
     console.error('Lỗi tải sản phẩm:', error)
+    trendingProducts.value = []
+  }
+}
+
+const loadInventoryProducts = async () => {
+  try {
+    const response = await fetch('https://localhost:7283/api/Thuoc/ListThuocTonKho', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors'
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const result = await response.json()
+    console.log('Inventory products response:', result)
+    
+    let products = [];
+    if (result.status === 1 && result.data) {
+      products = result.data.filter(p => p && p.maThuoc);
+    } else if (result.data) {
+      products = result.data.filter(p => p && p.maThuoc);
+    }
+    
+    // Lọc sản phẩm: chỉ giữ những sản phẩm có ít nhất 1 đơn vị với soLuongCon > 0 và trangThai === true
+    inventoryProducts.value = products.filter(product => {
+      if (!product.giaThuocs || product.giaThuocs.length === 0) {
+        return false;
+      }
+      
+      // Lọc các đơn vị khả dụng
+      const availableUnits = product.giaThuocs.filter(
+        unit => unit.soLuongCon > 0 && unit.trangThai === true
+      );
+      
+      // Chỉ giữ sản phẩm có ít nhất 1 đơn vị khả dụng
+      if (availableUnits.length > 0) {
+        // Cập nhật giaThuocs chỉ với các đơn vị khả dụng
+        product.giaThuocs = availableUnits;
+        return true;
+      }
+      return false;
+    });
+    
+    console.log('Filtered inventory products:', inventoryProducts.value.length);
+  } catch (error) {
+    console.error('Lỗi tải sản phẩm tồn kho:', error)
+    inventoryProducts.value = []
   }
 }
 
@@ -331,11 +491,30 @@ const getProductImage = (product) => {
   return 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&h=300&fit=crop'
 }
 
+const getProductPrice = (product) => {
+  if (product.giaThuocs && product.giaThuocs.length > 0) {
+    return product.giaThuocs[0].donGia
+  }
+  return product.donGiaSi || 0
+}
+
+const getProductUnit = (product) => {
+  if (product.giaThuocs && product.giaThuocs.length > 0) {
+    return product.giaThuocs[0].tenLoaiDonVi
+  }
+  return ''
+}
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
   }).format(price || 0)
+}
+
+const formatPriceShort = (price) => {
+  if (!price || price === 0) return '0 đ'
+  return new Intl.NumberFormat('vi-VN').format(price) + ' đ'
 }
 
 const searchProducts = () => {
@@ -344,7 +523,7 @@ const searchProducts = () => {
     query.category = searchForm.value.category
   }
   if (searchForm.value.keyword) {
-    query.search = searchForm.value.keyword
+    query.keyword = searchForm.value.keyword
   }
   router.push({ path: '/user/thuoc', query })
 }
@@ -354,8 +533,25 @@ const quickView = (product) => {
 }
 
 const addToCart = (product) => {
-  ElMessage.success('Đã thêm vào giỏ hàng!')
-}
+  // Lấy đơn vị đầu tiên từ giaThuocs
+  const firstUnit = product.giaThuocs && product.giaThuocs.length > 0 ? product.giaThuocs[0] : null;
+  
+  if (!firstUnit) {
+    ElMessage.error('Sản phẩm không có thông tin đơn vị');
+    return;
+  }
+
+  cartStore.addToCart({
+    maThuoc: product.maThuoc,
+    tenThuoc: product.tenThuoc,
+    donGia: firstUnit.donGia,
+    donVi: firstUnit.maLoaiDonVi,  // Sử dụng maLoaiDonVi từ giaThuocs
+    tenDonVi: firstUnit.tenLoaiDonVi,
+    urlAnh: product.urlAnh,
+    soLuong: 1,
+  });
+  ElMessage.success('Đã thêm vào giỏ hàng!');
+};
 
 const subscribe = () => {
   if (emailSubscribe.value) {
@@ -366,8 +562,20 @@ const subscribe = () => {
 
 // Lifecycle
 onMounted(() => {
+  console.log('Home page mounted')
   loadCategories()
   loadTrendingProducts()
+  loadInventoryProducts()
+})
+
+const route = useRoute()
+watch(() => route.path, (newPath) => {
+  if (newPath === '/' || newPath === '/home') {
+    console.log('Reloading home page data')
+    loadCategories()
+    loadTrendingProducts()
+    loadInventoryProducts()
+  }
 })
 </script>
 
@@ -774,6 +982,20 @@ onMounted(() => {
   text-align: center;
 }
 
+.product-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #0ecfe0, #17a2b8);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(14, 207, 224, 0.3);
+}
+
 .product-img img {
   width: 100%;
   height: 200px;
@@ -787,99 +1009,130 @@ onMounted(() => {
 
 .product-action-wrap {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
   opacity: 0;
-  transform: translateX(20px);
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  z-index: 3;
 }
 
 .product-item:hover .product-action-wrap {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .product-action {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 
 .product-action a {
-  width: 40px;
-  height: 40px;
-  background: #fff;
+  width: 45px;
+  height: 45px;
+  background: #f8f9fa;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #17181c;
   text-decoration: none;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
+  font-size: 16px;
 }
 
 .product-action a:hover {
   background: #0ecfe0;
   color: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(14, 207, 224, 0.4);
 }
 
-.product-content {
-  padding: 20px;
-  flex-grow: 1;
+/* Modern Product Card Design */
+.product-img-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f8f9fa;
+  aspect-ratio: 1/1;
+}
+
+.product-img-link {
+  display: block;
+  height: 100%;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-item:hover .product-img {
+  transform: scale(1.08);
+}
+
+/* Product Badges */
+.product-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
-.product-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  flex-grow: 1;
-}
-
-.product-title a {
-  color: #17181c;
-  text-decoration: none;
-  transition: color 0.3s;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-title a:hover {
-  color: #0ecfe0;
-}
-
-.product-rate {
-  margin-bottom: 10px;
-}
-
-.product-rate i {
-  color: #ffc107;
-  font-size: 14px;
-}
-
-.product-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 15px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.product-price {
-  font-size: 20px;
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 700;
-  color: #0ecfe0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.product-cart-btn {
-  width: 40px;
-  height: 40px;
-  background: #0ecfe0;
+.badge-hot {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
   color: #fff;
+}
+
+.badge-stock {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  color: #fff;
+}
+
+/* Product Overlay */
+.product-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.product-item:hover .product-overlay {
+  opacity: 1;
+}
+
+.quick-action-btn {
+  width: 44px;
+  height: 44px;
+  background: #fff;
   border: none;
   border-radius: 50%;
   display: flex;
@@ -887,11 +1140,144 @@ onMounted(() => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.product-cart-btn:hover {
-  background: #0bb5c4;
-  transform: scale(1.1);
+.quick-action-btn:hover {
+  background: #0ecfe0;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.quick-action-btn i {
+  font-size: 18px;
+}
+
+/* Product Info */
+.product-info {
+  padding: 16px 0 0;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  min-height: 40px;
+  line-height: 1.4;
+}
+
+.product-name a {
+  color: #2c3e50;
+  text-decoration: none;
+  transition: color 0.3s;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.product-name a:hover {
+  color: #0ecfe0;
+}
+
+/* Product Rating */
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.stars i {
+  color: #ffc107;
+  font-size: 12px;
+}
+
+.rating-count {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+/* Product Price Box */
+.product-price-box {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: auto;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unit-label {
+  font-size: 11px;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price-tag {
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.add-cart-btn {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(14, 207, 224, 0.3);
+}
+
+.add-cart-btn:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 6px 16px rgba(14, 207, 224, 0.4);
+}
+
+.add-cart-btn i {
+  font-size: 14px;
+}
+
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.stock-info i {
+  font-size: 13px;
 }
 
 /* Feature Area */

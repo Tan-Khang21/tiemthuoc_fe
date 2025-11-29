@@ -1,6 +1,6 @@
 <template>
   <div class="cart-page">
-    <h2>🛒 Giỏ hàng của bạn</h2>
+    <h2>Giỏ hàng của bạn</h2>
 
     <div v-if="cartStore.items.length === 0" class="empty-cart">
       <el-empty description="Giỏ hàng trống">
@@ -131,16 +131,76 @@ const handleCheckout = async () => {
     return;
   }
 
-  const result = await cartStore.checkout({
-    maKH: authStore.user.MAKH,
-    ghiChu: 'Đơn hàng online',
-  });
+  try {
+    // Lấy mã khách hàng từ localStorage
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      ElMessage.warning('Vui lòng đăng nhập lại');
+      router.push('/login');
+      return;
+    }
 
-  if (result.success) {
-    ElMessage.success('Đặt hàng thành công!');
-    router.push('/user/orders');
-  } else {
-    ElMessage.error(result.message || 'Đặt hàng thất bại');
+    const user = JSON.parse(userData);
+    const maKH = user.MaKH || user.maKH;
+
+    if (!maKH) {
+      ElMessage.error('Không tìm thấy thông tin khách hàng');
+      return;
+    }
+
+    // Chuẩn bị dữ liệu đơn hàng
+    const orderData = {
+      maKH: maKH,
+      ghiChu: 'Đơn hàng online',
+      tongTien: cartStore.totalAmount,
+      items: cartStore.items.map(item => ({
+        maThuoc: item.maThuoc,
+        donVi: item.donVi,  // Đây phải là mã loại đơn vị (VD: LDV003)
+        soLuong: item.soLuong,
+        donGia: item.donGia
+      }))
+    };
+
+    console.log('Order data to save:', orderData);
+    console.log('Cart items:', cartStore.items);
+
+    // Lưu thông tin đơn hàng tạm thời
+    localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+
+    // Tạo payment request
+    const paymentRequest = {
+      amount: cartStore.totalAmount,
+      description: `DH-${maKH}`.substring(0, 25), // Giới hạn 25 ký tự
+      returnUrl: `${window.location.origin}/user/payment-success`,
+      cancelUrl: `${window.location.origin}/user/payment-cancel`
+    };
+
+    console.log('Payment request:', paymentRequest);
+
+    // Gọi API tạo thanh toán
+    const response = await fetch('https://localhost:7283/api/SimplePayment/Create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(paymentRequest)
+    });
+
+    const result = await response.json();
+    console.log('Payment response:', result);
+
+    if (result.status === 1 && result.data && result.data.success) {
+      // Lưu mã đơn hàng
+      localStorage.setItem('orderCode', result.data.orderCode);
+      
+      // Chuyển hướng đến trang thanh toán
+      window.location.href = result.data.paymentUrl;
+    } else {
+      ElMessage.error(result.data?.message || 'Không thể tạo thanh toán');
+    }
+  } catch (error) {
+    console.error('Checkout error:', error);
+    ElMessage.error('Có lỗi xảy ra khi tạo thanh toán');
   }
 };
 </script>
@@ -173,5 +233,47 @@ const handleCheckout = async () => {
   border-top: 2px solid #e0e0e0;
   padding-top: 15px;
   margin-top: 20px;
+}
+
+/* Fix cho el-input-number để hiển thị đầy đủ */
+:deep(.el-input-number) {
+  width: 140px !important;
+  height: 36px !important;
+}
+
+:deep(.el-input-number .el-input__wrapper) {
+  padding: 1px !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+:deep(.el-input-number .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #c0c4cc inset !important;
+}
+
+:deep(.el-input-number__decrease),
+:deep(.el-input-number__increase) {
+  width: 36px !important;
+  height: 34px !important;
+  background-color: #f5f7fa;
+  border: none !important;
+  color: #606266;
+  font-size: 16px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+:deep(.el-input-number__decrease:hover),
+:deep(.el-input-number__increase:hover) {
+  background-color: #0ecfe0;
+  color: #fff;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  text-align: center;
+  padding: 0 4px !important;
+  height: 34px !important;
+  line-height: 34px !important;
 }
 </style>
