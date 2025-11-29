@@ -93,6 +93,12 @@ const routes = [
         component: () => import("@/views/admin/phieunhap.vue"),
       },
       {
+        // allow maPN containing slashes (e.g. "PN0001/25-11") by matching the rest of the path
+        path: "phieunhap/:maPN(.*)",
+        name: "admin-phieunhap-detail",
+        component: () => import("@/views/admin/phieunhap-detail.vue"),
+      },
+      {
         path: "phieunhap/them",
         name: "admin-them-phieunhap",
         component: () => import("@/views/admin/them-phieunhap.vue"),
@@ -103,14 +109,60 @@ const routes = [
         component: () => import("@/views/admin/hoadon.vue"),
       },
       {
+        // detail view for an invoice (allow /admin/hoadon/:maHD)
+        path: "hoadon/:maHD(.*)",
+        name: "admin-hoadon-detail",
+        component: () => import("@/views/admin/hoadon-detail-fixed.vue"),
+      },
+      {
+        path: "hoadon/online",
+        name: "admin-hoadon-online",
+        component: () => import("@/views/admin/hoadon-online.vue"),
+      },
+      {
         path: "hoadon/them",
         name: "admin-them-hoadon",
-        component: () => import("@/views/admin/them-hoadon.vue"),
+        component: () => import("@/views/admin/hoadon-create.vue"),
       },
       {
         path: "kho",
         name: "admin-kho",
         component: () => import("@/views/admin/kho.vue"),
+      },
+      {
+        path: "quydoi",
+        name: "admin-quydoi",
+        component: () => import("@/views/admin/quydoi.vue"),
+      },
+      {
+        path: "thuoc-can-xu-ly",
+        name: "admin-thuoc-can-xu-ly",
+        component: () => import("@/views/admin/thuoc-can-xu-ly.vue"),
+      },
+      {
+        path: "huythuoc",
+        name: "admin-huythuoc",
+        component: () => import("@/views/admin/huythuoc.vue"),
+      },
+      {
+        path: "lieudung",
+        name: "admin-lieudung",
+        component: () => import("@/views/admin/lieudung.vue"),
+      },
+      {
+        path: "loaidonvi",
+        name: "admin-loaidonvi",
+        component: () => import("@/views/admin/loaidonvi.vue"),
+      },
+      {
+        path: "loaithuoc",
+        name: "admin-loaithuoc",
+        component: () => import("@/views/admin/loaithuoc.vue"),
+      },
+      {
+        path: "nhomloai",
+        name: "admin-nhomloai",
+        component: () => import("@/views/admin/nhomloai.vue"),
       },
     ],
   },

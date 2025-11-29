@@ -4,9 +4,7 @@ import axios from 'axios';
 const instance = axios.create({
   baseURL: 'https://localhost:7283/api', // Thay đổi URL này theo cấu hình của bạn
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Remove default Content-Type to let axios set it based on data type
 });
 
 // Request interceptor - thêm token vào header nếu có
