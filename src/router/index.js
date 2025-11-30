@@ -164,6 +164,11 @@ const routes = [
         name: "admin-nhomloai",
         component: () => import("@/views/admin/nhomloai.vue"),
       },
+      {
+        path: "binhluan",
+        name: "admin-binhluan",
+        component: () => import("@/views/admin/binhluan.vue"),
+      },
     ],
   },
 ];

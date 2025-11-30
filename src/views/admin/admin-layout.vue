@@ -39,6 +39,10 @@
               <i class="fas fa-file-import"></i>
               <span>Phiếu Nhập</span>
             </el-menu-item>
+            <el-menu-item index="/admin/binhluan">
+              <i class="fas fa-comments"></i>
+              <span>Bình Luận</span>
+            </el-menu-item>
             <!-- Hóa Đơn submenu: Hóa đơn / Xử lý hóa đơn online -->
             <div class="menu-item-custom" @click="hoadonOpen = !hoadonOpen" style="margin-bottom:6px">
               <i class="fas fa-receipt"></i>
@@ -225,8 +229,9 @@ const currentPageName = computed(() => {
         '/admin/nhomloai': 'Nhóm Loại',
     '/admin/lieudung': 'Liều Dùng',
     '/admin/loaidonvi': 'Loại Đơn Vị',
-    '/admin/loaithuoc': 'Loại Thuốc'
-    ,'/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý'
+    '/admin/loaithuoc': 'Loại Thuốc',
+    '/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý',
+    '/admin/binhluan': 'Bình Luận & Hỏi Đáp'
   };
   return names[route.path] || 'Admin';
 });
