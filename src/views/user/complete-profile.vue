@@ -121,22 +121,32 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    // Gọi API tạo khách hàng mới
-    const response = await api.khachhang.create({
-      MaTK: authStore.user.MaTK,
+    // Lấy MaKH từ localStorage
+    const user = authStore.user
+    const maKH = user?.MaKH
+    
+    if (!maKH) {
+      throw new Error('Không tìm thấy mã khách hàng')
+    }
+
+    console.log('Updating customer info for MaKH:', maKH)
+
+    // Gọi API cập nhật thông tin khách hàng theo MaKH
+    const response = await api.khachhang.update(maKH, {
       HoTen: profileForm.value.hoTen,
-      SDT: profileForm.value.soDienThoai,
+      DienThoai: profileForm.value.soDienThoai,
       GioiTinh: profileForm.value.gioiTinh,
       NgaySinh: profileForm.value.ngaySinh || null,
-      CCCD: profileForm.value.cccd || null,
       DiaChi: profileForm.value.diaChi
     })
+
+    console.log('Update response:', response)
 
     if (response.data) {
       ElMessage.success('Hoàn thiện thông tin thành công!')
       
-      // Cập nhật lại user trong store
-      const updatedUser = { ...authStore.user, HasCustomerInfo: true, MaKH: response.data.MaKH }
+      // Cập nhật HasCustomerInfo = true trong store
+      const updatedUser = { ...authStore.user, HasCustomerInfo: true }
       authStore.user = updatedUser
       localStorage.setItem('user', JSON.stringify(updatedUser))
       

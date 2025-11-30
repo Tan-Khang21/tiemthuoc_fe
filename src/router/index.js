@@ -55,6 +55,16 @@ const routes = [
         name: "orders",
         component: () => import("@/views/user/orders.vue"),
       },
+      {
+        path: "payment-success",
+        name: "payment-success",
+        component: () => import("@/views/user/payment-success.vue"),
+      },
+      {
+        path: "payment-cancel",
+        name: "payment-cancel",
+        component: () => import("@/views/user/payment-cancel.vue"),
+      },
     ],
   },
   {
@@ -153,6 +163,11 @@ const routes = [
         path: "nhomloai",
         name: "admin-nhomloai",
         component: () => import("@/views/admin/nhomloai.vue"),
+      },
+      {
+        path: "binhluan",
+        name: "admin-binhluan",
+        component: () => import("@/views/admin/binhluan.vue"),
       },
     ],
   },
