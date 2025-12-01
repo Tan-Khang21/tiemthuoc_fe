@@ -51,6 +51,12 @@
         <el-table-column prop="TongTien" label="Tổng tiền" width="120">
           <template #default="{ row }">{{ formatPrice(row.TongTien) }}</template>
         </el-table-column>
+        <el-table-column prop="PhuongThucTTName" label="Phương thức TT" min-width="140" show-overflow-tooltip class-name="col-ellipsis">
+          <template #default="{ row }">{{ row.PhuongThucTTName || row.phuongThucTTName || '' }}</template>
+        </el-table-column>
+        <el-table-column prop="TienThanhToan" label="Tiền thanh toán" width="140">
+          <template #default="{ row }">{{ formatPrice(row.TienThanhToan) }}</template>
+        </el-table-column>
         <el-table-column prop="GhiChu" label="Ghi chú" min-width="180" show-overflow-tooltip class-name="col-ellipsis" />
         <el-table-column prop="TrangThaiGiaoHang" label="Trạng thái" width="140" show-overflow-tooltip>
           <template #default="{ row }">
@@ -61,8 +67,10 @@
           <template #default="{ row }">
             <div class="table-actions">
               <el-button class="action-btn btn-view" circle size="small" @click="viewItem(row)" title="Xem"><i class="fa fa-eye"></i></el-button>
-              <el-button class="action-btn btn-edit" circle size="small" @click="editItem(row)" title="Sửa"><i class="fa fa-edit"></i></el-button>
-              <el-button class="action-btn btn-delete" circle size="small" @click="deleteItem(row)" title="Hủy/Xóa"><i class="fa fa-trash"></i></el-button>
+              <el-button v-if="row.TrangThaiGiaoHang == 0" class="action-btn btn-confirm" circle size="small" @click="confirmItem(row)" title="Xác nhận"><i class="fa fa-check"></i></el-button>
+              <el-button v-if="row.TrangThaiGiaoHang == 1" :loading="shippingId === (row.MaHD || row.maHD)" class="action-btn btn-ship" circle size="small" @click="shipItem(row)" title="Giao hàng"><i class="fa fa-truck"></i></el-button>
+              <el-button v-if="row.TrangThaiGiaoHang == 2" :loading="shippingId === (row.MaHD || row.maHD)" class="action-btn btn-receive" circle size="small" @click="receiveItem(row)" title="Nhận hàng"><i class="fa fa-check-circle"></i></el-button>
+              <el-button v-if="row.TrangThaiGiaoHang == 2" :loading="shippingId === (row.MaHD || row.maHD)" class="action-btn btn-cancel-ship" circle size="small" @click="cancelShipment(row)" title="Huỷ hàng"><i class="fa fa-times"></i></el-button>
             </div>
           </template>
         </el-table-column>
@@ -81,6 +89,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import api from '@/api';
+import http from '@/api/axios';
 import { useAuthStore } from '@/store/auth';
 import { numberToWords } from '@/utils/numberUtils';
 
@@ -106,7 +115,8 @@ const mm = String(now.getMonth() + 1).padStart(2, '0');
 const dd = String(now.getDate()).padStart(2, '0');
 const startDate = ref(`${yyyy}-${mm}-01`);
 const endDate = ref(`${yyyy}-${mm}-${dd}`);
-const status = ref(null);
+// Default to 'Đã đặt' so the page initially shows placed orders
+const status = ref(0);
 // default to online invoices
 const type = ref('HDOL');
 const searchKeyword = ref('');
@@ -180,6 +190,9 @@ const applyFilters = () => {
         TongTien: it.TongTien ?? it.tongTien,
         GhiChu: it.GhiChu ?? it.ghiChu,
         TrangThaiGiaoHang: it.TrangThaiGiaoHang ?? it.trangThaiGiaoHang,
+        PhuongThucTT: it.phuongThucTT ?? it.PhuongThucTT ?? null,
+        PhuongThucTTName: it.phuongThucTTName ?? it.PhuongThucTTName ?? it.phuongThucName ?? null,
+        TienThanhToan: it.tienThanhToan ?? it.TienThanhToan ?? null,
       }));
 
       if (searchKeyword.value && searchKeyword.value.trim() !== '') {
@@ -210,7 +223,99 @@ const onSizeChange = (size) => { pageSize.value = size; currentPage.value = 1; }
 
 // Actions
 const viewItem = (row) => { const id = row.MaHD || row.maHD; if (!id) return; router.push(`/admin/hoadon/${encodeURIComponent(id)}`); };
-const editItem = (row) => { const id = row.MaHD || row.maHD; if (!id) return; router.push({ path: '/admin/hoadon/them', query: { maHD: id } }); };
+const confirmItem = (row) => { const id = row.MaHD || row.maHD; if (!id) return; router.push({ path: '/admin/hoadon/them', query: { maHD: id, confirm: 1 } }); };
+const shippingId = ref(null);
+
+const shipItem = (row) => {
+  const id = row.MaHD || row.maHD;
+  if (!id) return;
+  ElMessageBox.confirm(`Bạn có chắc muốn chuyển HĐ "${id}" sang trạng thái Đã giao?`, 'Xác nhận giao hàng', { confirmButtonText: 'Giao hàng', cancelButtonText: 'Hủy', type: 'warning' })
+    .then(async () => {
+      shippingId.value = id;
+      try {
+        const payload = { maHD: id, trangThaiGiaoHang: 2 };
+        let resp;
+        if (api.hoadon && typeof api.hoadon.updateStatus === 'function') {
+          resp = await api.hoadon.updateStatus(payload);
+        } else {
+          resp = await http.patch('/HoaDon/UpdateStatus', payload);
+        }
+        const r = resp && resp.data ? resp.data : resp;
+        if (r && (r.status === -1 || r.error)) {
+          ElMessage.error(r.message || 'Cập nhật trạng thái thất bại');
+        } else {
+          ElMessage.success('Đã chuyển hóa đơn sang trạng thái Đã giao');
+          applyFilters();
+        }
+      } catch (err) {
+        console.error('shipItem err', err);
+        ElMessage.error('Lỗi khi cập nhật trạng thái');
+      } finally {
+        shippingId.value = null;
+      }
+    }).catch(() => {});
+};
+
+const receiveItem = (row) => {
+  const id = row.MaHD || row.maHD;
+  if (!id) return;
+  ElMessageBox.confirm(`Bạn có chắc muốn đánh dấu HĐ "${id}" là Đã nhận?`, 'Xác nhận nhận hàng', { confirmButtonText: 'Nhận', cancelButtonText: 'Hủy', type: 'warning' })
+    .then(async () => {
+      shippingId.value = id;
+      try {
+        const payload = { maHD: id, trangThaiGiaoHang: 3 };
+        let resp;
+        if (api.hoadon && typeof api.hoadon.updateStatus === 'function') {
+          resp = await api.hoadon.updateStatus(payload);
+        } else {
+          resp = await http.patch('/HoaDon/UpdateStatus', payload);
+        }
+        const r = resp && resp.data ? resp.data : resp;
+        if (r && (r.status === -1 || r.error)) {
+          ElMessage.error(r.message || 'Cập nhật trạng thái thất bại');
+        } else {
+          ElMessage.success('Đã đánh dấu hóa đơn là Đã nhận');
+          applyFilters();
+        }
+      } catch (err) {
+        console.error('receiveItem err', err);
+        ElMessage.error('Lỗi khi cập nhật trạng thái');
+      } finally {
+        shippingId.value = null;
+      }
+    }).catch(() => {});
+};
+
+const cancelShipment = (row) => {
+  const id = row.MaHD || row.maHD;
+  if (!id) return;
+  ElMessageBox.confirm(`Bạn có chắc muốn huỷ hàng cho HĐ "${id}"? Hành động này sẽ cập nhật trạng thái thành Hủy.`, 'Xác nhận huỷ hàng', { confirmButtonText: 'Huỷ hàng', cancelButtonText: 'Bỏ qua', type: 'warning' })
+    .then(async () => {
+      shippingId.value = id;
+      try {
+        const payload = { maHD: id, trangThaiGiaoHang: -1 };
+        let resp;
+        if (api.hoadon && typeof api.hoadon.updateStatus === 'function') {
+          resp = await api.hoadon.updateStatus(payload);
+        } else {
+          resp = await http.patch('/HoaDon/UpdateStatus', payload);
+        }
+        const r = resp && resp.data ? resp.data : resp;
+        if (r && (r.status === -1 || r.error)) {
+          ElMessage.error(r.message || 'Huỷ hàng thất bại');
+        } else {
+          ElMessage.success('Đã huỷ hàng cho hóa đơn');
+          applyFilters();
+        }
+      } catch (err) {
+        console.error('cancelShipment err', err);
+        ElMessage.error('Lỗi khi huỷ hàng');
+      } finally {
+        shippingId.value = null;
+      }
+    }).catch(() => {});
+};
+
 const deleteItem = (row) => {
   const id = row.MaHD || row.maHD; if (!id) return;
   ElMessageBox.confirm(`Bạn có chắc muốn hủy hóa đơn "${id}"?`, 'Xác nhận', { confirmButtonText: 'Hủy', cancelButtonText: 'Bỏ qua', type: 'warning' })
@@ -234,7 +339,7 @@ const exportExcel = () => {
     if (!rows.length) { ElMessage.info('Không có dữ liệu để xuất'); return; }
     const title = 'DANH SÁCH HÓA ĐƠN ONLINE';
     const summary = `Từ: ${formatDateOnly(startDate.value) || ''} — Đến: ${formatDateOnly(endDate.value) || ''} | Tổng: ${rows.length} HĐ`;
-    const headers = ['Mã HĐ', 'Ngày lập', 'Khách hàng', 'Nhân viên', 'Tổng tiền', 'Ghi chú', 'Trạng thái'];
+    const headers = ['Mã HĐ', 'Ngày lập', 'Khách hàng', 'Nhân viên', 'Tổng tiền', 'Phương thức TT', 'Tiền thanh toán', 'Ghi chú', 'Trạng thái'];
     const csvRows = [title, summary, '', headers.join(',')];
     rows.forEach(r => {
       const cols = [
@@ -243,6 +348,8 @@ const exportExcel = () => {
         `"${(r.TenKH ?? '').replace(/"/g, '""') }"`,
         `"${(r.TenNV ?? '').replace(/"/g, '""') }"`,
         `"${r.TongTien ?? ''}"`,
+        `"${(r.PhuongThucTTName ?? r.phuongThucTTName ?? '') .toString().replace(/"/g, '""') }"`,
+        `"${r.TienThanhToan ?? ''}"`,
         `"${(r.GhiChu ?? '').replace(/"/g, '""') }"`,
         `"${mapStatus(r.TrangThaiGiaoHang) ?? ''}"`,
       ];
@@ -274,7 +381,7 @@ const printList = async () => {
   const totalCount = rows.length;
   const printWindow = window.open('', '_blank');
   if (!printWindow) { ElMessage.error('Không thể mở cửa sổ in'); return; }
-  const html = `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Danh sách Hóa đơn online</title><style>body{ font-family: 'Times New Roman', serif; margin:0; padding:20px; color:#111 } .container{ max-width:1100px; margin:0 auto } .header{ display:flex; align-items:center; gap:12px; border-bottom:2px solid #222; padding-bottom:10px; justify-content:center } .company-name{ font-size:28px; font-weight:700; text-transform:uppercase } .company-info{ font-size:12px } .title{ font-size:22px; text-align:center; font-weight:700; margin:18px 0 } .info { display:flex; justify-content:space-between; margin-bottom:12px } table{ width:100%; border-collapse: collapse } th,td{ border:1px solid #222; padding:8px; font-size:13px } th{ background:#f3f3f3 } .text-right{ text-align:right } .total-section{ margin-top:14px; border-top:1px dashed #333; padding-top:8px } .signature{ display:flex; justify-content:space-between; margin-top:28px } .print-info{ margin-top:18px; font-size:12px; text-align:right } @media print{ body{ margin:0 } }</style></head><body><div class="container"><div class="header"><div style="display:flex;align-items:center;gap:12px;"><img src="${logoPrimary}" onerror="this.onerror=null;this.src='${logoFallback}'" style="width:86px;height:auto;flex:0 0 auto" /><div style="text-align:center;"><div class="company-name">NHÀ THUỐC MEDION</div><div class="company-info">Địa chỉ: 140 Lê Trọng Tấn, Tân Phú, TP.HCM</div><div class="company-info">Điện thoại: (028) 1234-5678</div><div class="company-info">MST: 0123456789</div></div></div></div><div class="title">DANH SÁCH HÓA ĐƠN ONLINE</div><div class="info"><div>Từ: ${formatDateOnly(startDate.value) || ''} — Đến: ${formatDateOnly(endDate.value) || ''}</div><div>Tổng: ${totalCount} hóa đơn</div></div><table><thead><tr><th style="width:5%">STT</th><th style="width:20%">Mã HĐ</th><th style="width:12%">Ngày lập</th><th style="width:20%">Khách hàng</th><th style="width:16%">Nhân viên</th><th style="width:12%" class="text-right">Tổng tiền</th><th style="width:15%">Trạng thái</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="text-center">${i+1}</td><td>${r.MaHD??r.maHD??''}</td><td class="text-center">${formatDate(r.NgayLap??r.ngayLap)||''}</td><td>${r.TenKH??r.tenKH??''}</td><td>${r.TenNV??r.tenNV??''}</td><td class="text-right">${formatPrice(r.TongTien??r.tongTien)||''}</td><td>${mapStatus(r.TrangThaiGiaoHang??r.trangThaiGiaoHang)}</td></tr>`).join('')}</tbody></table><div class="total-section"><div class="text-right">Tổng tiền: <strong>${formatPrice(totalAmount)}</strong></div><div class="text-right">Bằng chữ: <em>${numberToWords(Math.floor(totalAmount))} đồng</em></div></div><div class="signature"><div>Người lập</div><div>Quản lý</div><div>Kế toán</div></div><div class="print-info">In lúc: ${new Date().toLocaleString('vi-VN')} — In bởi: ${tenNhanVien}</div></div></body></html>`;
+  const html = `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Danh sách Hóa đơn online</title><style>body{ font-family: 'Times New Roman', serif; margin:0; padding:20px; color:#111 } .container{ max-width:1100px; margin:0 auto } .header{ display:flex; align-items:center; gap:12px; border-bottom:2px solid #222; padding-bottom:10px; justify-content:center } .company-name{ font-size:28px; font-weight:700; text-transform:uppercase } .company-info{ font-size:12px } .title{ font-size:22px; text-align:center; font-weight:700; margin:18px 0 } .info { display:flex; justify-content:space-between; margin-bottom:12px } table{ width:100%; border-collapse: collapse } th,td{ border:1px solid #222; padding:8px; font-size:13px } th{ background:#f3f3f3 } .text-right{ text-align:right } .total-section{ margin-top:14px; border-top:1px dashed #333; padding-top:8px } .signature{ display:flex; justify-content:space-between; margin-top:28px } .print-info{ margin-top:18px; font-size:12px; text-align:right } @media print{ body{ margin:0 } }</style></head><body><div class="container"><div class="header"><div style="display:flex;align-items:center;gap:12px;"><img src="${logoPrimary}" onerror="this.onerror=null;this.src='${logoFallback}'" style="width:86px;height:auto;flex:0 0 auto" /><div style="text-align:center;"><div class="company-name">NHÀ THUỐC MEDION</div><div class="company-info">Địa chỉ: 140 Lê Trọng Tấn, Tân Phú, TP.HCM</div><div class="company-info">Điện thoại: (028) 1234-5678</div><div class="company-info">MST: 0123456789</div></div></div></div><div class="title">DANH SÁCH HÓA ĐƠN ONLINE</div><div class="info"><div>Từ: ${formatDateOnly(startDate.value) || ''} — Đến: ${formatDateOnly(endDate.value) || ''}</div><div>Tổng: ${totalCount} hóa đơn</div></div><table><thead><tr><th style="width:5%">STT</th><th style="width:18%">Mã HĐ</th><th style="width:10%">Ngày lập</th><th style="width:18%">Khách hàng</th><th style="width:13%">Nhân viên</th><th style="width:10%" class="text-right">Tổng tiền</th><th style="width:10%">Phương thức TT</th><th style="width:10%" class="text-right">Tiền TT</th><th style="width:16%">Trạng thái</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="text-center">${i+1}</td><td>${r.MaHD??r.maHD??''}</td><td class="text-center">${formatDate(r.NgayLap??r.ngayLap)||''}</td><td>${r.TenKH??r.tenKH??''}</td><td>${r.TenNV??r.tenNV??''}</td><td class="text-right">${formatPrice(r.TongTien??r.tongTien)||''}</td><td>${r.PhuongThucTTName??r.phuongThucTTName??''}</td><td class="text-right">${formatPrice(r.TienThanhToan??r.tienThanhToan)||''}</td><td>${mapStatus(r.TrangThaiGiaoHang??r.trangThaiGiaoHang)}</td></tr>`).join('')}</tbody></table><div class="total-section"><div class="text-right">Tổng tiền: <strong>${formatPrice(totalAmount)}</strong></div><div class="text-right">Bằng chữ: <em>${numberToWords(Math.floor(totalAmount))} đồng</em></div></div><div class="signature"><div>Người lập</div><div>Quản lý</div><div>Kế toán</div></div><div class="print-info">In lúc: ${new Date().toLocaleString('vi-VN')} — In bởi: ${tenNhanVien}</div></div></body></html>`;
   printWindow.document.open(); printWindow.document.write(html); printWindow.document.close(); printWindow.focus(); setTimeout(()=>printWindow.print(),600);
 };
 
@@ -308,7 +415,15 @@ watch(searchKeyword, ()=>{ debouncedApply(); });
 .action-btn i { font-size:14px; }
 .btn-view { background: linear-gradient(180deg,#2f9cff,#1877f2); border:0; }
 .btn-edit { background: linear-gradient(180deg,#f6a21a,#f18807); border:0; }
+/* Confirm button - green check */
+.btn-confirm { background: linear-gradient(180deg,#28c76f,#14a34a); border:0; }
 .btn-delete { background: linear-gradient(180deg,#ff6b6b,#e23b3b); border:0; }
+/* Ship button (teal) */
+.btn-ship { background: linear-gradient(180deg,#23c0b5,#0aa39a); border:0; }
+/* Receive button (blue-green) */
+.btn-receive { background: linear-gradient(180deg,#38bdf8,#0ea5a1); border:0; }
+/* Cancel shipment (red) */
+.btn-cancel-ship { background: linear-gradient(180deg,#ff6b6b,#e23b3b); border:0; }
 .col-ellipsis .cell { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .el-table__body-wrapper { overflow-x: hidden; }
 </style>
