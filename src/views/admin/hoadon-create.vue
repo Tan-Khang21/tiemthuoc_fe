@@ -336,7 +336,7 @@
             <el-icon><FullScreen /></el-icon>
             Thanh toán QR
           </el-button>
-          <el-button type="primary" size="default" @click="submitInvoice">
+          <el-button type="primary" size="default" @click="() => submitInvoice(1)">
             <el-icon><Check /></el-icon>
             Lưu hóa đơn (Tiền mặt)
           </el-button>
@@ -723,7 +723,7 @@ const ensureMaKH = async () => {
   }
 };
 
-const submitInvoice = async () => {
+const submitInvoice = async (paymentMethod = 1, orderCode = null) => {
   // basic validation
   if (!form.value.tenKH) { ElMessage.warning('Vui lòng nhập tên khách hàng'); return; }
   if (!items.value.length) { ElMessage.warning('Vui lòng thêm ít nhất 1 mặt hàng'); return; }
@@ -755,24 +755,64 @@ const submitInvoice = async () => {
       thanhTien: it.thanhTien, 
       tenLD: it.tenLD
     })),
-    tongTien: totalAmount.value
+    tongTien: totalAmount.value,
+    paymentMethod: paymentMethod,
+    orderCode: orderCode
   };
 
   try {
+    console.log('Submitting invoice with payload:', payload);
     const resp = await api.hoadon.create(payload);
     const r = (resp && resp.data) ? resp.data : resp;
+    console.log('Create invoice response:', r);
+
     if (r && (r.status === -1 || r.error)) {
       ElMessage.error(r.message || 'Tạo hóa đơn thất bại');
       return;
     }
+    
+    // Check if response contains a paymentUrl (unexpected for Cash)
+    if (r.paymentUrl || r.checkoutUrl || (r.data && (r.data.paymentUrl || r.data.checkoutUrl))) {
+       console.warn('Unexpected payment URL in Cash invoice response:', r);
+       // If we are forcing Cash (paymentMethod=1), we should probably ignore this URL 
+       // unless the backend explicitly failed the cash creation and returned a redirect.
+       // But let's see the log first.
+    }
+
     ElMessage.success('Tạo hóa đơn thành công');
     // Clear draft if exists
     localStorage.removeItem('invoice_draft');
     
     // redirect to detail page if id returned
-    const maHD = r && (r.maHD || r.MaHD || r.data && (r.data.maHD || r.data.MaHD)) ? (r.maHD || r.MaHD || r.data.maHD || r.data.MaHD) : null;
-    if (maHD) router.push(`/admin/hoadon/${encodeURIComponent(maHD)}`);
-    else router.back();
+    let maHD = null;
+    if (r) {
+      // Direct properties
+      if (r.maHD || r.MaHD) maHD = r.maHD || r.MaHD;
+      else if (r.id || r.Id) maHD = r.id || r.Id;
+      
+      // Nested data
+      else if (r.data) {
+        if (typeof r.data === 'string') maHD = r.data;
+        else if (typeof r.data === 'object') {
+          if (r.data.maHD || r.data.MaHD) maHD = r.data.maHD || r.data.MaHD;
+          else if (r.data.id || r.data.Id) maHD = r.data.id || r.data.Id;
+          else if (r.data.invoice && (r.data.invoice.maHD || r.data.invoice.MaHD)) maHD = r.data.invoice.maHD || r.data.invoice.MaHD;
+        }
+      }
+    }
+
+    if (maHD && typeof maHD === 'string' && maHD.startsWith('http')) {
+       console.warn('maHD looks like a URL, ignoring:', maHD);
+       maHD = null;
+    }
+
+    if (maHD) {
+      router.push(`/admin/hoadon/${encodeURIComponent(maHD)}`);
+    } else {
+      // Fallback to list
+      // Suppress warning since the operation was successful
+      router.push('/admin/hoadon');
+    }
   } catch (err) {
     console.error('create hoadon err', err);
     ElMessage.error('Lỗi khi tạo hóa đơn');
@@ -896,8 +936,9 @@ onMounted(async () => {
   if (route.query.paymentResult) {
     restoreDraft();
     if (route.query.paymentResult === 'success') {
-      // Auto submit invoice
-      await submitInvoice();
+      // Auto submit invoice with QR payment method (2) and orderCode
+      const orderCode = route.query.orderCode || route.query.order_code || null;
+      await submitInvoice(2, orderCode);
     } else if (route.query.paymentResult === 'cancel') {
       ElMessage.info('Đã hủy thanh toán QR. Bạn có thể tiếp tục chỉnh sửa.');
     }

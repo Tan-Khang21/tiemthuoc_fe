@@ -169,6 +169,11 @@ const routes = [
         name: "admin-binhluan",
         component: () => import("@/views/admin/binhluan.vue"),
       },
+      {
+        path: "chat",
+        name: "admin-chat",
+        component: () => import("@/views/admin/chat.vue"),
+      },
     ],
   },
 ];

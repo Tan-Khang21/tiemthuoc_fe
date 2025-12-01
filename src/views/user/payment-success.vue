@@ -65,6 +65,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElLoading } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { useCartStore } from '@/store/cart';
+import api from '@/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -94,22 +95,24 @@ const processPayment = async () => {
 
     const orderData = JSON.parse(pendingOrder);
     
+    // Cập nhật orderCode dựa trên phương thức thanh toán
+    // Nếu là QR (2) thì lấy từ query hoặc storage, nếu là Tiền mặt (1) thì null
+    if (orderData.phuongThucTT === 2) {
+      orderData.orderCode = route.query.orderCode || localStorage.getItem('orderCode');
+    } else {
+      orderData.orderCode = null;
+    }
+    
     // Gọi API tạo hóa đơn
-    const response = await fetch('https://localhost:7283/api/HoaDon/CreateOnline', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(orderData)
-    });
+    const response = await api.hoadon.createOnline(orderData);
+    const result = response.data;
 
-    const result = await response.json();
     console.log('Create invoice result:', result);
 
-    if (result.status === 1 || response.ok) {
+    if (result.status === 1) {
       success.value = true;
       orderInfo.value = {
-        orderCode: orderCode,
+        orderCode: result.data?.maHD || orderData.orderCode || '---',
         amount: orderData.tongTien
       };
 
