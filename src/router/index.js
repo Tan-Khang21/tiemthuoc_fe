@@ -173,6 +173,12 @@ const routes = [
         path: "thong-ke",
         name: "admin-thong-ke",
         component: () => import("@/views/admin/ThongKe.vue"),
+        },
+        {
+        path: "chat",
+        name: "admin-chat",
+        component: () => import("@/views/admin/chat.vue"),
+
       },
     ],
   },

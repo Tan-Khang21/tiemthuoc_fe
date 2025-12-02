@@ -43,6 +43,10 @@
               <i class="fas fa-comments"></i>
               <span>Bình Luận</span>
             </el-menu-item>
+            <el-menu-item index="/admin/chat">
+              <i class="fas fa-comment-dots"></i>
+              <span>Trò chuyện</span>
+            </el-menu-item>
             <!-- Hóa Đơn submenu: Hóa đơn / Xử lý hóa đơn online -->
             <div class="menu-item-custom" @click="hoadonOpen = !hoadonOpen" style="margin-bottom:6px">
               <i class="fas fa-receipt"></i>
@@ -166,7 +170,7 @@
       </el-aside>
 
       <!-- Main Content -->
-      <el-container>
+      <el-container class="main-wrapper">
         <el-header class="header" height="70px">
           <div class="header-content">
             <div class="header-left">
@@ -232,7 +236,11 @@ const currentPageName = computed(() => {
     '/admin/loaithuoc': 'Loại Thuốc',
     '/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý',
     '/admin/binhluan': 'Bình Luận & Hỏi Đáp',
+
     '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí'
+
+    '/admin/chat': 'Trò chuyện với khách'
+
   };
   return names[route.path] || 'Admin';
 });
@@ -295,6 +303,12 @@ const goToStatistics = () => {
   flex-direction: column;
   transition: width 260ms cubic-bezier(.4,0,.2,1);
   overflow-y: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: 100vh;
+  z-index: 1000;
 }
 
 .logo {
@@ -407,6 +421,30 @@ const goToStatistics = () => {
 
 .sidebar.collapsed .menu-item-custom i:first-child {
   margin-right: 0;
+}
+
+.sidebar.collapsed .menu-item-custom i:last-child {
+  display: none;
+}
+
+.sidebar.collapsed .submenu-item span {
+  display: none;
+}
+
+.sidebar.collapsed .custom-submenu {
+  margin-left: 0;
+  border-left: none;
+  background: transparent;
+}
+
+.sidebar.collapsed .submenu-item {
+  justify-content: center;
+  padding-left: 15px; /* Shift right to indicate nesting */
+}
+
+.sidebar.collapsed .submenu-item i {
+  margin-right: 0;
+  width: auto;
 }
 
 /* Header hamburger toggle */
@@ -619,10 +657,17 @@ const goToStatistics = () => {
 }
 
 /* Main Content */
+.main-wrapper {
+  margin-left: var(--sidebar-width);
+  transition: margin-left 260ms cubic-bezier(.4,0,.2,1);
+  min-height: 100vh;
+  flex-direction: column;
+}
+
 .main-content {
   background: #f5f7fa;
   padding: 25px;
-  min-height: calc(100vh - 70px);
+  flex: 1;
 }
 
 /* Custom menu item styling - match Element Plus menu item */

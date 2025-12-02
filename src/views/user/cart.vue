@@ -79,10 +79,18 @@
           </strong>
         </div>
 
+        <div class="payment-method" style="margin: 20px 0">
+          <div style="margin-bottom: 10px; font-weight: 500">Phương thức thanh toán:</div>
+          <el-radio-group v-model="paymentMethod">
+            <el-radio :label="1">Tiền mặt</el-radio>
+            <el-radio :label="2">Chuyển khoản QR</el-radio>
+          </el-radio-group>
+        </div>
+
         <el-button
           type="primary"
           size="large"
-          style="width: 100%; margin-top: 20px"
+          style="width: 100%; margin-top: 10px"
           @click="handleCheckout"
         >
           Đặt hàng
@@ -93,13 +101,16 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore, useAuthStore } from '@/store';
+import api from '@/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const paymentMethod = ref(2); // Mặc định là QR Code
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN').format(price);
@@ -153,54 +164,45 @@ const handleCheckout = async () => {
       maKH: maKH,
       ghiChu: 'Đơn hàng online',
       tongTien: cartStore.totalAmount,
+      phuongThucTT: paymentMethod.value,
       items: cartStore.items.map(item => ({
         maThuoc: item.maThuoc,
-        donVi: item.donVi,  // Đây phải là mã loại đơn vị (VD: LDV003)
+        donVi: item.donVi,
         soLuong: item.soLuong,
         donGia: item.donGia
       }))
     };
 
-    console.log('Order data to save:', orderData);
-    console.log('Cart items:', cartStore.items);
+    // Xử lý thanh toán dựa trên phương thức
+    if (paymentMethod.value === 2) {
+      // Thanh toán QR
+      const paymentRequest = {
+        amount: cartStore.totalAmount,
+        description: `DH-${maKH}`.substring(0, 25),
+        returnUrl: `${window.location.origin}/user/payment-success`,
+        cancelUrl: `${window.location.origin}/user/payment-cancel`
+      };
 
-    // Lưu thông tin đơn hàng tạm thời
-    localStorage.setItem('pendingOrder', JSON.stringify(orderData));
-
-    // Tạo payment request
-    const paymentRequest = {
-      amount: cartStore.totalAmount,
-      description: `DH-${maKH}`.substring(0, 25), // Giới hạn 25 ký tự
-      returnUrl: `${window.location.origin}/user/payment-success`,
-      cancelUrl: `${window.location.origin}/user/payment-cancel`
-    };
-
-    console.log('Payment request:', paymentRequest);
-
-    // Gọi API tạo thanh toán
-    const response = await fetch('https://localhost:7283/api/SimplePayment/Create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(paymentRequest)
-    });
-
-    const result = await response.json();
-    console.log('Payment response:', result);
-
-    if (result.status === 1 && result.data && result.data.success) {
-      // Lưu mã đơn hàng
-      localStorage.setItem('orderCode', result.data.orderCode);
+      const response = await api.simplePayment.create(paymentRequest);
       
-      // Chuyển hướng đến trang thanh toán
-      window.location.href = result.data.paymentUrl;
+      if (response.status === 1 && response.data && response.data.success) {
+        localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+        localStorage.setItem('orderCode', response.data.orderCode);
+        window.location.href = response.data.paymentUrl;
+      } else {
+        ElMessage.error(response.data?.message || 'Không thể tạo thanh toán');
+      }
     } else {
-      ElMessage.error(result.data?.message || 'Không thể tạo thanh toán');
+      // Thanh toán tiền mặt
+      localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      // Với tiền mặt, không có orderCode từ cổng thanh toán, set null hoặc bỏ qua
+      localStorage.removeItem('orderCode'); 
+      router.push('/user/payment-success');
     }
+
   } catch (error) {
     console.error('Checkout error:', error);
-    ElMessage.error('Có lỗi xảy ra khi tạo thanh toán');
+    ElMessage.error('Có lỗi xảy ra khi tạo đơn hàng');
   }
 };
 </script>

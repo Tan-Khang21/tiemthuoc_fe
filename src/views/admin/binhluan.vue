@@ -16,11 +16,21 @@
       </div>
 
       <el-table :data="pagedComments" v-loading="loading" stripe style="width: 100%">
-        <el-table-column label="Sản phẩm" min-width="180">
+        <el-table-column label="Sản phẩm" min-width="250">
           <template #default="{ row }">
-            <div class="product-info">
-              <span class="product-name">{{ row.root.tenThuoc || row.root.maThuoc }}</span>
-              <span class="product-sku">{{ row.root.maThuoc }}</span>
+            <div class="product-info-cell">
+              <img 
+                :src="getProductImage(row.root)" 
+                class="product-thumb" 
+                @error="handleImageError"
+                alt="Product"
+              />
+              <div class="product-details">
+                <span class="product-name" :title="medicineCache[row.root.maThuoc]?.tenThuoc || row.root.tenThuoc">
+                  {{ medicineCache[row.root.maThuoc]?.tenThuoc || row.root.tenThuoc || 'Sản phẩm ' + row.root.maThuoc }}
+                </span>
+                <span class="product-sku">{{ row.root.maThuoc }}</span>
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -197,12 +207,32 @@ onMounted(async () => {
   await loadThreads();
 });
 
+const medicineCache = ref({});
+
 const loadThreads = async () => {
   loading.value = true;
   try {
     const response = await api.binhluan.getRootsStatus();
     if (response.data && response.data.status === 1) {
       threads.value = response.data.data || [];
+      
+      // Extract unique maThuoc list
+      const maThuocList = [...new Set(threads.value.map(item => item.root.maThuoc))];
+      
+      // Fetch details for each medicine if not in cache
+      await Promise.all(maThuocList.map(async (maThuoc) => {
+        if (!medicineCache.value[maThuoc]) {
+          try {
+            const res = await api.thuoc.getById(maThuoc);
+            if (res.data && res.data.data) {
+              medicineCache.value[maThuoc] = res.data.data;
+            }
+          } catch (err) {
+            console.error(`Failed to fetch medicine ${maThuoc}`, err);
+          }
+        }
+      }));
+      
     } else {
       threads.value = [];
     }
@@ -325,6 +355,27 @@ const submitReply = async () => {
   }
 };
 
+const getProductImage = (root) => {
+  // Try to get from cache first
+  if (medicineCache.value[root.maThuoc]) {
+    const cachedUrl = medicineCache.value[root.maThuoc].urlAnh || medicineCache.value[root.maThuoc].UrlAnh;
+    if (cachedUrl && (cachedUrl.startsWith('http') || cachedUrl.startsWith('/'))) {
+      return cachedUrl;
+    }
+  }
+
+  // Fallback to root data
+  const url = root.urlAnh || root.UrlAnh;
+  if (url && (url.startsWith('http') || url.startsWith('/'))) {
+    return url;
+  }
+  return 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=100&h=100&fit=crop';
+};
+
+const handleImageError = (e) => {
+  e.target.src = 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=100&h=100&fit=crop';
+};
+
 const confirmDelete = async (maBL) => {
   try {
     await ElMessageBox.confirm('Bạn có chắc chắn muốn xóa bình luận này? Tất cả câu trả lời con cũng sẽ bị xóa.', 'Xác nhận xóa', {
@@ -387,20 +438,52 @@ const confirmDelete = async (maBL) => {
   align-items: center;
 }
 
-.product-info, .user-info {
+.product-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.product-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Allow text truncation */
+}
+
+.product-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.product-sku {
+  font-size: 12px;
+  color: #999;
+}
+
+.user-info {
   display: flex;
   flex-direction: column;
 }
 
-.product-name, .user-name {
+.user-name {
   font-weight: 600;
   color: #2c3e50;
 }
 
-.product-sku, .user-role {
-  font-size: 12px;
-  color: #999;
-}
 .user-role { color: #17a2b8; font-weight: 600; }
 
 .comment-content .comment-text {
