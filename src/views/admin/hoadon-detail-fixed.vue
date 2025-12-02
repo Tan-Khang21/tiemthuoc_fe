@@ -1,5 +1,4 @@
 <template>
-  <div class="invoice-detail-container">
     <!-- Modern Header Card -->
     <el-card class="header-card" shadow="hover">
       <div class="header-content">
@@ -197,7 +196,6 @@
         </div>
       </div>
     </el-card>
-  </div>
 </template>
 
 <script setup>
@@ -485,10 +483,7 @@ watch(viewMode, ()=>{ loadData(); });
 </script>
 
 <style scoped>
-/* Main Container */
 .invoice-detail-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 24px;
 }
 

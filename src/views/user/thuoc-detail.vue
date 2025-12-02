@@ -398,16 +398,25 @@
                                                 </span>
                                                 <span class="qa-time">{{ formatTimeAgo(item.ngayBinhLuan) }}</span>
                                             </div>
-                                            <div class="qa-text">{{ item.noiDung }}</div>
+                                            <div v-if="!isCommentHidden(item.maBL)" class="qa-text">{{ item.noiDung }}</div>
+                                            <div v-else class="qa-text-hidden">
+                                                <i class="fas fa-eye-slash"></i> Bình luận đã bị ẩn
+                                            </div>
                                             
                                             <div class="qa-actions" v-if="authStore.isAuthenticated">
                                                 <!-- Only show reply button on the last item of the thread -->
                                                 <button 
                                                     class="btn-reply-text" 
                                                     @click="toggleReplyForm(item.maBL)"
-                                                    v-if="index === thread.items.length - 1"
+                                                    v-if="index === thread.items.length - 1 && !isCommentHidden(item.maBL)"
                                                 >
                                                     Trả lời
+                                                </button>
+                                                <button 
+                                                    class="btn-hide-text" 
+                                                    @click="toggleHideComment(item.maBL)"
+                                                >
+                                                    {{ isCommentHidden(item.maBL) ? 'Hiện' : 'Ẩn' }}
                                                 </button>
                                                 <button 
                                                     class="btn-delete-text" 
@@ -527,6 +536,7 @@ const newQuestion = ref('');
 const replyingTo = ref(null);
 const replyContent = ref('');
 const submittingComment = ref(false);
+const hiddenComments = ref(new Set()); // Track hidden comment IDs
 
 onMounted(async () => {
   await loadThuocDetail();
@@ -924,6 +934,18 @@ const canDeleteComment = (comment) => {
     // Admin can delete any
     if (authStore.isAdmin) return true;
     return false;
+};
+
+const toggleHideComment = (maBL) => {
+    if (hiddenComments.value.has(maBL)) {
+        hiddenComments.value.delete(maBL);
+    } else {
+        hiddenComments.value.add(maBL);
+    }
+};
+
+const isCommentHidden = (maBL) => {
+    return hiddenComments.value.has(maBL);
 };
 
 const formatTimeAgo = (dateString) => {
@@ -2129,54 +2151,75 @@ const formatTimeAgo = (dateString) => {
 .qa-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .qa-thread {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #f0f2f5;
-  padding-bottom: 20px;
-}
-
-.qa-thread:last-child {
+  margin-bottom: 2px;
   border-bottom: none;
+  padding-bottom: 0;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .qa-item {
   background: #fff;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  padding: 0;
+  margin-left: 0;
 }
 
 .qa-item.is-root {
-  /* Highlight root comment */
-  background-color: #f9f9f9;
-  border-left: 3px solid #0ecfe0;
-  padding: 10px;
-  border-radius: 4px;
+  /* Root comment styling */
+  background-color: #fff;
+  border-left: 4px solid #0ecfe0;
+  padding: 15px;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 0;
+  position: relative;
 }
 
 .qa-item.is-reply {
-  /* No indentation per user request "cùng cấp" */
-  margin-left: 0;
-  padding-left: 10px; /* Slight padding to align with root content if needed, or just keep flat */
+  /* Indented reply style - tụt vào */
+  margin-left: 50px;
+  padding: 12px 15px;
+  background-color: #f9fbfc;
+  border-left: 3px solid #e0e0e0;
+  border-radius: 0 4px 4px 0;
+  position: relative;
+}
+
+.qa-item.is-reply::before {
+  /* Vertical connector line from root to reply */
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: -12px;
+  bottom: 100%;
+  width: 20px;
+  border-left: 2px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .qa-main {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
 
 .qa-avatar {
-  width: 40px;
-  height: 40px;
-  background: #f0f2f5;
-  color: #666;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   flex-shrink: 0;
+  font-size: 14px;
 }
 
 .qa-avatar.is-staff {
@@ -2227,6 +2270,21 @@ const formatTimeAgo = (dateString) => {
   margin-bottom: 8px;
 }
 
+.qa-text-hidden {
+  color: #999;
+  line-height: 1.5;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qa-text-hidden i {
+  color: #ccc;
+}
+
 .qa-actions {
   display: flex;
   gap: 15px;
@@ -2234,7 +2292,8 @@ const formatTimeAgo = (dateString) => {
 }
 
 .btn-reply-text,
-.btn-delete-text {
+.btn-delete-text,
+.btn-hide-text {
   background: none;
   border: none;
   padding: 0;
@@ -2249,6 +2308,14 @@ const formatTimeAgo = (dateString) => {
 
 .btn-reply-text:hover {
   color: #0ecfe0;
+}
+
+.btn-hide-text {
+  color: #999;
+}
+
+.btn-hide-text:hover {
+  color: #17a2b8;
 }
 
 .btn-delete-text {
