@@ -45,11 +45,11 @@
           <div style="margin-top:12px">
             <el-table ref="khoTableRef" :data="khoPaginatedItems" stripe v-loading="khoLoading" style="width:100%" :row-style="tableRowStyle" :row-key="getRowKey" :reserve-selection="true" @selection-change="handleKhoSelectionChange">
               <el-table-column type="selection" width="56" />
-              <el-table-column label="STT" width="60">
+              <el-table-column label="STT" width="50">
                 <template #default="{ $index }">{{ (khoCurrentPage - 1) * pageSize + $index + 1 }}</template>
               </el-table-column>
               <el-table-column prop="maLo" label="Lô" width="160" />
-              <el-table-column prop="maThuoc" label="Mã thuốc" width="120">
+              <el-table-column prop="maThuoc" label="Mã thuốc" width="90">
                 <template #default="{ row }">
                   <el-tag size="small" type="warning">{{ row.maThuoc }}</el-tag>
                 </template>
@@ -59,8 +59,8 @@
                   <div class="drug-name">{{ row.tenThuoc }}</div>
                 </template>
               </el-table-column>
-              <el-table-column prop="tenLoaiDonViGoc" label="Đơn vị" width="100" />
-              <el-table-column prop="soLuongCon" label="Số lượng" width="100">
+              <el-table-column prop="tenLoaiDonViGoc" label="Đơn vị" width="90" />
+              <el-table-column prop="soLuongCon" label="SL" width="50">
                 <template #default="{ row }">
                   <span style="font-weight:600; color:#28a745">{{ row.soLuongCon }}</span>
                 </template>

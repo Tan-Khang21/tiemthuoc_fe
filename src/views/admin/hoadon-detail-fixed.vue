@@ -25,6 +25,7 @@
                 <div class="meta-content">
                   <span class="meta-label">Khách hàng</span>
                   <span class="meta-value">{{ invoice.tenKH || invoice.tenKh || invoice.TenKH }}</span>
+                  <span class="meta-subvalue">{{ invoice.diaChiKH || invoice.DiaChiKH || invoice.diachiKH || invoice.diaChi || 'Không có địa chỉ' }}</span>
                 </div>
               </div>
             </div>
@@ -586,6 +587,14 @@ watch(viewMode, ()=>{ loadData(); });
   font-size: 15px;
   color: white;
   font-weight: 600;
+}
+
+.meta-subvalue {
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
 }
 
 .status-tag {

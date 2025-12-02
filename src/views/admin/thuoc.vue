@@ -393,6 +393,48 @@
               <div class="detail-mota" style="color:#0369a1; line-height:1.7">{{ detailsThuoc.moTa || '—' }}</div>
             </div>
           </div>
+
+          <!-- Reviews Section -->
+          <div class="reviews-section" style="margin-top:24px; padding-top:20px; border-top:1px solid #e5e7eb">
+            <h4 class="section-title" style="color:#0d3d47; font-size:16px; margin-bottom:16px; font-weight:700">
+              ⭐ Đánh giá sản phẩm
+            </h4>
+            
+            <div class="rating-summary" style="display:flex; align-items:center; gap:16px; margin-bottom:20px; background:#fff9c4; padding:16px; border-radius:8px">
+              <div class="average-score" style="text-align:center">
+                <div style="font-size:32px; font-weight:800; color:#f59e0b; line-height:1">{{ averageRating }}</div>
+                <div style="font-size:12px; color:#6b7280">trên 5</div>
+              </div>
+              <div class="stars-display">
+                <el-rate 
+                  :model-value="Number(averageRating)" 
+                  disabled 
+                  show-score 
+                  text-color="#ff9900"
+                  score-template="{value}"
+                />
+                <div style="font-size:13px; color:#4b5563; margin-top:4px">{{ reviews.length }} đánh giá</div>
+              </div>
+            </div>
+
+            <div class="reviews-list" style="max-height: 300px; overflow-y: auto; padding-right: 8px;">
+              <div v-if="reviews.length === 0" style="text-align:center; color:#9ca3af; padding:20px; font-style:italic">
+                Chưa có đánh giá nào.
+              </div>
+              <div v-else v-for="review in reviews" :key="review.maDanhGia" class="review-item" style="border-bottom:1px solid #f3f4f6; padding:12px 0">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px">
+                  <strong style="color:#374151">{{ review.tenKhachHang || 'Khách hàng' }}</strong>
+                  <span style="font-size:12px; color:#9ca3af">{{ formatDate(review.ngayDanhGia) }}</span>
+                </div>
+                <div style="margin-bottom:6px">
+                  <el-rate :model-value="review.soSao" disabled size="small" />
+                </div>
+                <div style="color:#4b5563; font-size:14px; line-height:1.5">
+                  {{ review.noiDung }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid #e5e7eb">
@@ -617,12 +659,49 @@ const viewDetails = async (thuoc) => {
     const payload = resp?.data?.data ?? resp?.data ?? {};
     detailsThuoc.value = payload;
     console.debug('[viewDetails] loaded payload:', payload);
+    await loadReviews(thuoc.maThuoc);
   } catch (error) {
     ElMessage.error('Lỗi khi tải chi tiết thuốc');
     console.error(error);
   } finally {
     loadingDetails.value = false;
   }
+};
+
+const reviews = ref([]);
+const loadReviews = async (maThuoc) => {
+  try {
+    const response = await api.danhgiathuoc.getByThuoc(maThuoc);
+    if (response.data && response.data.status === 1) {
+      reviews.value = response.data.data;
+    } else {
+      reviews.value = [];
+    }
+  } catch (error) {
+    console.error('Load reviews error:', error);
+    reviews.value = [];
+  }
+};
+
+const averageRating = computed(() => {
+  if (detailsThuoc.value?.diemTrungBinh) return parseFloat(detailsThuoc.value.diemTrungBinh).toFixed(1);
+  if (reviews.value.length > 0) {
+    const total = reviews.value.reduce((acc, r) => acc + (r.soSao || 0), 0);
+    return (total / reviews.value.length).toFixed(1);
+  }
+  return 0;
+});
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
 };
 
 const closeDetailsDialog = () => {

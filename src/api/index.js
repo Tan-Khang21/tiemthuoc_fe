@@ -8,6 +8,10 @@ import nhanvienApi from './nhanvien';
 import taikhoanApi from './taikhoan';
 import thuocviewApi from './thuocview';
 import phieuxulyApi from './phieuxulyhoanhuy';
+import danhgiathuocApi from './danhgiathuoc';
+import binhluanApi from './binhluan';
+import simplePaymentApi from './simplePayment';
+import chatApi from './chat';
 
 export default {
   thuoc: thuocApi,
@@ -19,4 +23,8 @@ export default {
   taikhoan: taikhoanApi,
   thuocview: thuocviewApi,
   phieuxuly: phieuxulyApi,
+  danhgiathuoc: danhgiathuocApi,
+  binhluan: binhluanApi,
+  simplePayment: simplePaymentApi,
+  chat: chatApi,
 };

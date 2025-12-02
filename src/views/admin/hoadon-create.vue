@@ -1,13 +1,12 @@
 <template>
-  <div class="invoice-detail-container">
     <!-- Modern Header Card -->
     <el-card class="header-card" shadow="hover">
       <div class="header-content">
         <div class="header-left">
           <div class="invoice-title">
             <el-icon class="title-icon"><Document /></el-icon>
-            <h2 class="title-text">Tạo Hóa đơn mới</h2>
-            <el-tag class="invoice-code" type="success" effect="light">Mới</el-tag>
+            <h2 class="title-text">{{ confirmMode ? 'Xác nhận hóa đơn' : 'Tạo Hóa đơn mới' }}</h2>
+            <el-tag class="invoice-code" type="success" effect="light">{{ confirmMode ? (form.maHD || route.query.maHD || '---') : 'Mới' }}</el-tag>
           </div>
 
           <div class="invoice-meta">
@@ -17,7 +16,7 @@
                 <el-icon class="meta-icon"><Calendar /></el-icon>
                 <div class="meta-content">
                   <span class="meta-label">Ngày lập</span>
-                  <el-date-picker v-model="form.ngayLap" type="date" placeholder="Chọn ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" class="form-input" />
+                  <el-date-picker v-model="form.ngayLap" type="date" placeholder="Chọn ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" class="form-input" :disabled="confirmMode" />
                 </div>
               </div>
 
@@ -46,6 +45,7 @@
                     class="form-input"
                     size="small"
                     popper-class="customer-suggestions"
+                    :disabled="confirmMode"
                   >
                     <template #default="{ item }">
                       <div style="display:flex;justify-content:space-between;gap:12px;">
@@ -61,7 +61,7 @@
                 <el-icon class="meta-icon"><User /></el-icon>
                 <div class="meta-content">
                   <span class="meta-label">Khách hàng *</span>
-                  <el-input v-model="form.tenKH" placeholder="Nhập tên khách hàng" class="form-input" clearable />
+                  <el-input v-model="form.tenKH" placeholder="Nhập tên khách hàng" class="form-input" clearable :disabled="confirmMode" />
                 </div>
               </div>
             </div>
@@ -69,8 +69,11 @@
         </div>
 
         <div class="header-actions">
-          <el-button class="action-btn" size="default" @click="$router.back()">Hủy</el-button>
+          <el-button v-if="!confirmMode" class="action-btn" size="default" @click="$router.back()">Hủy</el-button>
         </div>
+      </div>
+      <div style="margin-top:12px">
+        <el-alert v-if="confirmMode" title="Chế độ Xác nhận: thông tin chỉ hiển thị và không thể chỉnh sửa." type="info" show-icon />
       </div>
     </el-card>
 
@@ -84,14 +87,19 @@
             </el-form-item>
 
             <el-form-item label="Đơn vị nguồn (Tách từ)">
-              <el-select v-model="tachNewUnit" placeholder="Chọn đơn vị nguồn" clearable style="width:100%">
-                <el-option
-                  v-for="g in (items[tachIndex]?.giaThuocs || [])"
-                  :key="g.maGiaThuoc"
-                  :label="g.tenLoaiDonVi + (g.soLuong ? ' (' + g.soLuong + ')' : '')"
-                  :value="g.maLoaiDonVi"
-                />
-              </el-select>
+              <div style="display:flex;gap:8px;align-items:center">
+                <el-select v-model="tachNewUnit" placeholder="Chọn đơn vị nguồn" clearable style="flex:1 1 auto; min-width:220px">
+                  <el-option
+                    v-for="g in (items[tachIndex]?.giaThuocs || [])"
+                    :key="g.maGiaThuoc"
+                    :label="g.tenLoaiDonVi + (g.soLuong ? ' (' + g.soLuong + ')' : '')"
+                    :value="g.maLoaiDonVi"
+                  />
+                </el-select>
+                <div style="flex:0 0 72px; display:flex; justify-content:center;">
+                  <el-input-number :model-value="tachSourceSoLuong" disabled size="small" controls-position="right" style="width:72px; text-align:center" />
+                </div>
+              </div>
             </el-form-item>
 
             <el-form-item label="Chọn ngày">
@@ -159,43 +167,53 @@
         <!-- "Mã thuốc" column removed per request -->
         <el-table-column label="Tên thuốc" min-width="200">
           <template #default="{ row, $index }">
-            <el-select
-              v-model="row.maThuoc"
-              filterable
-              remote
-              reserve-keyword
-              placeholder="Chọn thuốc"
-              :remote-method="remoteSearchMedicine"
-              :loading="medLoading"
-              :value-key="'maThuoc'"
-              @change="() => onMedicineChange(row, $index)"
-              clearable
-            >
-              <el-option
-                v-for="m in filteredMedicines"
-                :key="m.maThuoc"
-                :label="m.tenThuoc"
-                :value="m.maThuoc"
+            <div v-if="!confirmMode">
+              <el-select
+                v-model="row.maThuoc"
+                filterable
+                remote
+                reserve-keyword
+                placeholder="Chọn thuốc"
+                :remote-method="remoteSearchMedicine"
+                :loading="medLoading"
+                :value-key="'maThuoc'"
+                @change="() => onMedicineChange(row, $index)"
+                clearable
               >
-                <div class="medicine-option">
-                  <div class="medicine-option-left">{{ m.tenThuoc }}</div>
-                  <div class="medicine-option-right">{{ (m.thanhPhan || '').slice(0, 150) }}</div>
-                </div>
-              </el-option>
-            </el-select>
+                <el-option
+                  v-for="m in filteredMedicines"
+                  :key="m.maThuoc"
+                  :label="m.tenThuoc"
+                  :value="m.maThuoc"
+                >
+                  <div class="medicine-option">
+                    <div class="medicine-option-left">{{ m.tenThuoc }}</div>
+                    <div class="medicine-option-right">{{ (m.thanhPhan || '').slice(0, 150) }}</div>
+                  </div>
+                </el-option>
+              </el-select>
+            </div>
+            <div v-else>
+              {{ row.tenThuoc || '—' }}
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="Đơn vị" width="140" align="center">
           <template #default="{ row }">
-            <div v-if="row.giaThuocs && row.giaThuocs.length">
-              <el-select v-model="row.maGiaThuoc" placeholder="Đơn vị" size="small" style="width:100%" @change="() => onGiaChange(row)">
-                <el-option
-                  v-for="g in row.giaThuocs"
-                  :key="g.maGiaThuoc"
-                  :label="g.tenLoaiDonVi + (g.soLuong ? ' (' + g.soLuong + ')' : '')"
-                  :value="g.maGiaThuoc"
-                />
-              </el-select>
+            <div v-if="!confirmMode">
+              <div v-if="row.giaThuocs && row.giaThuocs.length">
+                <el-select v-model="row.maGiaThuoc" placeholder="Đơn vị" size="small" style="width:100%" @change="() => onGiaChange(row)">
+                  <el-option
+                    v-for="g in row.giaThuocs"
+                    :key="g.maGiaThuoc"
+                    :label="g.tenLoaiDonVi + (g.soLuong ? ' (' + g.soLuong + ')' : '')"
+                    :value="g.maGiaThuoc"
+                  />
+                </el-select>
+              </div>
+              <div v-else>
+                <div>{{ row.tenLoaiDonVi || row.tenDonVi || '—' }}</div>
+              </div>
             </div>
             <div v-else>
               <div>{{ row.tenLoaiDonVi || row.tenDonVi || '—' }}</div>
@@ -226,7 +244,7 @@
         <el-table-column label="SL" width="100" align="center">
           <template #default="{ row }">
             <div class="cell-sl">
-              <el-input-number v-model="row.soLuong" :min="0" size="small" @change="recalcRow(row)" controls-position="right" style="width:78px" />
+              <el-input-number v-model="row.soLuong" :min="0" size="small" @change="recalcRow(row)" controls-position="right" style="width:78px" :disabled="confirmMode" />
             </div>
           </template>
         </el-table-column>
@@ -277,7 +295,7 @@
 
         <!-- Add-button below table -->
         <div style="display:flex;justify-content:flex-start;padding:12px 16px;border-top:1px solid rgba(0,0,0,0.04);background:#fff;">
-          <el-button class="action-btn add-btn" type="primary" size="default" @click="addEmptyItem">
+          <el-button class="action-btn add-btn" type="primary" size="default" @click="addEmptyItem" :disabled="confirmMode">
             <el-icon><Plus /></el-icon>
             Thêm mặt hàng
           </el-button>
@@ -298,6 +316,7 @@
             placeholder="Không có ghi chú"
             class="note-textarea"
             :autosize="{ minRows: 4, maxRows: 8 }"
+            :disabled="confirmMode"
           />
         </div>
 
@@ -311,18 +330,26 @@
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px">
-        <el-button size="default" @click="$router.back()">Hủy</el-button>
-        <el-button type="success" size="default" @click="payWithQR" :loading="qrLoading">
-          <el-icon><FullScreen /></el-icon>
-          Thanh toán QR
-        </el-button>
-        <el-button type="primary" size="default" @click="submitInvoice">
-          <el-icon><Check /></el-icon>
-          Lưu hóa đơn (Tiền mặt)
-        </el-button>
+        <el-button size="default" @click="onCancel">Hủy</el-button>
+        <template v-if="!confirmMode">
+          <el-button type="success" size="default" @click="payWithQR" :loading="qrLoading">
+            <el-icon><FullScreen /></el-icon>
+            Thanh toán QR
+          </el-button>
+          <el-button type="primary" size="default" @click="() => submitInvoice(1)">
+            <el-icon><Check /></el-icon>
+            Lưu hóa đơn (Tiền mặt)
+          </el-button>
+        </template>
+        <template v-else>
+          <el-button type="primary" size="default" @click="$router.back()">Quay lại</el-button>
+          <el-button type="success" size="default" :loading="confirmLoading" @click="confirmInvoiceOnline">
+            <el-icon><Check /></el-icon>
+            Xác nhận hóa đơn
+          </el-button>
+        </template>
       </div>
     </el-card>
-  </div>
 </template>
 
 <script setup>
@@ -346,7 +373,8 @@ const form = ref({
   tenKH: '',
   soDienThoai: '',
   tenNV: '',
-  ghiChu: ''
+  ghiChu: '',
+  TrangThaiGiaoHang: 0 // default to 'Đã đặt' when creating a new invoice
 });
 
 const items = ref([]);
@@ -480,6 +508,22 @@ const applyTachExpiryOption = (opt) => {
   // Format to YYYY-MM-DD to match value-format of date-picker
   tachNewExpiry.value = d.toISOString().split('T')[0];
 };
+
+// Display SL còn for selected source unit in tach dialog
+const tachSourceSoLuong = computed(() => {
+  const idx = tachIndex.value;
+  const ma = tachNewUnit.value;
+  if (idx == null || idx < 0) return null;
+  const list = (items.value[idx] && items.value[idx].giaThuocs) ? items.value[idx].giaThuocs : [];
+  if (!ma) return null;
+  const g = list.find(x => x.maLoaiDonVi === ma || x.maGiaThuoc === ma);
+  const q = g ? (g.soLuongCon ?? g.soLuong ?? 0) : null;
+  return q;
+});
+const tachSourceSoLuongDisplay = computed(() => {
+  const v = tachSourceSoLuong.value;
+  return v == null ? 'SL còn' : String(v);
+});
 
 const tachItem = (idx) => {
   const row = items.value[idx];
@@ -679,7 +723,7 @@ const ensureMaKH = async () => {
   }
 };
 
-const submitInvoice = async () => {
+const submitInvoice = async (paymentMethod = 1, orderCode = null) => {
   // basic validation
   if (!form.value.tenKH) { ElMessage.warning('Vui lòng nhập tên khách hàng'); return; }
   if (!items.value.length) { ElMessage.warning('Vui lòng thêm ít nhất 1 mặt hàng'); return; }
@@ -698,6 +742,8 @@ const submitInvoice = async () => {
     soDienThoai: form.value.soDienThoai,
     tenNV: form.value.tenNV,
     ghiChu: form.value.ghiChu,
+    TrangThaiGiaoHang: form.value.TrangThaiGiaoHang ?? 0,
+    trangThaiGiaoHang: form.value.TrangThaiGiaoHang ?? 0,
     items: items.value.map(it => ({
       maThuoc: it.maThuoc, 
       tenThuoc: it.tenThuoc, 
@@ -709,24 +755,64 @@ const submitInvoice = async () => {
       thanhTien: it.thanhTien, 
       tenLD: it.tenLD
     })),
-    tongTien: totalAmount.value
+    tongTien: totalAmount.value,
+    paymentMethod: paymentMethod,
+    orderCode: orderCode
   };
 
   try {
+    console.log('Submitting invoice with payload:', payload);
     const resp = await api.hoadon.create(payload);
     const r = (resp && resp.data) ? resp.data : resp;
+    console.log('Create invoice response:', r);
+
     if (r && (r.status === -1 || r.error)) {
       ElMessage.error(r.message || 'Tạo hóa đơn thất bại');
       return;
     }
+    
+    // Check if response contains a paymentUrl (unexpected for Cash)
+    if (r.paymentUrl || r.checkoutUrl || (r.data && (r.data.paymentUrl || r.data.checkoutUrl))) {
+       console.warn('Unexpected payment URL in Cash invoice response:', r);
+       // If we are forcing Cash (paymentMethod=1), we should probably ignore this URL 
+       // unless the backend explicitly failed the cash creation and returned a redirect.
+       // But let's see the log first.
+    }
+
     ElMessage.success('Tạo hóa đơn thành công');
     // Clear draft if exists
     localStorage.removeItem('invoice_draft');
     
     // redirect to detail page if id returned
-    const maHD = r && (r.maHD || r.MaHD || r.data && (r.data.maHD || r.data.MaHD)) ? (r.maHD || r.MaHD || r.data.maHD || r.data.MaHD) : null;
-    if (maHD) router.push(`/admin/hoadon/${encodeURIComponent(maHD)}`);
-    else router.back();
+    let maHD = null;
+    if (r) {
+      // Direct properties
+      if (r.maHD || r.MaHD) maHD = r.maHD || r.MaHD;
+      else if (r.id || r.Id) maHD = r.id || r.Id;
+      
+      // Nested data
+      else if (r.data) {
+        if (typeof r.data === 'string') maHD = r.data;
+        else if (typeof r.data === 'object') {
+          if (r.data.maHD || r.data.MaHD) maHD = r.data.maHD || r.data.MaHD;
+          else if (r.data.id || r.data.Id) maHD = r.data.id || r.data.Id;
+          else if (r.data.invoice && (r.data.invoice.maHD || r.data.invoice.MaHD)) maHD = r.data.invoice.maHD || r.data.invoice.MaHD;
+        }
+      }
+    }
+
+    if (maHD && typeof maHD === 'string' && maHD.startsWith('http')) {
+       console.warn('maHD looks like a URL, ignoring:', maHD);
+       maHD = null;
+    }
+
+    if (maHD) {
+      router.push(`/admin/hoadon/${encodeURIComponent(maHD)}`);
+    } else {
+      // Fallback to list
+      // Suppress warning since the operation was successful
+      router.push('/admin/hoadon');
+    }
   } catch (err) {
     console.error('create hoadon err', err);
     ElMessage.error('Lỗi khi tạo hóa đơn');
@@ -735,6 +821,7 @@ const submitInvoice = async () => {
 
 // --- QR Payment Flow ---
 const qrLoading = ref(false);
+const confirmLoading = ref(false);
 
 const saveDraft = () => {
   const draft = {
@@ -849,8 +936,9 @@ onMounted(async () => {
   if (route.query.paymentResult) {
     restoreDraft();
     if (route.query.paymentResult === 'success') {
-      // Auto submit invoice
-      await submitInvoice();
+      // Auto submit invoice with QR payment method (2) and orderCode
+      const orderCode = route.query.orderCode || route.query.order_code || null;
+      await submitInvoice(2, orderCode);
     } else if (route.query.paymentResult === 'cancel') {
       ElMessage.info('Đã hủy thanh toán QR. Bạn có thể tiếp tục chỉnh sửa.');
     }
@@ -889,7 +977,132 @@ onMounted(async () => {
     if (name) form.value.tenNV = name;
     console.log('hoadon-create init auth.user ->', auth.user, 'form.tenNV ->', form.value.tenNV);
   } catch (e) { console.error('hoadon-create init auth error', e); }
+
+  // If page opened with maHD (edit/view), load invoice data
+  const maHDq = route.query.maHD || route.query.mahd || route.query.MaHD;
+  if (maHDq) {
+    await loadInvoice(maHDq);
+    confirmMode.value = (route.query.confirm === '1' || route.query.confirm === 'true' || route.query.confirm === 1 || route.query.confirm === true);
+  }
 });
+
+const confirmInvoiceOnline = async () => {
+  if (!confirmMode.value) return;
+  if (!form.value.maHD) { ElMessage.warning('Không có mã hóa đơn để xác nhận'); return; }
+  const user = auth.user || auth.currentUser || auth.currentUser?.value || {};
+  const maNV = form.value.maNV || user?.MaNV || user?.maNV || user?.MaTK || '';
+
+  // Build items payload with robust mappings
+  const bodyItems = items.value.map(it => {
+    const maThuoc = it.maThuoc || it.MaThuoc || it.raw?.maThuoc || it.raw?.MaThuoc || '';
+
+    // Determine donVi: prefer explicit maLoaiDonVi, else try to resolve from selected giaThuoc
+    let donViVal = '';
+    if (it.maLoaiDonVi) donViVal = it.maLoaiDonVi;
+    else if (it.maGiaThuoc && Array.isArray(it.giaThuocs) && it.giaThuocs.length) {
+      const gsel = it.giaThuocs.find(x => x.maGiaThuoc === it.maGiaThuoc) || it.giaThuocs[0];
+      donViVal = gsel?.maLoaiDonVi || it.maGiaThuoc || it.tenLoaiDonVi || '';
+    } else if (it.maGiaThuoc) donViVal = it.maGiaThuoc;
+    else donViVal = it.tenLoaiDonVi || it.raw?.maLoaiDonVi || '';
+
+    // Determine maLD: prefer explicit maLD, else try to map from tenLD via lieuDungList
+    let maLDVal = it.maLD || it.MaLD || it.raw?.maLD || null;
+    if (!maLDVal && it.tenLD) {
+      const found = lieuDungList.value.find(x => (x.value || '').toString().trim() === (it.tenLD || '').toString().trim());
+      if (found) maLDVal = found.maLD || null;
+    }
+
+    return {
+      maThuoc: maThuoc,
+      donVi: donViVal,
+      soLuong: Number(it.soLuong) || 0,
+      donGia: Number(it.donGia) || 0,
+      maLD: maLDVal || null,
+      hanSuDung: it.hanSuDung ? (new Date(it.hanSuDung)).toISOString() : null
+    };
+  });
+
+  const payload = {
+    maHD: form.value.maHD || route.query.maHD || null,
+    maNV: maNV,
+    ghiChu: form.value.ghiChu || form.value.GhiChu || route.query.ghiChu || '',
+    items: bodyItems
+  };
+
+  console.debug('ConfirmOnline payload', payload);
+
+  confirmLoading.value = true;
+  try {
+    let resp;
+    if (api.hoadon && typeof api.hoadon.confirmOnline === 'function') {
+      resp = await api.hoadon.confirmOnline(payload);
+    } else {
+      resp = await http.post('/HoaDon/ConfirmOnline', payload);
+    }
+    const r = resp && resp.data ? resp.data : resp;
+    if (r && (r.status === -1 || r.error)) {
+      ElMessage.error(r.message || 'Xác nhận thất bại');
+    } else {
+      ElMessage.success('Xác nhận hóa đơn thành công');
+      // redirect to invoice detail or list
+      const id = payload.maHD;
+      if (id) router.push(`/admin/hoadon/${encodeURIComponent(id)}`);
+      else router.back();
+    }
+  } catch (err) {
+    console.error('confirmInvoiceOnline err', err);
+    ElMessage.error('Lỗi khi gọi API xác nhận');
+  } finally {
+    confirmLoading.value = false;
+  }
+};
+
+// Called when user clicks the top-left "Hủy" button in the footer.
+// When in confirmMode we should call the UpdateStatus API with trangThaiGiaoHang = -1 and include maNV.
+const onCancel = async () => {
+  if (!confirmMode.value) {
+    return router.back();
+  }
+
+  // confirmMode: ask user to confirm cancellation
+  try {
+    // simple confirm dialog
+    const ok = window.confirm('Bạn có chắc muốn hủy hóa đơn này? Hành động này sẽ báo về server.');
+    if (!ok) return;
+
+    if (!form.value.maHD) {
+      ElMessage.warning('Không có mã hóa đơn để hủy');
+      return;
+    }
+
+    const user = auth.user || auth.currentUser || {};
+    const maNV = form.value.maNV || user?.MaNV || user?.maNV || user?.MaTK || '';
+
+    const body = {
+      maHD: form.value.maHD,
+      trangThaiGiaoHang: -1,
+      maNV: maNV
+    };
+
+    confirmLoading.value = true;
+    // prefer api wrapper if available
+    if (api.hoadon && typeof api.hoadon.updateStatus === 'function') {
+      await api.hoadon.updateStatus(body);
+    } else {
+      await http.patch('/HoaDon/UpdateStatus', body);
+    }
+
+    ElMessage.success('Hủy hóa đơn thành công');
+    // go back to list
+    router.back();
+  } catch (err) {
+    console.error('cancelInvoiceOnline err', err);
+    const msg = (err?.response?.data?.message) || (err?.message) || 'Lỗi khi hủy hóa đơn';
+    ElMessage.error(msg);
+  } finally {
+    confirmLoading.value = false;
+  }
+};
 
 // update when MaNV changes
 watch(() => auth.user?.MaNV || auth.user?.maNV, async (ma) => {
@@ -1004,7 +1217,7 @@ const loadLieuDung = async () => {
     const resp = await http.get('/LieuDung');
     const d = resp.data || resp;
     if (d && d.data && Array.isArray(d.data)) {
-      lieuDungList.value = d.data.map(x => ({ value: x.tenLieuDung }));
+      lieuDungList.value = d.data.map(x => ({ value: x.tenLieuDung, maLD: x.maLD || x.MaLD || null }));
     }
   } catch (err) {
     console.error('loadLieuDung err', err);
@@ -1018,15 +1231,120 @@ const querySearchLieuDung = (queryString, cb) => {
   cb(results);
 };
 
+// Confirmation mode: when opened from list to "confirm" an existing invoice
+const confirmMode = ref(false);
+
+const loadInvoice = async (maHD) => {
+  if (!maHD) return;
+  try {
+    let resp;
+    // Prefer detailed endpoint /HoaDon/ChiTiet/:maHD if available
+    if (api.hoadon && typeof api.hoadon.getChiTiet === 'function') {
+      resp = await api.hoadon.getChiTiet(maHD);
+    } else {
+      // Try direct ChiTiet path
+      try {
+        resp = await http.get(`/HoaDon/ChiTiet/${encodeURIComponent(maHD)}`);
+      } catch (e) {
+        // fallback to other endpoints
+        if (api.hoadon && typeof api.hoadon.getById === 'function') {
+          resp = await api.hoadon.getById(maHD);
+        } else if (api.hoadon && typeof api.hoadon.get === 'function') {
+          resp = await api.hoadon.get(maHD);
+        } else {
+          resp = await http.get(`/HoaDon/Details/${encodeURIComponent(maHD)}`);
+        }
+      }
+    }
+
+    const r = resp && resp.data ? resp.data : resp;
+    // Normalize payload shape (sometimes the API wraps in { data: ... })
+    const inv = (r && r.data && typeof r.data === 'object') ? (r.data || r) : r;
+
+    // If the API returns { invoice: {...}, items: [...] } use invoice as the source for header fields
+    const src = inv.invoice || inv;
+
+    // Map main fields from src
+    form.value.ngayLap = src.NgayLap || src.ngayLap || form.value.ngayLap;
+    form.value.maHD = src.MaHD || src.maHD || src.maHd || form.value.maHD || route.query.maHD || route.query.mahd || null;
+    form.value.maKH = src.MaKH || src.maKH || src.maKh || form.value.maKH;
+    form.value.tenKH = src.TenKH || src.tenKH || src.tenKh || form.value.tenKH;
+    form.value.soDienThoai = src.DienThoaiKH || src.dienThoaiKH || src.soDienThoai || form.value.soDienThoai;
+    form.value.tenNV = src.TenNV || src.tenNV || form.value.tenNV;
+    form.value.ghiChu = src.GhiChu || src.ghiChu || src.ghi || form.value.ghiChu;
+
+    // Map items: try several common property names (prefer top-level items when present)
+    const rawItems = inv.items || inv.chiTietHoaDons || inv.chiTiet || inv.data?.items || inv.data?.chiTiet || inv.data || [];
+    const arr = Array.isArray(rawItems) ? rawItems : [];
+    items.value = arr.map(it => ({
+      maThuoc: it.maThuoc || it.MaThuoc || it.maThu || it.productCode || '',
+      tenThuoc: it.tenThuoc || it.TenThuoc || it.ten || it.productName || '',
+      tenLoaiDonVi: it.tenLoaiDonVi || it.TenLoaiDonVi || it.donVi || it.donGiaDonVi || '',
+      soLuongCon: it.soLuongCon ?? it.soLuongTon ?? it.soLuong ?? it.SoLuong ?? 0,
+      hanSuDung: it.hanSuDung || it.HanSuDung || it.hsd || '',
+      soLuong: it.soLuong || it.SoLuong || it.quantity || 1,
+      donGia: it.donGia || it.DonGia || it.price || 0,
+      thanhTien: Number(it.thanhTien || it.ThanhTien || ( (it.soLuong||0) * (it.donGia||0) ) || 0),
+      maGiaThuoc: it.maGiaThuoc || it.MaGiaThuoc || null,
+      tenLD: it.tenLD || it.lieuDung || '' ,
+      giaThuocs: [],
+      raw: it
+    }));
+    // Recalculate rows
+    items.value.forEach(rw => recalcRow(rw));
+    // Fetch giaThuocs for each unique medicine so SL Còn displays correctly
+    try {
+      const uniqueMa = Array.from(new Set(items.value.map(x => x.maThuoc).filter(Boolean)));
+      await Promise.all(uniqueMa.map(async (ma) => {
+        try {
+          const respG = await api.thuoc.getGiaThuocs(ma);
+          const rg = respG && respG.data ? respG.data : respG;
+          const rawG = (rg && rg.data && rg.data.giaThuocs) ? rg.data.giaThuocs : (rg && rg.giaThuocs) ? rg.giaThuocs : (Array.isArray(rg) ? rg : []);
+          const mapped = (Array.isArray(rawG) ? rawG : []).map(g => ({
+            maGiaThuoc: g.maGiaThuoc || g.MaGiaThuoc || null,
+            maLoaiDonVi: g.maLoaiDonVi || g.MaLoaiDonVi || null,
+            tenLoaiDonVi: g.tenLoaiDonVi || g.TenLoaiDonVi || g.tenDonVi || '',
+            soLuong: g.soLuong ?? g.SoLuong ?? 1,
+            donGia: g.donGia ?? g.DonGia ?? 0,
+            trangThai: typeof g.trangThai === 'boolean' ? g.trangThai : (g.trangThai === 'true' || g.TrangThai === true),
+            soLuongCon: g.soLuongCon ?? g.soLuongTon ?? 0,
+            nearestHanSuDung: g.nearestHanSuDung || g.NearestHanSuDung || g.hanSuDung || null,
+            raw: g
+          }));
+
+          // attach to matching items
+          items.value.forEach(it => {
+            if (!it.maThuoc || it.maThuoc !== ma) return;
+            it.giaThuocs = mapped;
+            // try to match item's maLoaiDonVi -> maLoaiDonVi may be in item.maLoaiDonVi
+            const preferMaLoai = it.maLoaiDonVi || it.maLoaiDonVi || null;
+            let sel = null;
+            if (preferMaLoai) sel = mapped.find(x => x.maLoaiDonVi === preferMaLoai || x.maGiaThuoc === preferMaLoai);
+            if (!sel) sel = mapped.find(x => x.trangThai) || mapped[0] || null;
+            if (sel) {
+              it.soLuongCon = sel.soLuongCon ?? sel.soLuong ?? it.soLuongCon;
+              it.maGiaThuoc = it.maGiaThuoc || sel.maGiaThuoc;
+              it.tenLoaiDonVi = it.tenLoaiDonVi || sel.tenLoaiDonVi;
+              it.donGia = it.donGia || sel.donGia;
+              // If item has no explicit hanSuDung, use nearestHanSuDung from giaThuoc
+              it.hanSuDung = it.hanSuDung || sel.nearestHanSuDung || it.hanSuDung || '';
+            }
+          });
+        } catch (e) {
+          console.error('load giaThuocs for', ma, e);
+        }
+      }));
+    } catch (e) {
+      console.error('load giaThuocs batch err', e);
+    }
+  } catch (err) {
+    console.error('loadInvoice err', err);
+  }
+};
+
 </script>
 
 <style scoped>
-/* Main Container */
-.invoice-detail-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 24px;
-}
 
 /* Header Card */
 .header-card {

@@ -134,6 +134,7 @@
       </div>
     </footer>
     <!-- Footer Area End -->
+    <ChatWidget />
   </div>
 </template>
 
@@ -142,6 +143,7 @@ import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore, useCartStore } from '@/store';
 import { ElMessage } from 'element-plus';
+import ChatWidget from '@/components/ChatWidget.vue';
 
 const route = useRoute();
 const router = useRouter();

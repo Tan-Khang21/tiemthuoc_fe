@@ -50,15 +50,14 @@
               <h1 class="product-title">{{ thuoc.tenThuoc }}</h1>
               
               <div class="product-rating">
-                <div class="stars">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star-half-alt"></i>
-                </div>
-                <span class="rating-score">4.5</span>
-                <span class="rating-count">(128 đánh giá)</span>
+                <el-rate 
+                  :model-value="Number(averageRating)" 
+                  disabled 
+                  show-score 
+                  text-color="#ff9900"
+                  score-template="{value}"
+                />
+                <span class="rating-count">({{ reviewCount }} đánh giá)</span>
                 <span class="divider">|</span>
                 <span class="sold-count">
                   <i class="fas fa-shopping-cart"></i> Đã bán 850+
@@ -275,6 +274,172 @@
                 </table>
               </div>
             </el-tab-pane>
+
+            <el-tab-pane label="Đánh giá" name="reviews">
+              <div class="tab-content">
+                <div class="reviews-header">
+                  <h3>Đánh giá sản phẩm</h3>
+                  <div class="user-review-action" v-if="authStore.isAuthenticated">
+                      <button v-if="isEligible" @click="openReviewForm" class="btn-review">
+                        <i class="fas fa-pen"></i>
+                        {{ userReview?.daDanhGia ? 'Sửa đánh giá' : 'Viết đánh giá' }}
+                      </button>
+                  </div>
+                </div>
+
+                <!-- Review Form -->
+                <div v-if="showReviewForm" class="review-form-container">
+                    <div class="review-form-card">
+                        <h4>{{ isEditing ? 'Cập nhật đánh giá' : 'Viết đánh giá' }}</h4>
+                        <div class="form-group">
+                            <label>Đánh giá của bạn:</label>
+                            <el-rate v-model="reviewForm.soSao" size="large" />
+                        </div>
+                        <div class="form-group">
+                            <label>Nội dung:</label>
+                            <el-input 
+                                type="textarea" 
+                                v-model="reviewForm.noiDung" 
+                                :rows="4" 
+                                placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..." 
+                            />
+                        </div>
+                        <div class="form-actions">
+                            <button @click="showReviewForm = false" class="btn-cancel">Hủy</button>
+                            <button @click="submitReview" class="btn-submit">Gửi đánh giá</button>
+                            <button v-if="isEditing" @click="deleteReview" class="btn-delete">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews List -->
+                <div class="reviews-list">
+                    <div v-if="reviews.length === 0" class="no-reviews">
+                        <i class="fas fa-comment-slash"></i>
+                        <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+                    </div>
+                    <div v-else class="reviews-container">
+                        <div v-for="review in reviews" :key="review.maDanhGia" class="review-item">
+                            <div class="review-avatar">
+                                <div class="avatar-placeholder">
+                                    {{ (review.tenKhachHang || 'K').charAt(0).toUpperCase() }}
+                                </div>
+                            </div>
+                            <div class="review-main">
+                                <div class="review-header-row">
+                                    <span class="reviewer-name">{{ review.tenKhachHang || 'Khách hàng' }}</span>
+                                    <span class="review-date">{{ formatDate(review.ngayDanhGia) }}</span>
+                                </div>
+                                <div class="review-rating">
+                                    <el-rate :model-value="review.soSao" disabled text-color="#ff9900" size="small" />
+                                </div>
+                                <div class="review-content-text">
+                                    {{ review.noiDung }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="Hỏi đáp" name="qa">
+              <div class="tab-content">
+                <div class="qa-header">
+                  <h3>Hỏi đáp về sản phẩm</h3>
+                  <p class="qa-subtitle">Đặt câu hỏi cho chúng tôi, nhân viên sẽ giải đáp thắc mắc của bạn.</p>
+                </div>
+
+                <!-- Question Form -->
+                <div class="qa-form-container" v-if="authStore.isAuthenticated">
+                    <div class="qa-input-wrapper">
+                        <div class="user-avatar-small">
+                            {{ (authStore.user?.HoTen || 'K').charAt(0).toUpperCase() }}
+                        </div>
+                        <el-input 
+                            v-model="newQuestion" 
+                            placeholder="Viết câu hỏi của bạn..." 
+                            class="qa-input"
+                            @keyup.enter="submitQuestion"
+                        >
+                            <template #append>
+                                <el-button @click="submitQuestion" :loading="submittingComment">
+                                    <i class="fas fa-paper-plane"></i>
+                                </el-button>
+                            </template>
+                        </el-input>
+                    </div>
+                </div>
+                <div v-else class="login-prompt">
+                    <router-link to="/login">Đăng nhập</router-link> để đặt câu hỏi.
+                </div>
+
+                <!-- Questions List -->
+                <div class="qa-list">
+                    <div v-if="comments.length === 0" class="no-qa">
+                        <i class="fas fa-question-circle"></i>
+                        <p>Chưa có câu hỏi nào. Hãy là người đầu tiên đặt câu hỏi!</p>
+                    </div>
+                    <div v-else class="qa-items">
+                        <!-- Iterate over threads (each 'comment' is a thread with flattened items) -->
+                        <div v-for="thread in comments" :key="thread.root.maBL" class="qa-thread">
+                            <div class="qa-thread-items">
+                                <div v-for="(item, index) in thread.items" :key="item.maBL" class="qa-item" :class="{'is-reply': index > 0, 'is-root': index === 0}">
+                                    <div class="qa-main">
+                                        <div class="qa-avatar" :class="{'is-staff': item.maNV}">
+                                            <i class="fas fa-user-shield" v-if="item.maNV"></i>
+                                            <span v-else>{{ (item.tenNguoiBinhLuan || 'K').charAt(0).toUpperCase() }}</span>
+                                        </div>
+                                        <div class="qa-content-wrapper">
+                                            <div class="qa-meta">
+                                                <span class="qa-author" :class="{'is-staff-name': item.maNV}">
+                                                    {{ item.tenNguoiBinhLuan || (item.maNV ? 'Nhân viên' : 'Khách hàng') }}
+                                                    <span v-if="item.maNV" class="staff-badge">QTV</span>
+                                                </span>
+                                                <span class="qa-time">{{ formatTimeAgo(item.ngayBinhLuan) }}</span>
+                                            </div>
+                                            <div class="qa-text">{{ item.noiDung }}</div>
+                                            
+                                            <div class="qa-actions" v-if="authStore.isAuthenticated">
+                                                <!-- Only show reply button on the last item of the thread -->
+                                                <button 
+                                                    class="btn-reply-text" 
+                                                    @click="toggleReplyForm(item.maBL)"
+                                                    v-if="index === thread.items.length - 1"
+                                                >
+                                                    Trả lời
+                                                </button>
+                                                <button 
+                                                    class="btn-delete-text" 
+                                                    v-if="canDeleteComment(item)"
+                                                    @click="deleteComment(item.maBL)"
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </div>
+
+                                            <!-- Reply Form -->
+                                            <div v-if="replyingTo === item.maBL" class="reply-form">
+                                                <el-input 
+                                                    v-model="replyContent" 
+                                                    placeholder="Viết câu trả lời..." 
+                                                    size="small"
+                                                    @keyup.enter="submitReply(item.maBL)"
+                                                >
+                                                    <template #append>
+                                                        <el-button @click="submitReply(item.maBL)" :loading="submittingComment">Gửi</el-button>
+                                                    </template>
+                                                </el-input>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </div>
 
@@ -311,15 +476,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/api';
-import { useCartStore } from '@/store';
-import { ElMessage } from 'element-plus';
+import { useCartStore, useAuthStore } from '@/store';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 
 const loading = ref(false);
 const thuoc = ref(null);
@@ -329,9 +495,47 @@ const relatedProducts = ref([]);
 const selectedUnit = ref(null); // Đơn vị tính được chọn
 const availableUnits = ref([]); // Danh sách đơn vị tính khả dụng
 
+// Computed
+const averageRating = computed(() => {
+  if (thuoc.value?.diemTrungBinh) return parseFloat(thuoc.value.diemTrungBinh).toFixed(1);
+  if (reviews.value.length > 0) {
+    const total = reviews.value.reduce((acc, r) => acc + (r.soSao || 0), 0);
+    return (total / reviews.value.length).toFixed(1);
+  }
+  return 0;
+});
+
+const reviewCount = computed(() => {
+  if (thuoc.value?.soLuotDanhGia) return thuoc.value.soLuotDanhGia;
+  return reviews.value.length;
+});
+
+// Review state
+const reviews = ref([]);
+const userReview = ref(null);
+const isEligible = ref(false);
+const showReviewForm = ref(false);
+const isEditing = ref(false);
+const reviewForm = ref({
+  soSao: 5,
+  noiDung: ''
+});
+
+// QA state
+const comments = ref([]);
+const newQuestion = ref('');
+const replyingTo = ref(null);
+const replyContent = ref('');
+const submittingComment = ref(false);
+
 onMounted(async () => {
   await loadThuocDetail();
   await loadRelatedProducts();
+  await loadReviews();
+  await loadComments();
+  if (authStore.isAuthenticated) {
+    await checkEligibility();
+  }
 });
 
 const loadThuocDetail = async () => {
@@ -472,6 +676,272 @@ const formatPrice = (price) => {
 const formatPriceShort = (price) => {
   if (!price || price === 0) return '0 đ';
   return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(date);
+};
+
+// Review methods
+const loadReviews = async () => {
+  try {
+    const maThuoc = route.params.maThuoc;
+    const response = await api.danhgiathuoc.getByThuoc(maThuoc);
+    if (response.data && response.data.status === 1) {
+      reviews.value = response.data.data;
+    }
+  } catch (error) {
+    console.error('Load reviews error:', error);
+  }
+};
+
+const checkEligibility = async () => {
+  if (!authStore.user?.MaKH) return;
+  try {
+    const maKh = authStore.user.MaKH;
+    const response = await api.danhgiathuoc.getEligible(maKh);
+    if (response.data && response.data.status === 1) {
+      const eligibleList = response.data.data;
+      const currentProduct = eligibleList.find(p => p.maThuoc === route.params.maThuoc);
+      
+      if (currentProduct) {
+        isEligible.value = true;
+        userReview.value = currentProduct;
+      } else {
+        isEligible.value = false;
+        userReview.value = null;
+      }
+    }
+  } catch (error) {
+    console.error('Check eligibility error:', error);
+  }
+};
+
+const openReviewForm = async () => {
+  if (userReview.value && userReview.value.daDanhGia) {
+    isEditing.value = true;
+    // Try to find review content
+    if (userReview.value.maDanhGia) {
+        try {
+            const res = await api.danhgiathuoc.getById(userReview.value.maDanhGia);
+            if (res.data && res.data.status === 1) {
+                const reviewData = res.data.data;
+                reviewForm.value.soSao = reviewData.soSao;
+                reviewForm.value.noiDung = reviewData.noiDung;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+  } else {
+    isEditing.value = false;
+    reviewForm.value = { soSao: 5, noiDung: '' };
+  }
+  showReviewForm.value = true;
+};
+
+const submitReview = async () => {
+  try {
+    const data = {
+      maKH: authStore.user.MaKH,
+      maThuoc: route.params.maThuoc,
+      soSao: reviewForm.value.soSao,
+      noiDung: reviewForm.value.noiDung
+    };
+    
+    let response;
+    if (isEditing.value && userReview.value?.maDanhGia) {
+       response = await api.danhgiathuoc.update(userReview.value.maDanhGia, {
+         soSao: reviewForm.value.soSao,
+         noiDung: reviewForm.value.noiDung
+       });
+    } else {
+       response = await api.danhgiathuoc.upsert(data);
+    }
+
+    if (response.data && response.data.status === 1) {
+      ElMessage.success(isEditing.value ? 'Cập nhật đánh giá thành công' : 'Đánh giá thành công');
+      showReviewForm.value = false;
+      await loadReviews();
+      await checkEligibility();
+    } else {
+      ElMessage.error(response.data?.message || 'Có lỗi xảy ra');
+    }
+  } catch (error) {
+    ElMessage.error('Có lỗi xảy ra');
+  }
+};
+
+const deleteReview = async () => {
+    if (!userReview.value?.maDanhGia) return;
+    
+    try {
+        await ElMessageBox.confirm('Bạn có chắc chắn muốn xóa đánh giá này?', 'Xác nhận', {
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            type: 'warning'
+        });
+        
+        const res = await api.danhgiathuoc.delete(userReview.value.maDanhGia);
+        if (res.data && res.data.data === true) {
+            ElMessage.success('Xóa đánh giá thành công');
+            showReviewForm.value = false;
+            await loadReviews();
+            await checkEligibility();
+        } else {
+             ElMessage.error('Xóa thất bại');
+        }
+    } catch (e) {
+        if (e !== 'cancel') {
+            ElMessage.error('Lỗi khi xóa đánh giá');
+        }
+    }
+};
+
+// QA Methods
+const loadComments = async () => {
+  try {
+    const maThuoc = route.params.maThuoc;
+    const response = await api.binhluan.getByThuoc(maThuoc);
+    if (response.data && response.data.status === 1) {
+      const rawComments = response.data.data || [];
+      // Flatten each thread
+      comments.value = rawComments.map(root => {
+        const items = [];
+        const traverse = (node) => {
+          items.push(node);
+          if (node.replies && node.replies.length > 0) {
+            node.replies.forEach(child => traverse(child));
+          }
+        };
+        traverse(root);
+        // Sort items by time
+        items.sort((a, b) => new Date(a.ngayBinhLuan) - new Date(b.ngayBinhLuan));
+        return { root, items };
+      });
+    }
+  } catch (error) {
+    console.error('Load comments error:', error);
+  }
+};
+
+const submitQuestion = async () => {
+  if (!newQuestion.value.trim()) return;
+  
+  submittingComment.value = true;
+  try {
+    const data = {
+      maThuoc: route.params.maThuoc,
+      maKH: authStore.user.MaKH,
+      noiDung: newQuestion.value,
+      traLoiChoBinhLuan: null
+    };
+    
+    const response = await api.binhluan.create(data);
+    if (response.data && response.data.status === 1) {
+      ElMessage.success('Đã gửi câu hỏi');
+      newQuestion.value = '';
+      await loadComments();
+    } else {
+      ElMessage.error(response.data?.message || 'Có lỗi xảy ra');
+    }
+  } catch (error) {
+    ElMessage.error('Có lỗi xảy ra');
+  } finally {
+    submittingComment.value = false;
+  }
+};
+
+const toggleReplyForm = (maBL) => {
+  if (replyingTo.value === maBL) {
+    replyingTo.value = null;
+    replyContent.value = '';
+  } else {
+    replyingTo.value = maBL;
+    replyContent.value = '';
+  }
+};
+
+const submitReply = async (parentMaBL) => {
+  if (!replyContent.value.trim()) return;
+  
+  submittingComment.value = true;
+  try {
+    const data = {
+      maThuoc: route.params.maThuoc,
+      maKH: authStore.user.MaKH,
+      noiDung: replyContent.value,
+      traLoiChoBinhLuan: parentMaBL
+    };
+    
+    const response = await api.binhluan.create(data);
+    if (response.data && response.data.status === 1) {
+      ElMessage.success('Đã gửi câu trả lời');
+      replyingTo.value = null;
+      replyContent.value = '';
+      await loadComments();
+    } else {
+      ElMessage.error(response.data?.message || 'Có lỗi xảy ra');
+    }
+  } catch (error) {
+    ElMessage.error('Có lỗi xảy ra');
+  } finally {
+    submittingComment.value = false;
+  }
+};
+
+const deleteComment = async (maBL) => {
+    try {
+        await ElMessageBox.confirm('Bạn có chắc chắn muốn xóa bình luận này?', 'Xác nhận', {
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            type: 'warning'
+        });
+        
+        const res = await api.binhluan.delete(maBL);
+        if (res.data && res.data.data === true) {
+            ElMessage.success('Xóa bình luận thành công');
+            await loadComments();
+        } else {
+             ElMessage.error('Xóa thất bại');
+        }
+    } catch (e) {
+        if (e !== 'cancel') {
+            ElMessage.error('Lỗi khi xóa bình luận');
+        }
+    }
+};
+
+const canDeleteComment = (comment) => {
+    // User can delete their own comments
+    if (authStore.user?.MaKH && comment.maKH === authStore.user.MaKH) return true;
+    // Admin can delete any
+    if (authStore.isAdmin) return true;
+    return false;
+};
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 60) return 'Vừa xong';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+  
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(date);
 };
 </script>
 
@@ -1423,5 +1893,391 @@ const formatPriceShort = (price) => {
   .main-image img {
     height: 300px;
   }
+}
+
+/* Reviews */
+.reviews-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.btn-review {
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.btn-review:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(14, 207, 224, 0.3);
+}
+
+.review-form-container {
+  margin-bottom: 40px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.review-form-card {
+  background: #f8f9fa;
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.review-form-card h4 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+.btn-submit {
+  background: #0ecfe0;
+  color: #fff;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-delete {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.reviews-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-item {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.review-item:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 20px;
+}
+
+.review-main {
+  flex: 1;
+}
+
+.review-header-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.reviewer-name {
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.review-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.review-rating {
+  margin-bottom: 10px;
+}
+
+.review-content-text {
+  color: #555;
+  line-height: 1.6;
+}
+
+.no-reviews {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.no-reviews i {
+  font-size: 40px;
+  margin-bottom: 15px;
+  color: #ddd;
+}
+
+/* QA Styles */
+.qa-header {
+  margin-bottom: 25px;
+}
+
+.qa-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.qa-form-container {
+  margin-bottom: 30px;
+}
+
+.qa-input-wrapper {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.user-avatar-small {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.qa-input .el-input-group__append {
+  padding: 0 15px;
+  background-color: #0ecfe0;
+  color: #fff;
+  border-color: #0ecfe0;
+}
+
+.qa-input .el-input-group__append button {
+  color: #fff;
+  margin: 0;
+}
+
+.login-prompt {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.login-prompt a {
+  color: #0ecfe0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.qa-thread {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f2f5;
+  padding-bottom: 20px;
+}
+
+.qa-thread:last-child {
+  border-bottom: none;
+}
+
+.qa-item {
+  background: #fff;
+  margin-bottom: 10px;
+}
+
+.qa-item.is-root {
+  /* Highlight root comment */
+  background-color: #f9f9f9;
+  border-left: 3px solid #0ecfe0;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.qa-item.is-reply {
+  /* No indentation per user request "cùng cấp" */
+  margin-left: 0;
+  padding-left: 10px; /* Slight padding to align with root content if needed, or just keep flat */
+}
+
+.qa-main {
+  display: flex;
+  gap: 15px;
+}
+
+.qa-avatar {
+  width: 40px;
+  height: 40px;
+  background: #f0f2f5;
+  color: #666;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.qa-avatar.is-staff {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: #fff;
+}
+
+.qa-content-wrapper {
+  flex: 1;
+}
+
+.qa-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.qa-author {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.is-staff-name {
+  color: #17a2b8;
+}
+
+.staff-badge {
+  background: #17a2b8;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.qa-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.qa-text {
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.qa-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.btn-reply-text,
+.btn-delete-text {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-reply-text {
+  color: #666;
+}
+
+.btn-reply-text:hover {
+  color: #0ecfe0;
+}
+
+.btn-delete-text {
+  color: #999;
+}
+
+.btn-delete-text:hover {
+  color: #ff4d4f;
+}
+
+.reply-form {
+  margin: 10px 0 15px;
+  animation: fadeIn 0.3s;
+}
+
+.no-qa {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.no-qa i {
+  font-size: 40px;
+  margin-bottom: 15px;
+  color: #ddd;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
