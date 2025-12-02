@@ -10,7 +10,7 @@
               <span style="font-size:12px; color:#6c757d">Quản Trị Hệ Thống</span>
             </div>
           </template>
-          <div class="logo logo-with-img" slot="reference">
+          <div class="logo logo-with-img" slot="reference" @click="goToStatistics" style="cursor: pointer;">
             <img class="logo-img" :src="logoImage" alt="Medion Logo" />
             <h2>MEDION ADMIN</h2>
             <p>Quản Trị Hệ Thống</p>
@@ -70,7 +70,7 @@
             <!-- Kho Thuốc with submenu: Kho Thuốc / Quy đổi / Hủy thuốc -->
             <div class="menu-item-custom" @click="khoOpen = !khoOpen" style="margin-bottom:6px">
               <i class="fas fa-warehouse"></i>
-              <span>Kho Thuốc</span>
+              <span> Kho Thuốc</span>
               <i :class="['fas', khoOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
             </div>
             <div v-show="khoOpen" class="custom-submenu">
@@ -112,7 +112,7 @@
           <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
           <div class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
             <i class="fas fa-chart-pie"></i>
-            <span>Tổng Hợp</span>
+            <span> Tổng Hợp</span>
             <i :class="['fas', summaryOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
           </div>
 
@@ -231,7 +231,8 @@ const currentPageName = computed(() => {
     '/admin/loaidonvi': 'Loại Đơn Vị',
     '/admin/loaithuoc': 'Loại Thuốc',
     '/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý',
-    '/admin/binhluan': 'Bình Luận & Hỏi Đáp'
+    '/admin/binhluan': 'Bình Luận & Hỏi Đáp',
+    '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí'
   };
   return names[route.path] || 'Admin';
 });
@@ -268,6 +269,10 @@ const hoadonOpen = ref(false);
 
 const goToPage = (path) => {
   router.push(path);
+};
+
+const goToStatistics = () => {
+  router.push('/admin/thong-ke');
 };
 </script>
 

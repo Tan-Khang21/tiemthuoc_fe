@@ -253,34 +253,56 @@
 
 
     <!-- Detail Dialog -->
-    <el-dialog v-model="detailDialog" width="700px" :close-on-click-modal="false">
+    <el-dialog v-model="detailDialog" width="720px" :close-on-click-modal="false" custom-class="modern-dialog">
       <template #title>
-        <div style="display:flex; align-items:center; gap:12px">
-          <h4 style="margin:0">Chi tiết thuốc</h4>
-          <small style="color:#666">{{ detailItem?.MaThuoc || '' }}</small>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-prescription-bottle dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Chi tiết thuốc</div>
+              <div class="dialog-subtitle">{{ detailItem?.MaThuoc || '' }}</div>
+            </div>
+          </div>
         </div>
       </template>
-      <div v-if="detailItem">
-        <el-descriptions column="2" border>
-          <el-descriptions-item label="Mã thuốc">{{ detailItem.MaThuoc }}</el-descriptions-item>
-          <el-descriptions-item label="Tên thuốc">{{ detailItem.TenThuoc }}</el-descriptions-item>
-          <el-descriptions-item label="Lô">{{ detailItem.MaLo }}</el-descriptions-item>
-          <el-descriptions-item label="Số lượng">{{ detailItem.SoLuong }} {{ detailItem.DonVi || '' }}</el-descriptions-item>
-          <el-descriptions-item label="Ghi chú" :span="2">{{ detailItem.GhiChu || 'Không có' }}</el-descriptions-item>
-        </el-descriptions>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="detailItem">
+            <el-descriptions column="2" border>
+              <el-descriptions-item label="Mã thuốc">{{ detailItem.MaThuoc }}</el-descriptions-item>
+              <el-descriptions-item label="Tên thuốc">{{ detailItem.TenThuoc }}</el-descriptions-item>
+              <el-descriptions-item label="Lô">{{ detailItem.MaLo }}</el-descriptions-item>
+              <el-descriptions-item label="Số lượng">{{ detailItem.SoLuong }} {{ detailItem.DonVi || '' }}</el-descriptions-item>
+              <el-descriptions-item label="Ghi chú" :span="2">{{ detailItem.GhiChu || 'Không có' }}</el-descriptions-item>
+            </el-descriptions>
+          </div>
+        </el-card>
       </div>
       <template #footer>
-        <div style="text-align:right">
-          <el-button @click="detailDialog = false">Đóng</el-button>
+        <div class="dialog-footer">
+          <el-button plain @click="detailDialog = false">Đóng</el-button>
           <el-button type="primary" @click="goToEdit(detailItem)">Xử lý chi tiết</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- Yêu cầu xử lý Detail Dialog -->
-    <el-dialog v-model="ycDetailDialog" title="Chi tiết yêu cầu xử lý" width="70%" :close-on-click-modal="true">
-      <div v-if="ycDetailLoading" style="padding:20px; text-align:center; color:#666">Đang tải...</div>
-      <div v-else-if="ycDetailPhieu">
+    <el-dialog v-model="ycDetailDialog" width="78%" :close-on-click-modal="true" custom-class="modern-dialog">
+      <template #title>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-file-alt dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Chi tiết yêu cầu xử lý</div>
+              <div class="dialog-subtitle">Mã: {{ ycDetailPhieu?.maPXH || ycDetailPhieu?.MaPXH || '' }}</div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="ycDetailLoading" style="padding:20px; text-align:center; color:#666">Đang tải...</div>
+          <div v-else-if="ycDetailPhieu">
         <div v-if="!ycEditMode">
           <el-descriptions column="2" border>
             <el-descriptions-item label="Mã PXH">{{ ycDetailPhieu.maPXH || ycDetailPhieu.MaPXH || '' }}</el-descriptions-item>
@@ -349,9 +371,11 @@
         </div>
       </div>
       <div v-else style="padding:20px; text-align:center; color:#666">Không có dữ liệu</div>
+        </el-card>
+      </div>
       <template #footer>
-        <div style="text-align:right">
-          <el-button @click="() => { ycEditMode = false; ycDetailDialog = false }">Đóng</el-button>
+        <div class="dialog-footer">
+          <el-button plain @click="() => { ycEditMode = false; ycDetailDialog = false }">Đóng</el-button>
           <template v-if="!ycEditMode">
             <el-button type="primary" size="small" @click="startApprove">Duyệt</el-button>
           </template>
@@ -364,139 +388,203 @@
     </el-dialog>
 
     <!-- Quick Cancel Dialog -->
-    <el-dialog v-model="cancelDialog" title="Xác nhận huỷ nhanh" width="500px" :close-on-click-modal="false">
-      <div v-if="cancelItem">
-        <el-alert title="Hành động này sẽ tạo phiếu huỷ cho toàn bộ số lượng còn lại của lô này." type="warning" :closable="false" show-icon style="margin-bottom:12px" />
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="Thuốc">{{ cancelItem.tenThuoc }}</el-descriptions-item>
-          <el-descriptions-item label="Lô">{{ cancelItem.maLo }}</el-descriptions-item>
-          <el-descriptions-item label="Số lượng huỷ">{{ cancelItem.soLuongCon }} {{ cancelItem.tenLoaiDonViGoc }}</el-descriptions-item>
-          <el-descriptions-item label="Hạn sử dụng">{{ formatDate(cancelItem.hanSuDung) }}</el-descriptions-item>
-        </el-descriptions>
-        <div style="margin-top:16px">
-          <label style="display:block; margin-bottom:4px; font-weight:600">Lý do huỷ:</label>
-          <el-input v-model="cancelReason" placeholder="Nhập lý do huỷ..." type="textarea" :rows="2" />
+    <el-dialog v-model="cancelDialog" width="560px" :close-on-click-modal="false" custom-class="modern-dialog">
+      <template #title>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-exclamation-triangle dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Xác nhận huỷ nhanh</div>
+            </div>
+          </div>
         </div>
+      </template>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="cancelItem">
+            <el-alert title="Hành động này sẽ tạo phiếu huỷ cho toàn bộ số lượng còn lại của lô này." type="warning" :closable="false" show-icon style="margin-bottom:12px" />
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="Thuốc">{{ cancelItem.tenThuoc }}</el-descriptions-item>
+              <el-descriptions-item label="Lô">{{ cancelItem.maLo }}</el-descriptions-item>
+              <el-descriptions-item label="Số lượng huỷ">{{ cancelItem.soLuongCon }} {{ cancelItem.tenLoaiDonViGoc }}</el-descriptions-item>
+              <el-descriptions-item label="Hạn sử dụng">{{ formatDate(cancelItem.hanSuDung) }}</el-descriptions-item>
+            </el-descriptions>
+            <div style="margin-top:16px">
+              <label style="display:block; margin-bottom:4px; font-weight:600">Lý do huỷ:</label>
+              <el-input v-model="cancelReason" placeholder="Nhập lý do huỷ..." type="textarea" :rows="2" />
+            </div>
+          </div>
+        </el-card>
       </div>
       <template #footer>
-        <el-button @click="cancelDialog = false">Đóng</el-button>
-        <el-button type="danger" :loading="cancelLoading" @click="submitQuickCancel">Xác nhận huỷ</el-button>
+        <div class="dialog-footer">
+          <el-button plain @click="cancelDialog = false">Đóng</el-button>
+          <el-button type="danger" :loading="cancelLoading" @click="submitQuickCancel">Xác nhận huỷ</el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- Create Cancel Request Dialog -->
-    <el-dialog v-model="createCancelDialog" title="Tạo phiếu yêu cầu huỷ" width="90%" :close-on-click-modal="false">
-      <div v-if="createCancelItems.length">
-        <el-table :data="createCancelItems" style="width:100%; table-layout: fixed" size="small" border>
-          <el-table-column label="Lô" prop="maLo" width="160" />
-          <el-table-column label="Mã thuốc" prop="maThuoc" width="120" />
-          <el-table-column label="Tên thuốc" prop="tenThuoc" min-width="200" />
-          <el-table-column label="Đơn vị" prop="tenLoaiDonViGoc" width="120">
-            <template #default="{ row }">{{ row.tenLoaiDonViGoc || row.tenLoaiDonVi || row.donVi || '' }}</template>
-          </el-table-column>
-          <el-table-column label="Số lượng còn" prop="soLuongCon" width="120">
-            <template #default="{ row }">
-              <span class="so-luong">{{ row.soLuongCon }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Hủy về" width="140">
-            <template #default="{ row }">
-              <span>{{ row.loaiXuLy ? 'Hoàn lại' : 'Huỷ' }}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div style="margin-top:12px">
-          <label style="display:block; margin-bottom:6px; font-weight:600">Ghi chú</label>
-          <el-input type="textarea" v-model="ghiChuCancel" :rows="3" placeholder="Ghi chú cho phiếu huỷ (tuỳ chọn)" />
+    <el-dialog v-model="createCancelDialog" width="92%" :close-on-click-modal="false" custom-class="modern-dialog">
+      <template #title>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-file-invoice-dollar dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Tạo phiếu yêu cầu huỷ</div>
+              <div class="dialog-subtitle">Chọn các lô cần xử lý</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div v-else style="padding:20px; text-align:center; color:#666">Chưa có lô nào được chọn.</div>
+      </template>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="createCancelItems.length">
+            <el-table :data="createCancelItems" style="width:100%; table-layout: fixed" size="small" border>
+              <el-table-column label="Lô" prop="maLo" width="160" />
+              <el-table-column label="Mã thuốc" prop="maThuoc" width="120" />
+              <el-table-column label="Tên thuốc" prop="tenThuoc" min-width="200" />
+              <el-table-column label="Đơn vị" prop="tenLoaiDonViGoc" width="120">
+                <template #default="{ row }">{{ row.tenLoaiDonViGoc || row.tenLoaiDonVi || row.donVi || '' }}</template>
+              </el-table-column>
+              <el-table-column label="Số lượng còn" prop="soLuongCon" width="120">
+                <template #default="{ row }">
+                  <span class="so-luong">{{ row.soLuongCon }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="Hủy về" width="140">
+                <template #default="{ row }">
+                  <span>{{ row.loaiXuLy ? 'Hoàn lại' : 'Huỷ' }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
 
+            <div style="margin-top:12px">
+              <label style="display:block; margin-bottom:6px; font-weight:600">Ghi chú</label>
+              <el-input type="textarea" v-model="ghiChuCancel" :rows="3" placeholder="Ghi chú cho phiếu huỷ (tuỳ chọn)" />
+            </div>
+          </div>
+          <div v-else style="padding:20px; text-align:center; color:#666">Chưa có lô nào được chọn.</div>
+        </el-card>
+      </div>
       <template #footer>
-        <el-button @click="closeCreateCancelDialog">Đóng</el-button>
-        <template v-if="approvedSourceMaPXH">
-          <el-button type="danger" :loading="createCancelLoading" @click="submitConfirmCancelByPXH">Xác nhận huỷ</el-button>
-        </template>
-        <template v-else>
-          <el-button type="primary" :loading="createCancelLoading" @click="submitCreateCancel">Tạo phiếu huỷ</el-button>
-        </template>
+        <div class="dialog-footer">
+          <el-button plain @click="closeCreateCancelDialog">Đóng</el-button>
+          <div style="margin-left:auto">
+            <template v-if="approvedSourceMaPXH">
+              <el-button type="danger" :loading="createCancelLoading" @click="submitConfirmCancelByPXH">Xác nhận huỷ</el-button>
+            </template>
+            <template v-else>
+              <el-button type="primary" :loading="createCancelLoading" @click="submitCreateCancel">Tạo phiếu huỷ</el-button>
+            </template>
+          </div>
+        </div>
       </template>
     </el-dialog>
 
     <!-- Invoice Detail Dialog -->
-    <el-dialog v-model="invoiceDetailDialog" title="Chi tiết hóa đơn" width="80%" :close-on-click-modal="true" custom-class="tall-dialog">
-      <div v-if="invoiceDetail">
-        <div style="display:flex; gap:16px; margin-bottom:12px">
-          <div style="padding:12px">
-            <el-descriptions column="2" border>
-              <el-descriptions-item label="Mã hoá đơn">{{ invoiceDetail.MaHD || invoiceDetail.maHD || '' }}</el-descriptions-item>
-              <el-descriptions-item label="Ngày">{{ formatDate(invoiceDetail.NgayTao || invoiceDetail.Ngay || invoiceDetail.NgayLap) }}</el-descriptions-item>
-              <el-descriptions-item label="Khách hàng">{{ invoiceDetail.TenKH || invoiceDetail.tenKH || invoiceDetail.KhachHang || '' }}</el-descriptions-item>
-              <el-descriptions-item label="Nhân viên">{{ invoiceDetail.TenNV || invoiceDetail.tenNV || invoiceDetail.NhanVien || '' }}</el-descriptions-item>
-            </el-descriptions>
+    <el-dialog v-model="invoiceDetailDialog" width="82%" :close-on-click-modal="true" custom-class="modern-dialog tall-dialog">
+      <template #title>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-receipt dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Chi tiết hoá đơn</div>
+              <div class="dialog-subtitle">{{ invoiceDetail?.MaHD || invoiceDetail?.maHD || '' }}</div>
+            </div>
           </div>
         </div>
+      </template>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="invoiceDetail">
+            <div style="display:flex; gap:16px; margin-bottom:12px">
+              <div style="padding:12px; flex:1">
+                <el-descriptions column="2" border>
+                  <el-descriptions-item label="Mã hoá đơn">{{ invoiceDetail.MaHD || invoiceDetail.maHD || '' }}</el-descriptions-item>
+                  <el-descriptions-item label="Ngày">{{ formatDate(invoiceDetail.NgayTao || invoiceDetail.Ngay || invoiceDetail.NgayLap) }}</el-descriptions-item>
+                  <el-descriptions-item label="Khách hàng">{{ invoiceDetail.TenKH || invoiceDetail.tenKH || invoiceDetail.KhachHang || '' }}</el-descriptions-item>
+                  <el-descriptions-item label="Nhân viên">{{ invoiceDetail.TenNV || invoiceDetail.tenNV || invoiceDetail.NhanVien || '' }}</el-descriptions-item>
+                </el-descriptions>
+              </div>
+            </div>
 
-        <el-table :data="invoiceItems" style="width:100%" size="small" border>
-          <el-table-column prop="maLo" label="Lô" width="140" />
-          <el-table-column prop="maThuoc" label="Mã thuốc" width="100" />
-          <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="200" />
-          <el-table-column prop="soLuong" label="Số lượng" width="120" />
-          <el-table-column prop="hanSuDung" label="Hạn sử dụng" width="140">
-            <template #default="{ row }">{{ formatDate(row.hanSuDung) }}</template>
-          </el-table-column>
-        </el-table>
+            <el-table :data="invoiceItems" style="width:100%" size="small" border>
+              <el-table-column prop="maLo" label="Lô" width="140" />
+              <el-table-column prop="maThuoc" label="Mã thuốc" width="100" />
+              <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="200" />
+              <el-table-column prop="soLuong" label="Số lượng" width="120" />
+              <el-table-column prop="hanSuDung" label="Hạn sử dụng" width="140">
+                <template #default="{ row }">{{ formatDate(row.hanSuDung) }}</template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div v-else style="padding:20px; text-align:center; color:#666">Đang tải...</div>
+        </el-card>
       </div>
-      <div v-else style="padding:20px; text-align:center; color:#666">Đang tải...</div>
       <template #footer>
-        <div style="text-align:right">
-          <el-button @click="invoiceDetailDialog = false">Đóng</el-button>
+        <div class="dialog-footer">
+          <el-button plain @click="invoiceDetailDialog = false">Đóng</el-button>
           <el-button type="warning" @click="openInvoiceCancelDialog">Yêu cầu huỷ</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- Invoice Cancel Request Dialog -->
-    <el-dialog v-model="invoiceCancelDialog" title="Tạo yêu cầu huỷ hoá đơn" width="80%" :close-on-click-modal="false" custom-class="tall-dialog">
-      <div v-if="invoiceCancelItems.length">
-        <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
-          <div style="font-weight:600">Loại xử lý:</div>
-          <div style="color:#666">Chọn loại xử lý cho từng mục ở cột "Loại xử lý" bên dưới</div>
-          <div style="margin-left:auto; min-width:320px">
-            <label style="display:block; margin-bottom:6px; font-weight:600">Ghi chú</label>
-            <el-input v-model="invoiceCancelNote" placeholder="Ghi chú cho yêu cầu (tùy chọn)" />
+    <el-dialog v-model="invoiceCancelDialog" width="86%" :close-on-click-modal="false" custom-class="modern-dialog tall-dialog">
+      <template #title>
+        <div class="dialog-header">
+          <div class="dialog-title-left">
+            <i class="fa fa-ban dialog-title-icon" aria-hidden="true"></i>
+            <div>
+              <div class="dialog-title">Tạo yêu cầu huỷ hoá đơn</div>
+              <div class="dialog-subtitle">Chỉnh sửa loại xử lý cho từng mục</div>
+            </div>
           </div>
         </div>
+      </template>
+      <div class="dialog-body">
+        <el-card class="dialog-body-card">
+          <div v-if="invoiceCancelItems.length">
+            <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
+              <div style="font-weight:600">Loại xử lý:</div>
+              <div style="color:#666">Chọn loại xử lý cho từng mục ở cột "Loại xử lý" bên dưới</div>
+              <div style="margin-left:auto; min-width:320px">
+                <label style="display:block; margin-bottom:6px; font-weight:600">Ghi chú</label>
+                <el-input v-model="invoiceCancelNote" placeholder="Ghi chú cho yêu cầu (tùy chọn)" />
+              </div>
+            </div>
 
-        <el-table :data="invoiceCancelItems" style="width:100%; table-layout: fixed" size="small" border :row-class-name="invoiceRowClass" :row-style="invoiceRowStyle">
-          <el-table-column label="Lô" prop="maLo" width="140" />
-          <el-table-column label="Mã thuốc" prop="maThuoc" width="80" />
-          <el-table-column label="Tên thuốc" prop="tenThuoc" min-width="200" />
-          <el-table-column label="Đơn vị" prop="tenLoaiDonVi" width="80" />
-          <el-table-column label="SL hoá đơn" prop="soLuongCon" width="140" />
-          <el-table-column label="Số lượng huỷ" prop="soLuong" width="140">
-            <template #default="{ row }">
-              <div style="font-weight:700; text-align:right">{{ row.soLuong }}</div>
-            </template>
-          </el-table-column>
-          <el-table-column label="Hạn sử dụng" width="160">
-            <template #default="{ row }">{{ formatDate(row.hanSuDung) }}</template>
-          </el-table-column>
-          <el-table-column label="Loại xử lý" width="200">
-            <template #default="{ row, $index }">
-              <el-radio-group v-model="invoiceCancelItems[$index].loaiXuLy">
-                <el-radio :label="false">Huỷ</el-radio>
-                <el-radio :label="true">Nhập lại</el-radio>
-              </el-radio-group>
-            </template>
-          </el-table-column>
-        </el-table>
+            <el-table :data="invoiceCancelItems" style="width:100%; table-layout: fixed" size="small" border :row-class-name="invoiceRowClass" :row-style="invoiceRowStyle">
+              <el-table-column label="Lô" prop="maLo" width="140" />
+              <el-table-column label="Mã thuốc" prop="maThuoc" width="80" />
+              <el-table-column label="Tên thuốc" prop="tenThuoc" min-width="200" />
+              <el-table-column label="Đơn vị" prop="tenLoaiDonVi" width="80" />
+              <el-table-column label="SL hoá đơn" prop="soLuongCon" width="140" />
+              <el-table-column label="Số lượng huỷ" prop="soLuong" width="140">
+                <template #default="{ row }">
+                  <div style="font-weight:700; text-align:right">{{ row.soLuong }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column label="Hạn sử dụng" width="160">
+                <template #default="{ row }">{{ formatDate(row.hanSuDung) }}</template>
+              </el-table-column>
+              <el-table-column label="Loại xử lý" width="200">
+                <template #default="{ row, $index }">
+                  <el-radio-group v-model="invoiceCancelItems[$index].loaiXuLy">
+                    <el-radio :label="false">Huỷ</el-radio>
+                    <el-radio :label="true">Nhập lại</el-radio>
+                  </el-radio-group>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div v-else style="padding:20px; text-align:center; color:#666">Không có mục nào để tạo yêu cầu.</div>
+        </el-card>
       </div>
-      <div v-else style="padding:20px; text-align:center; color:#666">Không có mục nào để tạo yêu cầu.</div>
       <template #footer>
-        <div style="text-align:right">
-          <el-button @click="invoiceCancelDialog = false">Đóng</el-button>
+        <div class="dialog-footer">
+          <el-button plain @click="invoiceCancelDialog = false">Đóng</el-button>
           <el-button type="primary" :loading="invoiceCancelLoading" @click="submitInvoiceCancel">Gửi yêu cầu</el-button>
         </div>
       </template>
@@ -1458,6 +1546,118 @@ const invoiceRowStyle = (arg) => {
 .yc-field label { font-size:13px; color:var(--el-text-color-secondary); }
 .yc-search { min-width:260px }
 
+/* Modern dialog styles */
+.modern-dialog .el-dialog__header { padding: 16px 24px; border-bottom: none; }
+.dialog-header { display:flex; align-items:center; gap:12px }
+.dialog-title-left { display:flex; gap:12px; align-items:center }
+.dialog-title-icon { font-size:20px; color:var(--el-color-primary); width:28px }
+.dialog-title { font-weight:700; font-size:16px }
+.dialog-subtitle { font-size:13px; color:var(--el-text-color-secondary) }
+.dialog-body { padding: 8px 0 }
+.dialog-body-card { padding: 14px; border-radius:8px; box-shadow: none }
+.dialog-footer { display:flex; gap:12px; align-items:center; padding:12px 0 }
+.dialog-footer .el-button { min-width:96px }
+
+/* New styles for the compact single-row Yêu cầu xử lý filters (card-like) */
+.ycau-filters-grid {
+  padding:10px;
+  background:#fbfdfe;
+  border-radius:8px;
+  border:1px solid #eef3f7;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.ycau-filters-grid .yc-filter-field { display:flex; flex-direction:column }
+.ycau-filters-grid .yc-filter-field label { text-transform:uppercase; font-size:12px; color:#6b7280; margin-bottom:6px }
+.ycau-filters-grid .el-input__inner, .ycau-filters-grid .el-date-editor--date .el-input__inner {
+  height:36px; padding:6px 10px; font-size:13px; border-radius:6px
+}
+.ycau-filters-grid .el-select .el-input__inner { height:36px }
+.ycau-filters-grid .el-input__inner::placeholder { color:#9aa6b2 }
+
+/* Action buttons row: keep two buttons on one horizontal line */
+.action-buttons-row { display:flex; gap:8px; align-items:center; justify-content:center; white-space:nowrap }
+.action-buttons-row .el-button { flex: 0 0 auto }
+@media (max-width: 480px) {
+  .action-buttons-row { flex-wrap:wrap; justify-content:flex-start }
+}
+
+@media (max-width:900px) {
+  .ycau-filters-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)) !important }
+}
+
+@media (max-width: 900px) {
+  .yc-field { min-width:140px }
+  .yc-search { min-width:200px }
+}
+
+/* Hoá đơn filter: keep on one line when possible */
+.hoadon-filters { display:flex; gap:12px; align-items:center; flex-wrap:nowrap }
+.hoadon-filters .hoadon-label { font-weight:600; white-space:nowrap }
+
+@media (max-width: 560px) {
+  .hoadon-filters { flex-wrap:wrap }
+}
+
+/* Make Hoá đơn select larger for readability and easier clicking */
+.hoadon-filters .hoadon-select { min-width:240px }
+.hoadon-filters .hoadon-select .el-input__inner { height:40px; font-size:14px; padding:6px 12px }
+.hoadon-filters .hoadon-select .el-input__inner::placeholder { color: #888 }
+</style>
+<style scoped>
+.page-card { margin-top: 0 !important; }
+.page-header { margin-top: 0; }
+.kho-tab-content { padding-top: 0; }
+</style>
+
+<style scoped>
+/* Tall dialog variant to avoid inner page scrolling */
+.tall-dialog .el-dialog__body {
+  max-height: calc(100vh - 220px) !important;
+  overflow: auto !important;
+}
+.tall-dialog .el-dialog__footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 12px 24px;
+  z-index: 10;
+}
+@media (max-width: 768px) {
+  .tall-dialog .el-dialog__body { max-height: calc(100vh - 140px) !important }
+}
+</style>
+<!-- Global styles for expiry highlighting (not scoped so they affect child-rendered table rows) -->
+<style>
+.expiry-red, .expiry-red td {
+  background-color: rgba(220,38,38,0.06) !important;
+  color: #b91c1c !important;
+}
+</style>
+
+<style scoped>
+
+
+.controls { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+.controls .field { min-width:180px; display:flex; gap:8px; align-items:center; flex: 0 1 260px }
+.controls .label { font-weight:600; color:var(--el-text-color-secondary); flex:0 0 72px; margin-right:8px; white-space:nowrap }
+.control-el { width:100%; box-sizing:border-box }
+
+.drug-name { word-break: break-word; white-space: normal; overflow-wrap: anywhere; }
+.so-luong { text-align: right; font-weight: 700 }
+
+@media (max-width: 768px) {
+  .controls .field { flex-direction:column; align-items:flex-start }
+  .controls .label { margin-bottom:6px; flex:0 0 auto }
+}
+
+.yc-filters { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap }
+.yc-field { display:flex; flex-direction:column; gap:6px; min-width:160px }
+.yc-field label { font-size:13px; color:var(--el-text-color-secondary); }
+.yc-search { min-width:260px }
+
 /* New styles for the compact single-row Yêu cầu xử lý filters (card-like) */
 .ycau-filters-grid {
   padding:10px;
@@ -1541,4 +1741,212 @@ const invoiceRowStyle = (arg) => {
   color: #6f42c1 !important;
 }
 .expiry-purple td * { color: #6f42c1 !important }
+</style>
+
+<style scoped>
+/* Invoice Detail Dialog Redesign Styles */
+.invoice-detail-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  color: white;
+  padding: 20px 24px;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -20px -20px 20px -20px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.invoice-id {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.detail-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.detail-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+  background: #fff;
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.card-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: linear-gradient(to right, #f8fafc, #fff);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.medicine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medicine-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.medicine-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.medicine-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.medicine-icon {
+  width: 40px;
+  height: 40px;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.medicine-details h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.medicine-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.medicine-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.quantity-badge {
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.expiry-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.expiry-tag.danger { background: #fef2f2; color: #dc2626; }
+.expiry-tag.warning { background: #fffbeb; color: #d97706; }
+.expiry-tag.success { background: #f0fdf4; color: #16a34a; }
+.expiry-tag.info { background: #f8fafc; color: #64748b; }
 </style>

@@ -169,6 +169,11 @@ const routes = [
         name: "admin-binhluan",
         component: () => import("@/views/admin/binhluan.vue"),
       },
+      {
+        path: "thong-ke",
+        name: "admin-thong-ke",
+        component: () => import("@/views/admin/ThongKe.vue"),
+      },
     ],
   },
 ];
@@ -184,24 +189,24 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const userStr = localStorage.getItem("user");
-  
+
   if (to.meta.requiresAdmin) {
     if (!userStr) {
       ElMessage.error("Vui lòng đăng nhập để tiếp tục!");
       next("/login");
       return;
     }
-    
+
     const user = JSON.parse(userStr);
     const isAdmin = user.IsAdmin === true || user.MaNV || user.VaiTro === "Admin";
-    
+
     if (!isAdmin) {
       ElMessage.error("Bạn không có quyền truy cập trang này!");
       next("/user");
       return;
     }
   }
-  
+
   next();
 });
 
