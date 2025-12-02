@@ -1,17 +1,76 @@
 <template>
-  
-    <!-- Header Section -->
-    <div class="stats-header">
-      <div class="header-content">
-        <div>
-          <h1 class="header-title">
-            <i class="fas fa-chart-line"></i> Thống Kê Doanh Thu & Chi Phí
-          </h1>
+    <!-- Chart Section with Stats Cards -->
+    <div class="chart-section">
+      <!-- Stats Cards Inside Chart Section -->
+      <div class="stats-cards-inline">
+        <div class="stat-card revenue-card">
+          <div class="card-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div class="card-content">
+            <p class="card-label">Tổng Doanh Thu</p>
+            <p class="card-value">{{ formatCurrency(totalRevenue) }}</p>
+          </div>
+          <div class="card-bg-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+        </div>
+
+        <div class="stat-card import-card">
+          <div class="card-icon">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="card-content">
+            <p class="card-label">Tổng Tiền Nhập</p>
+            <p class="card-value">{{ formatCurrency(totalImport) }}</p>
+          </div>
+          <div class="card-bg-icon">
+            <i class="fas fa-box"></i>
+          </div>
+        </div>
+
+        <div class="stat-card cancel-card">
+          <div class="card-icon">
+            <i class="fas fa-trash-alt"></i>
+          </div>
+          <div class="card-content">
+            <p class="card-label">Tổng Tiền Huỷ</p>
+            <p class="card-value">{{ formatCurrency(totalCancel) }}</p>
+          </div>
+          <div class="card-bg-icon">
+            <i class="fas fa-trash-alt"></i>
+          </div>
+        </div>
+
+        <div class="stat-card profit-card">
+          <div class="card-icon">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="card-content">
+            <p class="card-label">Lợi Nhuận Ước Tính</p>
+            <p class="card-value">{{ formatCurrency(totalRevenue - totalImport) }}</p>
+          </div>
+          <div class="card-bg-icon">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+        </div>
+
+        <div class="stat-card staff-card">
+          <div class="card-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="card-content">
+            <p class="card-label">Tổng Nhân Viên</p>
+            <p class="card-value">{{ totalStaff }}</p>
+          </div>
+          <div class="card-bg-icon">
+            <i class="fas fa-users"></i>
+          </div>
         </div>
       </div>
 
       <!-- Filters Section -->
-      <div class="filters-section">
+      <div class="filters-section-inline">
         <div class="filter-group">
           <label class="filter-label">Năm</label>
           <el-select v-model="selectedYear" placeholder="Chọn năm" @change="fetchData" class="filter-select">
@@ -50,77 +109,40 @@
           </el-button>
         </div>
       </div>
-    </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-cards">
-      <div class="stat-card revenue-card">
-        <div class="card-icon">
-          <i class="fas fa-coins"></i>
+      <!-- Charts Container -->
+      <div class="charts-container">
+        <!-- Bar Chart -->
+        <div class="bar-chart-wrapper">
+          <h3 class="chart-subtitle">Biểu đồ so sánh doanh thu, nhập hàng và tiền huỷ theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</h3>
+          <div class="chart-container">
+            <div v-if="loaded" class="chart-wrapper">
+              <Bar :data="chartData" :options="chartOptions" />
+            </div>
+            <div v-else class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+          </div>
         </div>
-        <div class="card-content">
-          <p class="card-label">Tổng Doanh Thu</p>
-          <p class="card-value">{{ formatCurrency(totalRevenue) }}</p>
-        </div>
-        <div class="card-bg-icon">
-          <i class="fas fa-coins"></i>
-        </div>
-      </div>
 
-      <div class="stat-card import-card">
-        <div class="card-icon">
-          <i class="fas fa-box"></i>
-        </div>
-        <div class="card-content">
-          <p class="card-label">Tổng Tiền Nhập</p>
-          <p class="card-value">{{ formatCurrency(totalImport) }}</p>
-        </div>
-        <div class="card-bg-icon">
-          <i class="fas fa-box"></i>
-        </div>
-      </div>
-
-      <div class="stat-card cancel-card">
-        <div class="card-icon">
-          <i class="fas fa-trash-alt"></i>
-        </div>
-        <div class="card-content">
-          <p class="card-label">Tổng Tiền Huỷ</p>
-          <p class="card-value">{{ formatCurrency(totalCancel) }}</p>
-        </div>
-        <div class="card-bg-icon">
-          <i class="fas fa-trash-alt"></i>
-        </div>
-      </div>
-
-      <div class="stat-card profit-card">
-        <div class="card-icon">
-          <i class="fas fa-chart-pie"></i>
-        </div>
-        <div class="card-content">
-          <p class="card-label">Lợi Nhuận Ước Tính</p>
-          <p class="card-value">{{ formatCurrency(totalRevenue - totalImport) }}</p>
-        </div>
-        <div class="card-bg-icon">
-          <i class="fas fa-chart-pie"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chart Section -->
-    <div class="chart-section">
-      <div class="chart-header">
-        <h2 class="chart-title">
-          <i class="fas fa-bar-chart"></i> Biểu Đồ So Sánh
-        </h2>
-        <p class="chart-subtitle">Doanh thu, nhập hàng và tiền huỷ theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</p>
-      </div>
-      <div class="chart-container">
-        <div v-if="loaded" class="chart-wrapper">
-          <Bar :data="chartData" :options="chartOptions" />
-        </div>
-        <div v-else class="loading-placeholder">
-          <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+        <!-- Pie Chart -->
+        <div class="pie-chart-wrapper">
+          <h3 class="chart-subtitle">Top 3 loại thuốc bán chạy</h3>
+          <div class="pie-chart-container">
+            <div v-if="loaded" class="chart-wrapper">
+              <Doughnut :data="pieChartData" :options="pieChartOptions" />
+            </div>
+            <div v-else class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+          </div>
+          <div v-if="topMedicines.length > 0" class="medicines-list">
+            <div v-for="(medicine, index) in topMedicines" :key="medicine.maThuoc" class="medicine-item">
+              <span class="medicine-index" :style="{ background: pieChartData.datasets[0].backgroundColor[index] }">{{ index + 1 }}</span>
+              <span class="medicine-name">{{ medicine.tenThuoc }}</span>
+              <span class="medicine-quantity">{{ medicine.totalQuantity }} x</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -135,13 +157,15 @@ import {
   Tooltip,
   Legend,
   BarElement,
+  ArcElement,
   CategoryScale,
   LinearScale
 } from 'chart.js';
-import { Bar } from 'vue-chartjs';
+import { Bar, Doughnut } from 'vue-chartjs';
 import ThongKeService from '@/services/ThongKeService';
+import axios from 'axios';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
@@ -157,16 +181,29 @@ const chartData = ref({
   datasets: []
 });
 
+const pieChartData = ref({
+  labels: [],
+  datasets: []
+});
+
+const topMedicines = ref([]);
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
       position: 'top',
-    },
-    title: {
-      display: true,
-      text: 'Biểu đồ Thống Kê'
+    }
+  }
+};
+
+const pieChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
     }
   }
 };
@@ -174,9 +211,53 @@ const chartOptions = {
 const totalRevenue = ref(0);
 const totalImport = ref(0);
 const totalCancel = ref(0);
+const totalStaff = ref(0);
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+};
+
+const fetchTopMedicines = async () => {
+  try {
+    let response;
+    if (viewMode.value === 'year') {
+      response = await ThongKeService.getTopSellingMedicines(selectedYear.value, 10);
+    } else {
+      response = await ThongKeService.getTopSellingMedicinesByMonth(selectedMonth.value, selectedYear.value, 10);
+    }
+    
+    const allMedicines = response.data;
+    
+    // Get top 3
+    topMedicines.value = allMedicines.slice(0, 3);
+    
+    // Calculate other medicines total
+    const otherTotal = allMedicines.slice(3).reduce((sum, m) => sum + m.totalQuantity, 0);
+
+    // Setup pie chart with top 3 + others
+    const colors = ['#10B981', '#3B82F6', '#F59E0B', '#6c757d'];
+    const labels = topMedicines.value.map(m => m.categoryName || 'Khác');
+    const data = topMedicines.value.map(m => m.totalQuantity);
+    
+    if (otherTotal > 0) {
+      labels.push('Khác');
+      data.push(otherTotal);
+    }
+
+    pieChartData.value = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Số lượng bán',
+          backgroundColor: colors.slice(0, labels.length),
+          borderColor: colors.slice(0, labels.length),
+          data: data
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error fetching top selling medicines:', error);
+  }
 };
 
 const fetchData = async () => {
@@ -218,9 +299,24 @@ const fetchData = async () => {
       ]
     };
 
+    // Fetch top medicines
+    await fetchTopMedicines();
+
+    // Fetch staff count
+    await fetchStaffCount();
+
     loaded.value = true;
   } catch (error) {
     console.error('Error fetching statistics:', error);
+  }
+};
+
+const fetchStaffCount = async () => {
+  try {
+    const response = await axios.get('https://localhost:7283/api/NhanVien');
+    totalStaff.value = response.data.length;
+  } catch (error) {
+    console.error('Error fetching staff count:', error);
   }
 };
 
@@ -272,6 +368,14 @@ onMounted(() => {
   align-items: flex-end;
 }
 
+.filters-section-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
 .filter-group {
   display: flex;
   flex-direction: column;
@@ -281,7 +385,7 @@ onMounted(() => {
 .filter-label {
   font-weight: 600;
   color: #0d3d47;
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -313,21 +417,26 @@ onMounted(() => {
   margin-bottom: 40px;
 }
 
+.stats-cards-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
 .stat-card {
   background: white;
   border-radius: 15px;
-  padding: 25px;
+  padding: 15px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .stat-card:hover {
-  transform: translateY(-8px);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
 }
 
@@ -356,10 +465,14 @@ onMounted(() => {
   background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
 }
 
+.staff-card::before {
+  background: linear-gradient(90deg, #8B5CF6 0%, #7C3AED 100%);
+}
+
 .card-icon {
-  font-size: 40px;
-  width: 80px;
-  height: 80px;
+  font-size: 32px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,6 +500,11 @@ onMounted(() => {
   color: #F59E0B;
 }
 
+.staff-card .card-icon {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8B5CF6;
+}
+
 .card-bg-icon {
   position: absolute;
   right: -20px;
@@ -403,7 +521,7 @@ onMounted(() => {
 
 .card-label {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: #6c757d;
   text-transform: uppercase;
@@ -411,8 +529,8 @@ onMounted(() => {
 }
 
 .card-value {
-  margin: 8px 0 0 0;
-  font-size: 28px;
+  margin: 4px 0 0 0;
+  font-size: 18px;
   font-weight: 700;
   color: #0d3d47;
 }
@@ -420,47 +538,99 @@ onMounted(() => {
 .chart-section {
   background: white;
   border-radius: 15px;
-  padding: 30px;
+  padding: 20px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
-.chart-header {
-  margin-bottom: 25px;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 20px;
+.charts-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+  overflow: hidden;
 }
 
-.chart-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0d3d47;
-  margin: 0 0 8px 0;
+.bar-chart-wrapper {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.chart-title i {
-  color: #17a2b8;
-  font-size: 26px;
+.pie-chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .chart-subtitle {
-  font-size: 13px;
-  color: #6c757d;
-  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d3d47;
+  margin: 0 0 15px 0;
 }
 
 .chart-container {
   position: relative;
-  height: 500px;
+  height: 350px;
   width: 100%;
+}
+
+.pie-chart-container {
+  position: relative;
+  height: 250px;
+  width: 100%;
+  margin-bottom: 15px;
 }
 
 .chart-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
+}
+
+.medicines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.medicine-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  font-size: 12px;
+}
+
+.medicine-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.medicine-name {
+  flex: 1;
+  color: #0d3d47;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicine-quantity {
+  color: #6c757d;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .loading-placeholder {
@@ -480,8 +650,6 @@ onMounted(() => {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-
-
   .stats-header {
     padding: 20px;
   }
@@ -513,8 +681,25 @@ onMounted(() => {
     font-size: 22px;
   }
 
+  .charts-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
   .chart-container {
     height: 300px;
+  }
+
+  .pie-chart-container {
+    height: 200px;
+  }
+
+  .medicine-item {
+    font-size: 11px;
+  }
+
+  .medicine-name {
+    font-size: 11px;
   }
 }
 </style>
