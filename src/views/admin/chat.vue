@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import api from '@/api';
 import { ElMessage } from 'element-plus';
@@ -104,6 +104,7 @@ const loadingConversations = ref(false);
 const loadingMessages = ref(false);
 const sending = ref(false);
 const messagesContainer = ref(null);
+let pollInterval = null;
 
 const formatTime = (time) => {
   if (!time) return '';
@@ -151,6 +152,11 @@ const selectConversation = async (conv) => {
   loadingMessages.value = true;
   messages.value = []; // Clear previous messages
   
+  // Clear previous poll interval
+  if (pollInterval) {
+    clearInterval(pollInterval);
+  }
+  
   try {
     // Use getConversationByCustomer to fetch details including messages
     if (conv.maKH) {
@@ -176,6 +182,7 @@ const selectConversation = async (conv) => {
   } finally {
     loadingMessages.value = false;
     scrollToBottom();
+    startPolling(conv);
   }
 };
 
@@ -235,8 +242,36 @@ const scrollToBottom = () => {
   });
 };
 
+const startPolling = (conv) => {
+  pollInterval = setInterval(async () => {
+    if (!currentConversation.value || !conv.maKH) return;
+    
+    try {
+      const res = await api.chat.getConversationByCustomer(conv.maKH);
+      if (res.data && res.data.data && res.data.data.messages) {
+        const newMessages = res.data.data.messages.sort((a, b) => new Date(a.thoiGian) - new Date(b.thoiGian));
+        messages.value = newMessages;
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error('Error polling messages:', error);
+    }
+  }, 5000); // Poll every 5 seconds
+};
+
+const stopPolling = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+};
+
 onMounted(() => {
   fetchConversations();
+});
+
+onUnmounted(() => {
+  stopPolling();
 });
 </script>
 
