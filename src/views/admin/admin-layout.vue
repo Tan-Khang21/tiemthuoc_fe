@@ -319,6 +319,8 @@ const goToStatistics = () => {
   bottom: 0;
   height: 100vh;
   z-index: 1000;
+  width: var(--sidebar-width);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo {
@@ -332,6 +334,7 @@ const goToStatistics = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar.collapsed .logo {
@@ -405,6 +408,7 @@ const goToStatistics = () => {
   overflow: hidden;
   position: absolute;
   pointer-events: none;
+  transition: opacity 0.25s ease-out, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar.collapsed .logo i {
@@ -493,6 +497,7 @@ const goToStatistics = () => {
   align-items: center;
   gap: 8px;
   padding-left: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .admin-menu .el-menu-item i {
@@ -664,6 +669,7 @@ const goToStatistics = () => {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   flex-direction: column;
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-content {
@@ -688,6 +694,7 @@ const goToStatistics = () => {
   border-radius: 12px;
   position: relative;
   box-sizing: border-box;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-item-custom:hover {
@@ -723,6 +730,7 @@ const goToStatistics = () => {
   margin-left: 30px;
   border-radius: 0 8px 8px 0;
   padding-right: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .submenu-item {
@@ -737,6 +745,7 @@ const goToStatistics = () => {
   cursor: pointer;
   background: rgba(255, 255, 255, 0.2);
   color: #0d3d47;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .submenu-item:hover {
@@ -824,6 +833,7 @@ body[style] {
   right: 0;
   z-index: 1020;
   background: white;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header.fixed-top {

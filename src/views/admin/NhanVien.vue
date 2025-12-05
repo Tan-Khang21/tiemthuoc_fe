@@ -178,8 +178,8 @@ const fetchStaff = async () => {
 };
 
 const openAddDialog = () => {
-  // Navigate tới trang tạo mới nhân viên (mode create)
-  router.push({ name: 'admin-nhanvien-detail', params: { maNV: 'new' } });
+  // Navigate tới trang tạo mới nhân viên
+  router.push({ name: 'admin-nhanvien-create' });
 };
 
 const editStaff = (row) => {

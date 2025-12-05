@@ -185,6 +185,11 @@ const routes = [
         component: () => import("@/views/admin/NhanVien.vue"),
       },
       {
+        path: "nhanvien/create",
+        name: "admin-nhanvien-create",
+        component: () => import("@/views/admin/NhanVien-create.vue"),
+      },
+      {
         path: "nhanvien/:maNV",
         name: "admin-nhanvien-detail",
         component: () => import("@/views/admin/NhanVien-detail.vue"),
