@@ -121,11 +121,11 @@ import api from '@/api/axios';
 import { ElMessage } from 'element-plus';
 
 const phieuHuyItems = ref([]);
-// Default date range: from = first day of current month, to = today
+// Default date range: from = 1 month ago from today, to = today
 const _now = new Date();
-const _firstDay = new Date(_now.getFullYear(), _now.getMonth(), 1);
+const _oneMonthAgo = new Date(_now.getFullYear(), _now.getMonth() - 1, _now.getDate());
 const _iso = d => d ? d.toISOString().slice(0, 10) : null;
-const fromDate = ref(_iso(_firstDay));
+const fromDate = ref(_iso(_oneMonthAgo));
 const toDate = ref(_iso(_now));
 const searchQuery = ref('');
 

@@ -63,6 +63,8 @@
                     v-model="createFormData.ngaySinh"
                     type="date"
                     placeholder="Chọn ngày sinh"
+                    format="DD/MM/YYYY"
+                    value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
                 </el-form-item>
@@ -107,6 +109,29 @@
               </div>
             </div>
 
+            <!-- Account Section Divider -->
+            <div class="section-divider">
+              <span>Thông Tin Tài Khoản</span>
+            </div>
+
+            <!-- Row 5: Tên đăng nhập -->
+            <div class="form-row">
+              <div class="form-col full">
+                <el-form-item label="Tên Đăng Nhập" prop="tenDangNhap">
+                  <el-autocomplete
+                    v-model="createFormData.tenDangNhap"
+                    :fetch-suggestions="querySearch"
+                    placeholder="Nhập tên đăng nhập"
+                    @select="handleSelect"
+                  >
+                    <template #prefix>
+                      <i class="fas fa-user-circle"></i>
+                    </template>
+                  </el-autocomplete>
+                </el-form-item>
+              </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="form-actions">
               <el-button class="btn-cancel" @click="goBack">Hủy</el-button>
@@ -118,11 +143,144 @@
         </el-card>
       </div>
     </div>
+
+    <!-- Success Dialog with Account Info -->
+    <el-dialog
+      v-model="showSuccessDialog"
+      title="Tạo Nhân Viên Thành Công"
+      width="90%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      align-center
+    >
+      <div v-if="successData" class="success-content">
+        <div class="success-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="success-message">Nhân viên đã được tạo thành công!</div>
+
+        <!-- Account Info Box -->
+        <div class="account-info-box">
+          <div class="info-section">
+            <div class="info-label">Mã Nhân Viên:</div>
+            <div class="info-value account-code">
+              {{ successData.maNV }}
+              <el-button 
+                type="primary" 
+                text 
+                size="small" 
+                @click="copyToClipboard(successData.maNV)"
+              >
+                <i class="fas fa-copy"></i>
+              </el-button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-section">
+            <div class="info-label">Tên Đăng Nhập:</div>
+            <div class="info-value username-field">
+              <el-input 
+                v-model="successData.tenDangNhap" 
+                readonly
+                style="width: 100%"
+              >
+                <template #append>
+                  <el-button 
+                    @click="copyToClipboard(successData.tenDangNhap)"
+                    icon="DocumentCopy"
+                  />
+                </template>
+              </el-input>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Mật Khẩu Mặc Định:</div>
+            <div class="info-value">
+              <div class="password-field">
+                <span class="password-display">{{ passwordVisible ? '123456' : '••••••' }}</span>
+                <div class="button-group">
+                  <el-button 
+                    type="primary" 
+                    text 
+                    size="small" 
+                    @click="passwordVisible = !passwordVisible"
+                  >
+                    <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                  </el-button>
+                  <el-button 
+                    type="primary" 
+                    text 
+                    size="small" 
+                    @click="copyToClipboard('123456')"
+                  >
+                    <i class="fas fa-copy"></i>
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Chức Vụ:</div>
+            <div class="info-value">
+              <el-tag :type="successData.chucVu === 1 ? 'danger' : 'success'">
+                {{ successData.chucVu === 1 ? 'Admin' : 'Nhân Viên' }}
+              </el-tag>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Họ Tên:</div>
+            <div class="info-value">{{ successData.hoTen }}</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Ngày Sinh:</div>
+            <div class="info-value">{{ successData.ngaySinh ? new Date(successData.ngaySinh).toLocaleDateString('vi-VN') : 'N/A' }}</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Giới Tính:</div>
+            <div class="info-value">{{ successData.gioiTinh }}</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Số Điện Thoại:</div>
+            <div class="info-value">{{ successData.dienThoai }}</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">Địa Chỉ:</div>
+            <div class="info-value">{{ successData.diaChi }}</div>
+          </div>
+        </div>
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>
+            <strong>Lưu ý:</strong> Nhân viên phải đổi mật khẩu khi đăng nhập lần đầu tiên!
+          </span>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="copyAllInfo">
+          <i class="fas fa-copy"></i> Sao Chép Tất Cả
+        </el-button>
+        <el-button type="primary" @click="confirmSuccess">
+          Hoàn Thành
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
@@ -137,14 +295,22 @@ const createFormData = ref({
   gioiTinh: 'Nam',
   dienThoai: '',
   diaChi: '',
-  chucVu: 2
+  chucVu: 2,
+  tenDangNhap: ''
 });
 const createFormRef = ref(null);
 const isSubmitting = ref(false);
+const existingUsernames = ref([]);
+
+// Success Dialog State
+const showSuccessDialog = ref(false);
+const successData = ref(null);
+const passwordVisible = ref(false);
 
 const createRules = {
   hoTen: [
-    { required: true, message: 'Vui lòng nhập họ tên', trigger: 'blur' }
+    { required: true, message: 'Vui lòng nhập họ tên', trigger: 'blur' },
+    { min: 3, message: 'Họ tên phải có ít nhất 3 ký tự', trigger: 'blur' }
   ],
   ngaySinh: [
     { required: true, message: 'Vui lòng chọn ngày sinh', trigger: 'change' }
@@ -153,13 +319,20 @@ const createRules = {
     { required: true, message: 'Vui lòng chọn giới tính', trigger: 'change' }
   ],
   dienThoai: [
-    { required: true, message: 'Vui lòng nhập số điện thoại', trigger: 'blur' }
+    { required: true, message: 'Vui lòng nhập số điện thoại', trigger: 'blur' },
+    { pattern: /^\d{10,11}$/, message: 'Số điện thoại phải là 10-11 chữ số', trigger: 'blur' }
   ],
   diaChi: [
-    { required: true, message: 'Vui lòng nhập địa chỉ', trigger: 'blur' }
+    { required: true, message: 'Vui lòng nhập địa chỉ', trigger: 'blur' },
+    { min: 5, message: 'Địa chỉ phải có ít nhất 5 ký tự', trigger: 'blur' }
   ],
   chucVu: [
     { required: true, message: 'Vui lòng chọn chức vụ', trigger: 'change' }
+  ],
+  tenDangNhap: [
+    { required: true, message: 'Vui lòng nhập tên đăng nhập', trigger: 'blur' },
+    { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự', trigger: 'blur' },
+    { max: 50, message: 'Tên đăng nhập không quá 50 ký tự', trigger: 'blur' }
   ]
 };
 
@@ -168,24 +341,128 @@ const goBack = () => {
   router.push('/admin/nhanvien');
 };
 
+// Load existing usernames on component mount
+const loadExistingUsernames = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/NhanVien/usernames`);
+    if (Array.isArray(response.data)) {
+      existingUsernames.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error loading usernames:', error);
+  }
+};
+
 const createStaff = async () => {
   if (!createFormRef.value) return;
   await createFormRef.value.validate();
 
   isSubmitting.value = true;
   try {
-    await axios.post(`${API_URL}/NhanVien`, createFormData.value);
-    ElMessage.success({
-      title: 'Thành công!',
-      message: 'Thêm nhân viên thành công! Tài khoản đã được tạo với mật khẩu mặc định: 123456',
-      duration: 4000
-    });
-    router.push('/admin/nhanvien');
+    // Format date to DD/MM/YYYY or send as ISO string
+    const ngaySinh = createFormData.value.ngaySinh 
+      ? new Date(createFormData.value.ngaySinh).toISOString().split('T')[0]
+      : null;
+
+    const payload = {
+      hoTen: createFormData.value.hoTen,
+      ngaySinh: ngaySinh,
+      gioiTinh: createFormData.value.gioiTinh,
+      dienThoai: createFormData.value.dienThoai,
+      diaChi: createFormData.value.diaChi,
+      chucVu: createFormData.value.chucVu,
+      tenDangNhap: createFormData.value.tenDangNhap
+    };
+
+    const response = await axios.post(
+      `${API_URL}/NhanVien/create-with-account`,
+      payload
+    );
+
+    if (response.data.success && response.data.data) {
+      // Set success data and show dialog
+      successData.value = response.data.data;
+      passwordVisible.value = false;
+      showSuccessDialog.value = true;
+      
+      ElMessage.success('Nhân viên đã được tạo thành công!');
+    } else {
+      ElMessage.error(response.data.message || 'Lỗi khi tạo nhân viên');
+    }
   } catch (error) {
-    ElMessage.error('Lỗi khi thêm nhân viên: ' + (error.response?.data?.message || error.message));
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message ||
+                        'Lỗi không xác định';
+    ElMessage.error('Lỗi khi tạo nhân viên: ' + errorMessage);
+    console.error('Error:', error.response?.data || error);
   } finally {
     isSubmitting.value = false;
   }
+};
+
+// Copy to clipboard function
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success('Đã sao chép!');
+  }).catch(() => {
+    ElMessage.error('Không thể sao chép!');
+  });
+};
+
+// Copy all info function
+const copyAllInfo = () => {
+  if (!successData.value) return;
+  
+  const ngaySinhFormatted = successData.value.ngaySinh 
+    ? new Date(successData.value.ngaySinh).toLocaleDateString('vi-VN')
+    : 'N/A';
+
+  const allInfo = `Mã Nhân Viên: ${successData.value.maNV}
+Tên Đăng Nhập: ${successData.value.tenDangNhap}
+Mật Khẩu: 123456
+Chức Vụ: ${successData.value.chucVu === 1 ? 'Admin' : 'Nhân Viên'}
+Họ Tên: ${successData.value.hoTen}
+Ngày Sinh: ${ngaySinhFormatted}
+Giới Tính: ${successData.value.gioiTinh}
+Số Điện Thoại: ${successData.value.dienThoai}
+Địa Chỉ: ${successData.value.diaChi}`;
+
+  navigator.clipboard.writeText(allInfo).then(() => {
+    ElMessage.success('Đã sao chép toàn bộ thông tin!');
+  }).catch(() => {
+    ElMessage.error('Không thể sao chép!');
+  });
+};
+
+// Confirm and redirect
+const confirmSuccess = () => {
+  showSuccessDialog.value = false;
+  successData.value = null;
+  passwordVisible.value = false;
+  router.push('/admin/nhanvien');
+};
+
+// Load usernames when component mounts
+onMounted(() => {
+  loadExistingUsernames();
+});
+
+// Autocomplete search function
+const querySearch = (queryString, cb) => {
+  const results = queryString
+    ? existingUsernames.value.filter(username =>
+        username.toLowerCase().includes(queryString.toLowerCase())
+      )
+    : existingUsernames.value;
+  
+  cb(results.map(username => ({ value: username })));
+};
+
+// Handle select from autocomplete
+const handleSelect = (item) => {
+  createFormData.value.tenDangNhap = item.value;
+  ElMessage.warning(`Tên đăng nhập "${item.value}" đã được sử dụng. Vui lòng nhập tên khác!`);
 };
 </script>
 
@@ -305,6 +582,31 @@ const createStaff = async () => {
   grid-column: 1 / -1;
 }
 
+.section-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  margin: 30px 0 20px 0;
+  gap: 12px;
+  font-weight: 600;
+  color: #17a2b8;
+  font-size: 15px;
+}
+
+.section-divider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, #dee2e6, transparent);
+}
+
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to left, #dee2e6, transparent);
+}
+
 .create-card :deep(.el-form-item) {
   margin-bottom: 20px;
 }
@@ -414,6 +716,189 @@ const createStaff = async () => {
   .btn-cancel,
   .btn-submit {
     width: 100%;
+  }
+}
+
+/* Success Dialog Styles */
+.success-content {
+  padding: 15px 0;
+  max-height: none;
+  overflow-y: visible;
+}
+
+.success-icon {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.success-icon i {
+  font-size: 48px;
+  color: #28a745;
+}
+
+.success-message {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.account-info-box {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.info-section {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #212529;
+  padding: 6px 8px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  gap: 6px;
+}
+
+.account-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.username-field {
+  display: block;
+}
+
+.password-field {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.button-group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.password-display {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.divider {
+  display: none;
+}
+
+.warning-box {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #856404;
+  grid-column: 1 / -1;
+}
+
+.warning-box i {
+  color: #ff9800;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.warning-box strong {
+  font-weight: 600;
+}
+
+:deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #17a2b8 0%, #20b2aa 100%);
+  padding: 20px;
+}
+
+:deep(.el-dialog__title) {
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+:deep(.el-dialog__close) {
+  color: white;
+}
+
+:deep(.el-dialog__footer) {
+  text-align: right;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+}
+
+/* Responsive Dialog */
+@media (max-width: 1400px) {
+  .account-info-box {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .account-info-box {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  :deep(.el-dialog) {
+    width: 95% !important;
+  }
+
+  .account-info-box {
+    grid-template-columns: 1fr;
+  }
+
+  .info-label {
+    font-size: 10px;
+  }
+
+  .info-value {
+    font-size: 12px;
+    padding: 5px 6px;
+  }
+
+  .warning-box {
+    font-size: 10px;
+    padding: 6px 8px;
   }
 }
 </style>

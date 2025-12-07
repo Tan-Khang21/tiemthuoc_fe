@@ -121,15 +121,16 @@
         <el-table-column label="Thao tác" width="220">
           <template #default="scope">
             <div class="table-action-cell">
-                    <el-button
-                      class="table-btn btn-view"
-                      size="small"
-                      circle
-                      @click="openDetail(scope.row)"
-                      :icon="View"
-                      title="Xem"
-                    ></el-button>
               <el-button
+                class="table-btn btn-view"
+                size="small"
+                circle
+                @click="openDetail(scope.row)"
+                :icon="View"
+                title="Xem"
+              ></el-button>
+              <el-button
+                v-if="isAdmin"
                 class="table-btn btn-edit"
                 size="small"
                 circle
@@ -138,6 +139,7 @@
                 title="Sửa"
               ></el-button>
               <el-button
+                v-if="isAdmin"
                 class="table-btn btn-delete"
                 size="small"
                 circle
@@ -195,9 +197,10 @@ const logoFallback = (() => {
 
 const list = ref([]);
 const filteredList = ref([]);
-// default start = first day of current month, end = today
+// default start = 1 month ago from today, end = today
 const now = new Date();
-const startDate = ref(new Date(now.getFullYear(), now.getMonth(), 1));
+const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+const startDate = ref(oneMonthAgo);
 const endDate = ref(new Date());
 const searchKeyword = ref('');
 const supplierFilter = ref(null);
@@ -212,6 +215,15 @@ const total = ref(0);
 const loading = ref(false);
 const supplierLoading = ref(false);
 const employeeLoading = ref(false);
+
+// Check if user is admin
+const isAdmin = computed(() => {
+  const chucVu = authStore.user?.ChucVu;
+  const result = authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1' || 
+         authStore.user?.isAdmin === true || authStore.user?.VaiTro === 'Admin';
+  console.log('isAdmin debug (phieunhap):', { chucVu, user: authStore.user, result });
+  return result;
+});
 
 // format date param as YYYY-MM-DD (API expects date strings like 2025-11-01)
 const formatDateParam = (d) => {

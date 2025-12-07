@@ -108,13 +108,14 @@ const pagedList = computed(() => {
   return Array.isArray(list.value) ? list.value.slice(start, start + pageSize.value) : [];
 });
 
-// Filter state (default: first day of current month -> today)
+// Filter state (default: 1 month ago from today -> today)
 const now = new Date();
-const yyyy = now.getFullYear();
-const mm = String(now.getMonth() + 1).padStart(2, '0');
-const dd = String(now.getDate()).padStart(2, '0');
-const startDate = ref(`${yyyy}-${mm}-01`);
-const endDate = ref(`${yyyy}-${mm}-${dd}`);
+const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+const yyyy = oneMonthAgo.getFullYear();
+const mm = String(oneMonthAgo.getMonth() + 1).padStart(2, '0');
+const dd = String(oneMonthAgo.getDate()).padStart(2, '0');
+const startDate = ref(`${yyyy}-${mm}-${dd}`);
+const endDate = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
 // Default to 'Đã đặt' so the page initially shows placed orders
 const status = ref(0);
 // default to online invoices

@@ -31,7 +31,7 @@
         <el-table-column prop="dienThoai" label="Số Điện Thoại" width="130" />
         <el-table-column prop="diaChi" label="Địa Chỉ" min-width="200" />
         <el-table-column prop="chucVu" label="Chức Vụ" width="120" :formatter="formatRole" />
-        <el-table-column label="Hành Động" width="250" fixed="right" align="center">
+        <el-table-column label="Hành Động" width="300" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">
               <i class="fas fa-eye"></i> Xem Chi Tiết
@@ -39,8 +39,12 @@
             <el-button link type="warning" @click="editStaff(row)">
               <i class="fas fa-edit"></i> Sửa
             </el-button>
-            <el-button link type="danger" @click="deleteStaff(row)">
-              <i class="fas fa-trash"></i> Xóa
+            <el-button 
+              link 
+              :type="getAccountStatusType(row)" 
+              @click="toggleAccountStatus(row)"
+            >
+              <i :class="getAccountStatusIcon(row)"></i> {{ getAccountStatusText(row) }}
             </el-button>
           </template>
         </el-table-column>
@@ -117,6 +121,7 @@ const dialogVisible = ref(false);
 const isEdit = ref(false);
 const selectedStaff = ref(null);
 const formRef = ref(null);
+const accountStatusMap = ref({}); // Lưu trạng thái tài khoản: { maNV: isEnabled }
 
 const formData = ref({
   maNV: '',
@@ -171,6 +176,11 @@ const fetchStaff = async () => {
   try {
     const response = await axios.get(`${API_URL}/NhanVien`);
     staffList.value = response.data;
+    
+    // Tải trạng thái tài khoản cho mỗi nhân viên
+    for (const staff of staffList.value) {
+      await getAccountStatus(staff.maNV);
+    }
   } catch (error) {
     ElMessage.error('Lỗi khi tải danh sách nhân viên');
     console.error(error);
@@ -207,23 +217,96 @@ const saveStaff = async () => {
   }
 };
 
-const deleteStaff = (row) => {
+// Lấy trạng thái tài khoản
+const getAccountStatus = async (maNV) => {
+  try {
+    const response = await axios.get(`${API_URL}/NhanVien/${maNV}/account-status`);
+    if (response.data.success) {
+      accountStatusMap.value[maNV] = response.data.data.isEnabled;
+      return response.data.data.isEnabled;
+    }
+  } catch (error) {
+    console.error('Lỗi khi lấy trạng thái tài khoản:', error);
+  }
+  return false;
+};
+
+// Hiển thị type nút dựa vào trạng thái
+const getAccountStatusType = (row) => {
+  const isEnabled = accountStatusMap.value[row.maNV];
+  return isEnabled ? 'danger' : 'success';
+};
+
+// Hiển thị icon nút
+const getAccountStatusIcon = (row) => {
+  const isEnabled = accountStatusMap.value[row.maNV];
+  return isEnabled ? 'fas fa-lock' : 'fas fa-lock-open';
+};
+
+// Hiển thị text nút
+const getAccountStatusText = (row) => {
+  const isEnabled = accountStatusMap.value[row.maNV];
+  return isEnabled ? 'Vô Hiệu Hoá' : 'Mở Lại';
+};
+
+// Toggle trạng thái tài khoản
+const toggleAccountStatus = async (row) => {
+  const isEnabled = accountStatusMap.value[row.maNV];
+  const action = isEnabled ? 'vô hiệu hoá' : 'mở';
+  const title = isEnabled ? 'Vô Hiệu Hoá Tài Khoản' : 'Mở Lại Tài Khoản';
+  const confirmText = isEnabled ? 'Vô Hiệu Hoá' : 'Mở Lại';
+
   ElMessageBox.confirm(
-    `Bạn có chắc chắn muốn xóa nhân viên "${row.hoTen}"?`,
-    'Xác Nhận Xóa',
+    `Bạn có chắc chắn muốn ${action} tài khoản nhân viên "${row.hoTen}"?`,
+    title,
     {
-      confirmButtonText: 'Xóa',
+      confirmButtonText: confirmText,
       cancelButtonText: 'Hủy',
       type: 'warning'
     }
   )
     .then(async () => {
       try {
-        await axios.delete(`${API_URL}/NhanVien/${row.maNV}`);
-        ElMessage.success('Xóa nhân viên thành công');
-        fetchStaff();
+        const endpoint = isEnabled ? 'disable-account' : 'enable-account';
+        const response = await axios.post(`${API_URL}/NhanVien/${row.maNV}/${endpoint}`);
+        
+        if (response.data.success) {
+          ElMessage.success(response.data.message);
+          // Cập nhật trạng thái
+          accountStatusMap.value[row.maNV] = !isEnabled;
+        } else {
+          ElMessage.error(response.data.message || 'Lỗi');
+        }
       } catch (error) {
-        ElMessage.error('Lỗi khi xóa nhân viên');
+        ElMessage.error('Lỗi khi thay đổi trạng thái tài khoản');
+        console.error(error);
+      }
+    })
+    .catch(() => {});
+};
+
+const deleteStaff = (row) => {
+  ElMessageBox.confirm(
+    `Bạn có chắc chắn muốn vô hiệu hoá tài khoản nhân viên "${row.hoTen}"? Tài khoản sẽ không thể đăng nhập.`,
+    'Vô Hiệu Hoá Tài Khoản',
+    {
+      confirmButtonText: 'Vô Hiệu Hoá',
+      cancelButtonText: 'Hủy',
+      type: 'warning'
+    }
+  )
+    .then(async () => {
+      try {
+        const response = await axios.post(`${API_URL}/NhanVien/${row.maNV}/disable-account`);
+        if (response.data.success) {
+          ElMessage.success(response.data.message || 'Tài khoản đã được vô hiệu hoá');
+          fetchStaff();
+        } else {
+          ElMessage.error(response.data.message || 'Lỗi khi vô hiệu hoá tài khoản');
+        }
+      } catch (error) {
+        ElMessage.error('Lỗi khi vô hiệu hoá tài khoản');
+        console.error(error);
       }
     })
     .catch(() => {});

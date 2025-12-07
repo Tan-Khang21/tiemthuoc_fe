@@ -26,7 +26,7 @@
           size="small"
         />
 
-        <el-select v-model="status" class="filter-small" placeholder="Trạng thái" clearable size="small">
+        <el-select v-model="status" class="filter-small" placeholder="Đã nhận" clearable size="small">
           <el-option :value="null" label="Tất cả" />
           <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
@@ -71,8 +71,8 @@
           <template #default="{ row }">
             <div class="table-actions">
               <el-button class="action-btn btn-view" circle size="small" @click="viewItem(row)" title="Xem"><i class="fa fa-eye"></i></el-button>
-              <el-button class="action-btn btn-edit" circle size="small" @click="editItem(row)" title="Sửa"><i class="fa fa-edit"></i></el-button>
-              <el-button class="action-btn btn-delete" circle size="small" @click="deleteItem(row)" title="Hủy/Xóa"><i class="fa fa-trash"></i></el-button>
+              <el-button v-if="isAdmin" class="action-btn btn-edit" circle size="small" @click="editItem(row)" title="Sửa"><i class="fa fa-edit"></i></el-button>
+              <el-button v-if="isAdmin" class="action-btn btn-delete" circle size="small" @click="deleteItem(row)" title="Hủy/Xóa"><i class="fa fa-trash"></i></el-button>
             </div>
           </template>
         </el-table-column>
@@ -117,14 +117,15 @@ const pagedList = computed(() => {
   return Array.isArray(list.value) ? list.value.slice(start, start + pageSize.value) : [];
 });
 
-// Filter state (default: first day of current month -> today)
+// Filter state (default: 1 month ago from today -> today)
 const now = new Date();
-const yyyy = now.getFullYear();
-const mm = String(now.getMonth() + 1).padStart(2, '0');
-const dd = String(now.getDate()).padStart(2, '0');
+const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+const yyyy = oneMonthAgo.getFullYear();
+const mm = String(oneMonthAgo.getMonth() + 1).padStart(2, '0');
+const dd = String(oneMonthAgo.getDate()).padStart(2, '0');
 // Use YYYY-MM-DD strings to match `value-format` on el-date-picker
-const startDate = ref(`${yyyy}-${mm}-01`);
-const endDate = ref(`${yyyy}-${mm}-${dd}`);
+const startDate = ref(`${yyyy}-${mm}-${dd}`);
+const endDate = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
 const status = ref(null);
 const type = ref('HD');
 const searchKeyword = ref('');
@@ -140,6 +141,19 @@ const statusOptions = [
   { value: 2, label: 'Đã giao' },
   { value: 3, label: 'Đã nhận' },
 ];
+
+// Role-based access control
+const isAdmin = computed(() => {
+  const chucVu = authStore.user?.ChucVu;
+  const result = (
+    authStore.user?.ChucVu === 1 ||
+    authStore.user?.ChucVu === '1' ||
+    authStore.user?.isAdmin === true ||
+    authStore.user?.VaiTro === 'Admin'
+  );
+  console.log('isAdmin debug:', { chucVu, user: authStore.user, result });
+  return result;
+});
 
 const applyFilters = () => {
   // validate dates

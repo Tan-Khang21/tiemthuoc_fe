@@ -3,74 +3,119 @@
     <div class="chart-section">
       <!-- Stats Cards Inside Chart Section -->
       <div class="stats-cards-inline">
-        <div class="stat-card revenue-card">
-          <div class="card-icon">
-            <i class="fas fa-coins"></i>
+        <!-- Admin Stats Cards -->
+        <template v-if="isAdmin">
+          <div class="stat-card revenue-card">
+            <div class="card-icon">
+              <i class="fas fa-coins"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Doanh Thu</p>
+              <p class="card-value">{{ formatCurrency(totalRevenue) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-coins"></i>
+            </div>
           </div>
-          <div class="card-content">
-            <p class="card-label">Tổng Doanh Thu</p>
-            <p class="card-value">{{ formatCurrency(totalRevenue) }}</p>
-          </div>
-          <div class="card-bg-icon">
-            <i class="fas fa-coins"></i>
-          </div>
-        </div>
 
-        <div class="stat-card import-card">
-          <div class="card-icon">
-            <i class="fas fa-box"></i>
+          <div class="stat-card import-card">
+            <div class="card-icon">
+              <i class="fas fa-box"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Tiền Nhập</p>
+              <p class="card-value">{{ formatCurrency(totalImport) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-box"></i>
+            </div>
           </div>
-          <div class="card-content">
-            <p class="card-label">Tổng Tiền Nhập</p>
-            <p class="card-value">{{ formatCurrency(totalImport) }}</p>
-          </div>
-          <div class="card-bg-icon">
-            <i class="fas fa-box"></i>
-          </div>
-        </div>
 
-        <div class="stat-card cancel-card">
-          <div class="card-icon">
-            <i class="fas fa-trash-alt"></i>
+          <div class="stat-card cancel-card">
+            <div class="card-icon">
+              <i class="fas fa-trash-alt"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Tiền Huỷ</p>
+              <p class="card-value">{{ formatCurrency(totalCancel) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-trash-alt"></i>
+            </div>
           </div>
-          <div class="card-content">
-            <p class="card-label">Tổng Tiền Huỷ</p>
-            <p class="card-value">{{ formatCurrency(totalCancel) }}</p>
-          </div>
-          <div class="card-bg-icon">
-            <i class="fas fa-trash-alt"></i>
-          </div>
-        </div>
 
-        <div class="stat-card profit-card">
-          <div class="card-icon">
-            <i class="fas fa-chart-pie"></i>
+          <div class="stat-card profit-card">
+            <div class="card-icon">
+              <i class="fas fa-chart-pie"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Lợi Nhuận Ước Tính</p>
+              <p class="card-value">{{ formatCurrency(totalRevenue - totalImport) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-chart-pie"></i>
+            </div>
           </div>
-          <div class="card-content">
-            <p class="card-label">Lợi Nhuận Ước Tính</p>
-            <p class="card-value">{{ formatCurrency(totalRevenue - totalImport) }}</p>
-          </div>
-          <div class="card-bg-icon">
-            <i class="fas fa-chart-pie"></i>
-          </div>
-        </div>
 
-        <div class="stat-card staff-card">
-          <div class="card-icon">
-            <i class="fas fa-users"></i>
+          <div class="stat-card staff-card">
+            <div class="card-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Nhân Viên</p>
+              <p class="card-value">{{ totalStaff }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-users"></i>
+            </div>
           </div>
-          <div class="card-content">
-            <p class="card-label">Tổng Nhân Viên</p>
-            <p class="card-value">{{ totalStaff }}</p>
+        </template>
+
+        <!-- Staff Stats Cards -->
+        <template v-else>
+          <div class="stat-card revenue-card">
+            <div class="card-icon">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Hóa Đơn</p>
+              <p class="card-value">{{ staffTotalInvoices }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-receipt"></i>
+            </div>
           </div>
-          <div class="card-bg-icon">
-            <i class="fas fa-users"></i>
+
+          <div class="stat-card import-card">
+            <div class="card-icon">
+              <i class="fas fa-coins"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Tổng Doanh Thu</p>
+              <p class="card-value">{{ formatCurrency(staffTotalRevenue) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-coins"></i>
+            </div>
           </div>
-        </div>
+
+          <div class="stat-card cancel-card">
+            <div class="card-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="card-content">
+              <p class="card-label">Doanh Thu Tháng Này</p>
+              <p class="card-value">{{ formatCurrency(staffMonthRevenue) }}</p>
+            </div>
+            <div class="card-bg-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+          </div>
+        </template>
       </div>
 
-      <!-- Filters Section -->
-      <div class="filters-section-inline">
+      <!-- Filters Section (only show for admin) -->
+      <div class="filters-section-inline" v-if="isAdmin">
         <div class="filter-group">
           <label class="filter-label">Năm</label>
           <el-select v-model="selectedYear" placeholder="Chọn năm" @change="fetchData" class="filter-select">
@@ -110,14 +155,27 @@
         </div>
       </div>
 
-      <!-- Charts Container -->
-      <div class="charts-container">
+      <!-- Charts Container (only show for admin) -->
+      <div class="charts-container-admin" v-if="isAdmin">
         <!-- Bar Chart -->
         <div class="bar-chart-wrapper">
           <h3 class="chart-subtitle">Biểu đồ so sánh doanh thu, nhập hàng và tiền huỷ theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</h3>
           <div class="chart-container">
             <div v-if="loaded" class="chart-wrapper">
               <Bar :data="chartData" :options="chartOptions" />
+            </div>
+            <div v-else class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+          </div>
+        </div>
+
+        <!-- Line Chart for Revenue Trend -->
+        <div class="line-chart-wrapper">
+          <h3 class="chart-subtitle">Xu hướng doanh thu vs tiền nhập theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</h3>
+          <div class="chart-container">
+            <div v-if="loaded" class="chart-wrapper">
+              <Line :data="lineChartData" :options="lineChartOptions" />
             </div>
             <div v-else class="loading-placeholder">
               <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
@@ -144,6 +202,35 @@
             </div>
           </div>
         </div>
+
+        <!-- Revenue by Category Chart -->
+        <div class="category-chart-wrapper">
+          <h3 class="chart-subtitle">Doanh thu theo danh mục thuốc</h3>
+          <div class="chart-container">
+            <div v-if="loaded && revenueByCategory.labels && revenueByCategory.labels.length > 0" class="chart-wrapper">
+              <Bar :data="revenueByCategory" :options="chartOptions" />
+            </div>
+            <div v-else class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Container for Staff -->
+      <div class="charts-container-staff" v-else>
+        <!-- Staff Revenue Line Chart -->
+        <div class="line-chart-wrapper">
+          <h3 class="chart-subtitle">Biểu đồ doanh thu hàng ngày (tháng này)</h3>
+          <div class="chart-container">
+            <div v-if="loaded && lineChartData.labels && lineChartData.labels.length > 0" class="chart-wrapper">
+              <Line :data="lineChartData" :options="lineChartOptions" />
+            </div>
+            <div v-else class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -161,11 +248,14 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js';
-import { Bar, Doughnut } from 'vue-chartjs';
+import { Bar, Doughnut, Line } from 'vue-chartjs';
 import ThongKeService from '@/services/ThongKeService';
 import axios from 'axios';
+import { useAuthStore } from '@/store/auth';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
+
+const authStore = useAuthStore();
 
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
@@ -174,6 +264,12 @@ const loaded = ref(false);
 const years = computed(() => {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: 5 }, (_, i) => currentYear - i);
+});
+
+// Check if user is admin
+const isAdmin = computed(() => {
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1' || 
+         authStore.user?.isAdmin === true || authStore.user?.VaiTro === 'Admin';
 });
 
 const chartData = ref({
@@ -186,7 +282,13 @@ const pieChartData = ref({
   datasets: []
 });
 
+const lineChartData = ref({
+  labels: [],
+  datasets: []
+});
+
 const topMedicines = ref([]);
+const revenueByCategory = ref([]);
 
 const chartOptions = {
   responsive: true,
@@ -208,10 +310,35 @@ const pieChartOptions = {
   }
 };
 
+const lineChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: function(value) {
+          return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
+        }
+      }
+    }
+  }
+};
+
 const totalRevenue = ref(0);
 const totalImport = ref(0);
 const totalCancel = ref(0);
 const totalStaff = ref(0);
+
+// Staff personal statistics
+const staffTotalInvoices = ref(0);
+const staffTotalRevenue = ref(0);
+const staffMonthRevenue = ref(0);
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -263,47 +390,59 @@ const fetchTopMedicines = async () => {
 const fetchData = async () => {
   loaded.value = false;
   try {
-    let response;
-    if (viewMode.value === 'year') {
-      response = await ThongKeService.getThongKeNam(selectedYear.value);
+    if (isAdmin.value) {
+      // Admin sees system-wide statistics
+      let response;
+      if (viewMode.value === 'year') {
+        response = await ThongKeService.getThongKeNam(selectedYear.value);
+      } else {
+        response = await ThongKeService.getThongKeThang(selectedMonth.value, selectedYear.value);
+      }
+
+      const data = response.data;
+
+      // Update totals
+      totalRevenue.value = data.doanhThu.reduce((sum, item) => sum + item.value, 0);
+      totalImport.value = data.tienNhapHang.reduce((sum, item) => sum + item.value, 0);
+      totalCancel.value = data.tienHuyHang.reduce((sum, item) => sum + item.value, 0);
+
+      // Update chart
+      chartData.value = {
+        labels: data.doanhThu.map(item => item.label),
+        datasets: [
+          {
+            label: 'Doanh Thu',
+            backgroundColor: '#10B981', // Green
+            data: data.doanhThu.map(item => item.value)
+          },
+          {
+            label: 'Tiền Nhập',
+            backgroundColor: '#3B82F6', // Blue
+            data: data.tienNhapHang.map(item => item.value)
+          },
+          {
+            label: 'Tiền Huỷ',
+            backgroundColor: '#EF4444', // Red
+            data: data.tienHuyHang.map(item => item.value)
+          }
+        ]
+      };
+
+      // Fetch top medicines
+      await fetchTopMedicines();
+      
+      // Fetch revenue by category
+      await fetchRevenueByCategory();
+      
+      // Fetch line chart data
+      await fetchRevenueLineChart();
+
+      // Fetch staff count
+      await fetchStaffCount();
     } else {
-      response = await ThongKeService.getThongKeThang(selectedMonth.value, selectedYear.value);
+      // Staff sees only their personal statistics
+      await fetchStaffStatistics();
     }
-
-    const data = response.data;
-
-    // Update totals
-    totalRevenue.value = data.doanhThu.reduce((sum, item) => sum + item.value, 0);
-    totalImport.value = data.tienNhapHang.reduce((sum, item) => sum + item.value, 0);
-    totalCancel.value = data.tienHuyHang.reduce((sum, item) => sum + item.value, 0);
-
-    // Update chart
-    chartData.value = {
-      labels: data.doanhThu.map(item => item.label),
-      datasets: [
-        {
-          label: 'Doanh Thu',
-          backgroundColor: '#10B981', // Green
-          data: data.doanhThu.map(item => item.value)
-        },
-        {
-          label: 'Tiền Nhập',
-          backgroundColor: '#3B82F6', // Blue
-          data: data.tienNhapHang.map(item => item.value)
-        },
-        {
-          label: 'Tiền Huỷ',
-          backgroundColor: '#EF4444', // Red
-          data: data.tienHuyHang.map(item => item.value)
-        }
-      ]
-    };
-
-    // Fetch top medicines
-    await fetchTopMedicines();
-
-    // Fetch staff count
-    await fetchStaffCount();
 
     loaded.value = true;
   } catch (error) {
@@ -317,6 +456,140 @@ const fetchStaffCount = async () => {
     totalStaff.value = response.data.length;
   } catch (error) {
     console.error('Error fetching staff count:', error);
+  }
+};
+
+// Fetch revenue trends by category for admin
+const fetchRevenueByCategory = async () => {
+  try {
+    const response = await axios.get('https://localhost:7283/api/ThongKe/revenue-by-category');
+    const categories = response.data || [];
+    
+    const labels = categories.map(c => c.categoryName);
+    const revenues = categories.map(c => c.totalRevenue);
+    const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+    
+    revenueByCategory.value = {
+      labels: labels,
+      datasets: [{
+        label: 'Doanh Thu Theo Danh Mục',
+        backgroundColor: colors.slice(0, labels.length),
+        borderColor: colors.slice(0, labels.length),
+        data: revenues,
+        borderWidth: 2
+      }]
+    };
+  } catch (error) {
+    console.error('Error fetching revenue by category:', error);
+    // Fallback: Leave empty, the chart will show loading placeholder
+    revenueByCategory.value = { labels: [], datasets: [] };
+  }
+};
+
+// Fetch line chart data for revenue trend
+const fetchRevenueLineChart = async () => {
+  try {
+    let response;
+    if (viewMode.value === 'year') {
+      response = await ThongKeService.getThongKeNam(selectedYear.value);
+    } else {
+      response = await ThongKeService.getThongKeThang(selectedMonth.value, selectedYear.value);
+    }
+    
+    const data = response.data;
+    
+    lineChartData.value = {
+      labels: data.doanhThu.map(item => item.label),
+      datasets: [
+        {
+          label: 'Doanh Thu',
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          data: data.doanhThu.map(item => item.value),
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        },
+        {
+          label: 'Tiền Nhập',
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          data: data.tienNhapHang.map(item => item.value),
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error fetching line chart data:', error);
+  }
+};
+
+// Fetch staff personal statistics
+const fetchStaffStatistics = async () => {
+  try {
+    const maNV = authStore.user?.MaNV;
+    if (!maNV) return;
+
+    // Get invoices for this staff
+    const invoicesResponse = await axios.get(`https://localhost:7283/api/HoaDon/nhanvien/${maNV}`);
+    const invoices = invoicesResponse.data || [];
+    
+    staffTotalInvoices.value = invoices.length;
+    staffTotalRevenue.value = invoices.reduce((sum, inv) => sum + (inv.tongTien || 0), 0);
+    
+    // Get this month's revenue
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+    
+    const monthRevenue = invoices
+      .filter(inv => {
+        const invDate = new Date(inv.ngayLap);
+        return invDate.getMonth() + 1 === currentMonth && invDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, inv) => sum + (inv.tongTien || 0), 0);
+    
+    staffMonthRevenue.value = monthRevenue;
+    
+    // Generate line chart for staff showing their revenue trend this month
+    const today2 = new Date();
+    const currentYear2 = today2.getFullYear();
+    const currentMonth2 = today2.getMonth() + 1;
+    
+    // Group invoices by date for this month
+    const revenueByDate = {};
+    invoices.forEach(inv => {
+      const invDate = new Date(inv.ngayLap);
+      if (invDate.getFullYear() === currentYear2 && invDate.getMonth() + 1 === currentMonth2) {
+        const dateStr = `${invDate.getDate()}/${invDate.getMonth() + 1}`;
+        revenueByDate[dateStr] = (revenueByDate[dateStr] || 0) + (inv.tongTien || 0);
+      }
+    });
+    
+    const dates = Object.keys(revenueByDate).sort((a, b) => {
+      const [dayA] = a.split('/');
+      const [dayB] = b.split('/');
+      return parseInt(dayA) - parseInt(dayB);
+    });
+    
+    lineChartData.value = {
+      labels: dates,
+      datasets: [
+        {
+          label: 'Doanh Thu Hàng Ngày',
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          data: dates.map(date => revenueByDate[date]),
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error fetching staff statistics:', error);
   }
 };
 
@@ -551,6 +824,34 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.charts-container-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 20px;
+  align-items: start;
+  overflow: hidden;
+}
+
+.charts-container-staff {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+  overflow: hidden;
+}
+
+.line-chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.category-chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .bar-chart-wrapper {
   display: flex;
   flex-direction: column;
@@ -682,6 +983,16 @@ onMounted(() => {
   }
 
   .charts-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .charts-container-admin {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .charts-container-staff {
     grid-template-columns: 1fr;
     gap: 15px;
   }

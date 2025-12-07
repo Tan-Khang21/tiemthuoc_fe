@@ -9,7 +9,14 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAdmin: (state) => {
-      return state.user && (state.user.IsAdmin === true || state.user.MaNV);
+      // Only admin if ChucVu === 1 (not just having MaNV which staff also have)
+      if (!state.user) return false;
+      return (
+        state.user.ChucVu === 1 ||
+        state.user.ChucVu === '1' ||
+        state.user.IsAdmin === true ||
+        state.user.VaiTro === 'Admin'
+      );
     },
     hasCustomerInfo: (state) => {
       return state.user && state.user.HasCustomerInfo === true;
@@ -50,6 +57,7 @@ export const useAuthStore = defineStore('auth', {
             MaKH: response.data.maKH || response.data.MaKH,
             MaNV: response.data.maNV || response.data.MaNV || employeeData.maNV || employeeData.MaNV,
             VaiTro: response.data.vaiTro || response.data.VaiTro,
+            ChucVu: response.data.chucVu || response.data.ChucVu || employeeData.chucVu || employeeData.ChucVu,
             HasCustomerInfo: response.data.hasCustomerInfo || response.data.HasCustomerInfo,
             IsAdmin: response.data.isAdmin || response.data.IsAdmin
           };

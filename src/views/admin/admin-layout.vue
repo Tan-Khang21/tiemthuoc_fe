@@ -31,7 +31,7 @@
               <i class="fas fa-pills"></i>
               <span>Quản Lý Thuốc</span>
             </el-menu-item>
-            <el-menu-item index="/admin/nhacungcap">
+            <el-menu-item v-if="isAdmin" index="/admin/nhacungcap">
               <i class="fas fa-building"></i>
               <span>Nhà Cung Cấp</span>
             </el-menu-item>
@@ -112,28 +112,18 @@
               </div>
             </div>
             
-            <!-- Thống Kê Menu Item -->
-            <el-menu-item index="/admin/thong-ke">
-              <i class="fas fa-chart-bar"></i>
-              <span>Thống Kê</span>
-            </el-menu-item>
             
-            <!-- Nhân Viên Menu Item -->
-            <el-menu-item index="/admin/nhanvien">
-              <i class="fas fa-users"></i>
-              <span>Nhân Viên</span>
-            </el-menu-item>
           </el-menu>
 
           <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
-          <div class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
+          <div v-if="isAdmin" class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
             <i class="fas fa-chart-pie"></i>
             <span> Tổng Hợp</span>
             <i :class="['fas', summaryOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
           </div>
 
           <!-- Custom submenu items -->
-          <div v-show="summaryOpen" class="custom-submenu">
+          <div v-if="isAdmin && summaryOpen" class="custom-submenu">
             <div
               class="submenu-item"
               :class="{ 'is-active': activeMenu === '/admin/lieudung' }"
@@ -167,15 +157,21 @@
               <span>Nhóm loại</span>
             </div>
           </div>
+          
+          <!-- Nhân Viên Menu Item - Admin only -->
+          <div v-if="isAdmin" class="menu-item-custom" @click="goToPage('/admin/nhanvien')" :class="{ 'is-active': activeMenu === '/admin/nhanvien' }">
+            <i class="fas fa-users"></i>
+            <span>Nhân Viên</span>
+          </div>
         </div>
           <div class="sidebar-footer">
-            <div class="user-info">
+            <div class="user-info" @click="viewMyProfile" style="cursor: pointer;">
               <div class="avatar">
                 <i class="fas fa-user-shield"></i>
               </div>
               <div class="user-details">
                 <p class="user-name">{{ authStore.user?.TenDangNhap || 'Admin' }}</p>
-                <p class="user-role">Quản Trị Viên</p>
+                <p class="user-role">{{ userRoleDisplay }}</p>
               </div>
             </div>
           </div>
@@ -235,6 +231,47 @@ const authStore = useAuthStore();
 
 const activeMenu = computed(() => route.path);
 
+// Check if user is admin (chucVu === 1 means Admin, 0 means Nhân Viên)
+const isAdmin = computed(() => {
+  // Check ChucVu field (numeric: 1 = admin, 0 = staff)
+  const chucVu = authStore.user?.ChucVu ?? authStore.user?.chucVu;
+  if (chucVu === 1 || chucVu === '1') return true;
+  
+  // Fallback to IsAdmin field (boolean)
+  if (authStore.user?.IsAdmin === true) return true;
+  if (authStore.user?.isAdmin === true) return true;
+  
+  // Fallback to VaiTro field (string: "Admin")
+  if (authStore.user?.VaiTro === 'Admin' || authStore.user?.vaiTro === 'Admin') return true;
+  
+  return false;
+});
+
+// Get display role text
+const userRoleDisplay = computed(() => {
+  const chucVu = authStore.user?.ChucVu ?? authStore.user?.chucVu;
+  if (chucVu === 1 || chucVu === '1') return 'Quản Trị Viên';
+  if (chucVu === 0 || chucVu === '0') return 'Nhân Viên';
+  if (authStore.user?.VaiTro === 'Admin' || authStore.user?.isAdmin === true) return 'Quản Trị Viên';
+  return 'Nhân Viên';
+});
+
+// Menu items that only admins can see
+const adminOnlyMenus = [
+  '/admin/nhacungcap',
+  '/admin/nhanvien',
+  '/admin/lieudung',
+  '/admin/loaidonvi',
+  '/admin/loaithuoc',
+  '/admin/nhomloai'
+];
+
+// Check if a menu should be visible
+const canAccessMenu = (menuPath) => {
+  if (isAdmin.value) return true; // Admin can access all
+  return !adminOnlyMenus.includes(menuPath);
+};
+
 const currentPageName = computed(() => {
   const names = {
     '/admin/thuoc': 'Quản Lý Thuốc',
@@ -292,6 +329,16 @@ const goToPage = (path) => {
 
 const goToStatistics = () => {
   router.push('/admin/thong-ke');
+};
+
+const viewMyProfile = () => {
+  // Get maNV from user info - it should be stored in authStore
+  const maNV = authStore.user?.MaNV;
+  if (maNV) {
+    router.push(`/admin/staff/${maNV}`);
+  } else {
+    ElMessage.warning('Không tìm thấy thông tin nhân viên');
+  }
 };
 </script>
 
@@ -540,6 +587,13 @@ const goToStatistics = () => {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-info:hover {
+  background: linear-gradient(135deg, #c8e9ee 0%, #a8dde6 100%);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+  transform: translateY(-2px);
 }
 
 .avatar {
@@ -701,6 +755,13 @@ const goToStatistics = () => {
   background: rgba(255, 255, 255, 0.5);
   color: #17a2b8;
   box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
+}
+
+.menu-item-custom.is-active {
+  background: white;
+  color: #17a2b8;
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+  font-weight: 600;
 }
 
 .menu-item-custom i:first-child {

@@ -1,7 +1,10 @@
 <template>
   <el-card class="page-card">
     <el-tabs v-model="activeTab" style="margin-top:12px">
-      <el-tab-pane label="Thuốc từ kho" name="kho">
+      <el-tab-pane name="kho">
+        <template #label>
+          <span>Thuốc từ kho <el-badge :value="khoExpiredCount" class="item" /></span>
+        </template>
         <!-- Kho tab: Sắp hết hạn -->
         <div class="kho-tab-content" style="margin-top:12px">
           <div class="filter-section" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f5f7fa; border-radius:8px">
@@ -101,7 +104,10 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="Thuốc từ hóa đơn" name="hoadon">
+      <el-tab-pane name="hoadon">
+        <template #label>
+          <span>Thuốc từ hóa đơn <el-badge :value="hoadonCancelledCount" class="item" /></span>
+        </template>
         <!-- Hóa đơn tab content -->
         <div style="padding:12px">
           <div class="hoadon-filters" style="margin-bottom:12px">
@@ -144,7 +150,10 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="Yêu cầu xử lý" name="yeucau">
+      <el-tab-pane name="yeucau">
+        <template #label>
+          <span>Yêu cầu xử lý <el-badge :value="ycCountDisplay" class="item" /></span>
+        </template>
         <div style="padding:12px">
           <div class="ycau-filters-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:16px; margin-bottom:16px; padding:12px; background:#f5f7fa; border-radius:6px">
             <div class="yc-filter-field">
@@ -190,14 +199,17 @@
               <template #default="{ row }">
                 <div class="action-buttons-row">
                   <el-button size="small" @click="() => openYeuCauDetail(row)">Chi tiết</el-button>
-                  <el-button type="primary" size="small" @click="() => openYeuCauApprove(row)">Duyệt</el-button>
+                  <el-button v-if="isAdmin" type="primary" size="small" @click="() => openYeuCauApprove(row)">Duyệt</el-button>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="Đã duyệt" name="daduyet">
+      <el-tab-pane name="daduyet">
+        <template #label>
+          <span>Đã duyệt <el-badge :value="approvedNoCancelCount" class="item" /></span>
+        </template>
         <div style="padding:12px">
           <div class="ycau-filters-grid" style="margin-bottom:16px; padding:12px">
             <div class="yc-filter-field">
@@ -377,7 +389,7 @@
         <div class="dialog-footer">
           <el-button plain @click="() => { ycEditMode = false; ycDetailDialog = false }">Đóng</el-button>
           <template v-if="!ycEditMode">
-            <el-button type="primary" size="small" @click="startApprove">Duyệt</el-button>
+            <el-button v-if="isAdmin && !ycDetailPhieu?.maNV_Duyet && !ycDetailPhieu?.MaNV_Duyet" type="primary" size="small" @click="startApprove">Duyệt</el-button>
           </template>
           <template v-else>
             <el-button size="small" @click="cancelApprove">Huỷ</el-button>
@@ -601,6 +613,17 @@ import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
+
+// Role-based access control
+const isAdmin = computed(() => {
+  return (
+    authStore.user?.ChucVu === 1 ||
+    authStore.user?.ChucVu === '1' ||
+    authStore.user?.isAdmin === true ||
+    authStore.user?.VaiTro === 'Admin'
+  );
+});
+
 const start = ref(null);
 const end = ref(null);
 const q = ref('');
@@ -748,14 +771,21 @@ const hoadonDisplayedItems = computed(() => {
   });
 });
 
+// Count cancelled invoices (trangThaiGiaoHang === -1)
+const hoadonCancelledCount = computed(() => {
+  return (hoadonItems.value || []).filter(item => {
+    return (item.trangThaiGiaoHang ?? 0) === -1;
+  }).length;
+});
+
 // Yêu cầu xử lý (PhieuXuLyHoanHuy)
 const ycItems = ref([]);
 const nhanVienList = ref([]);
 const ycLoading = ref(false);
 const ycQuery = ref('');
-// default ycStart = first day of current month, ycEnd = now
+// default ycStart = 1 month ago (same date, one month back), ycEnd = now
 const _now = new Date();
-const _startOfMonth = new Date(_now.getFullYear(), _now.getMonth(), 1, 0, 0, 0);
+const _startOfMonth = new Date(_now.getFullYear(), _now.getMonth() - 1, _now.getDate(), 0, 0, 0);
 const _fmt = (dt) => {
   if (!dt) return null;
   const d = new Date(dt);
@@ -827,6 +857,14 @@ const approvedDisplayedItems = computed(() => {
       return a.includes(q) || b.includes(q) || c.includes(q);
     } catch (e) { return false; }
   });
+});
+
+// Count approved items that don't have a cancel request yet (trangthaitaophieuhuy === 0 or '0')
+const approvedNoCancelCount = computed(() => {
+  return (approvedItems.value || []).filter(item => {
+    const trangThai = item.trangthaitaophieuhuy ?? item.TrangThaiTaoPhieuHuy;
+    return trangThai === 0 || trangThai === '0';
+  }).length;
 });
 
 const fetchYeuCauList = async () => {
@@ -1038,6 +1076,10 @@ watch([approvedStart, approvedEnd, approvedMaNV, approvedLoaiNguon, approvedQuer
   if (activeTab.value === 'daduyet') scheduleFetchApproved(400);
 });
 
+const ycCountDisplay = computed(() => {
+  return ycItems.value?.length || 0;
+});
+
 const ycDisplayedItems = computed(() => {
   const q = (ycQuery.value || '').toString().trim().toLowerCase();
   const list = ycItems.value || [];
@@ -1178,14 +1220,15 @@ const statusLabel = (s) => {
 
 const setDefaultRange = () => {
   const today = new Date();
-  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  // Start from 1 month ago (same date, but one month back)
+  const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
   const fmt = (dt) => {
     const y = dt.getFullYear();
     const m = String(dt.getMonth() + 1).padStart(2, '0');
     const d = String(dt.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   };
-  start.value = fmt(first);
+  start.value = fmt(oneMonthAgo);
   end.value = fmt(today);
 };
 
@@ -1266,6 +1309,13 @@ const khoDisplayedItems = computed(() => {
       return false;
     }
   });
+});
+
+// Count expired medicines (ngayConLai <= 0)
+const khoExpiredCount = computed(() => {
+  return (khoItems.value || []).filter(item => {
+    return (item.ngayConLai ?? 999) <= 0;
+  }).length;
 });
 
 const khoPaginatedItems = computed(() => {
@@ -1406,25 +1456,27 @@ onMounted(async () => {
   setDefaultRange();
   fetchKhoList();
   fetchList();
-  // set default range for Yêu cầu xử lý: start = first day of this month, end = now
-  try {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-    ycStart.value = startOfMonth;
-    ycEnd.value = now;
-  } catch (e) {
-    ycStart.value = null;
-    ycEnd.value = null;
-  }
+  fetchHoaDonList(hoadonStatus.value); // Fetch hóa đơn list on mount
+  
+  // Initialize Yêu cầu xử lý and Đã duyệt with proper default dates
+  // Use the pre-calculated _startOfMonth (1 month ago) and _now (today)
+  ycStart.value = _startOfMonth;
+  ycEnd.value = _now;
+  approvedStart.value = _startOfMonth;
+  approvedEnd.value = _now;
+  
+  // Fetch initial data for Yêu cầu xử lý and Đã duyệt
+  await fetchYeuCauList();
+  await fetchApprovedList();
 
-    // Fetch employee list
-    try {
-      const response = await api.get('/NhanVien');
-      // API returns fields like maNV / hoTen
-      nhanVienList.value = Array.isArray(response?.data) ? response.data : (response?.data?.data || []);
-    } catch (error) {
-      console.error('Failed to load employee list:', error);
-    }
+  // Fetch employee list
+  try {
+    const response = await api.get('/NhanVien');
+    // API returns fields like maNV / hoTen
+    nhanVienList.value = Array.isArray(response?.data) ? response.data : (response?.data?.data || []);
+  } catch (error) {
+    console.error('Failed to load employee list:', error);
+  }
 });
 
 watch([start, end], () => {

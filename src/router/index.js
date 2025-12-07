@@ -194,6 +194,11 @@ const routes = [
         name: "admin-nhanvien-detail",
         component: () => import("@/views/admin/NhanVien-detail.vue"),
       },
+      {
+        path: "staff/:maNV",
+        name: "admin-staff-profile",
+        component: () => import("@/views/admin/ProfileStaff.vue"),
+      },
     ],
   },
 ];
