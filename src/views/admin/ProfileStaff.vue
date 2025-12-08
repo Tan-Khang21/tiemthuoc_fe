@@ -374,7 +374,7 @@ const mapStatus = (status) => {
     '-2': 'Hoàn Tất Huỷ',
     '-3': 'Chưa Xử Lý Huỷ'
   };
-  return statuses[status] || 'Không Xác Định';
+  return statuses[status] || 'Đã hủy';
 };
 
 const getStatusType = (status) => {

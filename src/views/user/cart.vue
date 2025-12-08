@@ -136,6 +136,8 @@ const removeItem = (item) => {
 };
 
 const handleCheckout = async () => {
+  console.log('=== BẮT ĐẦU THANH TOÁN ===');
+  
   if (!authStore.isAuthenticated) {
     ElMessage.warning('Vui lòng đăng nhập để đặt hàng');
     router.push('/login');
@@ -173,6 +175,9 @@ const handleCheckout = async () => {
       }))
     };
 
+    console.log('Payment Method:', paymentMethod.value);
+    console.log('Order Data:', orderData);
+
     // Xử lý thanh toán dựa trên phương thức
     if (paymentMethod.value === 2) {
       // Thanh toán QR
@@ -183,17 +188,29 @@ const handleCheckout = async () => {
         cancelUrl: `${window.location.origin}/user/payment-cancel`
       };
 
+      console.log('Payment Request:', paymentRequest);
+      console.log('Đang gọi API SimplePayment/Create...');
+
       const response = await api.simplePayment.create(paymentRequest);
       
-      if (response.status === 1 && response.data && response.data.success) {
+      console.log('Response từ API:', response);
+      console.log('Response.data:', response.data);
+      
+      // Backend trả về: { status: 1, data: {...}, message: "..." }
+      const result = response.data;
+      
+      if (result && result.status === 1 && result.data) {
+        console.log('✅ Thanh toán thành công, chuyển hướng đến:', result.data.paymentUrl);
         localStorage.setItem('pendingOrder', JSON.stringify(orderData));
-        localStorage.setItem('orderCode', response.data.orderCode);
-        window.location.href = response.data.paymentUrl;
+        localStorage.setItem('orderCode', result.data.orderCode);
+        window.location.href = result.data.paymentUrl;
       } else {
-        ElMessage.error(response.data?.message || 'Không thể tạo thanh toán');
+        console.error('❌ Lỗi response:', result);
+        ElMessage.error(result?.message || 'Không thể tạo thanh toán');
       }
     } else {
       // Thanh toán tiền mặt
+      console.log('Thanh toán tiền mặt');
       localStorage.setItem('pendingOrder', JSON.stringify(orderData));
       // Với tiền mặt, không có orderCode từ cổng thanh toán, set null hoặc bỏ qua
       localStorage.removeItem('orderCode'); 
@@ -201,7 +218,9 @@ const handleCheckout = async () => {
     }
 
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('❌ Checkout error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error response:', error.response);
     ElMessage.error('Có lỗi xảy ra khi tạo đơn hàng');
   }
 };

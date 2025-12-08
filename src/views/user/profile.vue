@@ -21,6 +21,33 @@
       <el-card class="info-card">
         <template #header>
           <div class="card-header">
+            <i class="fas fa-lock"></i>
+            <span>Thông Tin Tài Khoản</span>
+          </div>
+        </template>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Tên đăng nhập</label>
+            <div class="info-value">
+              <i class="fas fa-user-tag"></i>
+              <span>{{ authStore.user?.TenDangNhap || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <label>Email</label>
+            <div class="info-value">
+              <i class="fas fa-envelope"></i>
+              <span>{{ authStore.user?.Email || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <el-card class="info-card">
+        <template #header>
+          <div class="card-header">
             <i class="fas fa-id-card"></i>
             <span>Thông Tin Cá Nhân</span>
           </div>
@@ -72,33 +99,6 @@
             <div class="info-value">
               <i class="fas fa-map-marker-alt"></i>
               <span>{{ customerInfo.diaChi || 'Chưa cập nhật' }}</span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-
-      <el-card class="info-card">
-        <template #header>
-          <div class="card-header">
-            <i class="fas fa-lock"></i>
-            <span>Thông Tin Tài Khoản</span>
-          </div>
-        </template>
-        
-        <div class="info-grid">
-          <div class="info-item">
-            <label>Tên đăng nhập</label>
-            <div class="info-value">
-              <i class="fas fa-user-tag"></i>
-              <span>{{ authStore.user?.TenDangNhap || 'N/A' }}</span>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <label>Email</label>
-            <div class="info-value">
-              <i class="fas fa-envelope"></i>
-              <span>{{ authStore.user?.Email || 'Chưa cập nhật' }}</span>
             </div>
           </div>
         </div>
@@ -305,45 +305,65 @@ onMounted(() => {
   max-width: 1000px;
   margin: 0 auto;
   padding: 30px 20px;
+  background: #f0f8ff;
+  min-height: 100vh;
 }
 
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #c8e9ee;
+  margin-bottom: 25px;
+  padding: 25px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #4fc3f7;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .header-content i {
-  font-size: 50px;
-  color: #17a2b8;
+  font-size: 45px;
+  color: #4fc3f7;
 }
 
 .header-content h2 {
-  margin: 0 0 5px;
-  color: #0d3d47;
-  font-size: 28px;
-  font-weight: 700;
+  margin: 0 0 4px;
+  color: #2c3e50;
+  font-size: 26px;
+  font-weight: 600;
 }
 
 .header-content p {
   margin: 0;
-  color: #6c757d;
+  color: #7f8c8d;
   font-size: 14px;
+}
+
+:deep(.profile-header .el-button) {
+  background: #4fc3f7;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+:deep(.profile-header .el-button:hover) {
+  background: #29b6f6;
 }
 
 .loading-container {
   background: white;
   padding: 30px;
   border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .profile-content {
@@ -353,27 +373,42 @@ onMounted(() => {
 
 .info-card {
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: none;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:deep(.info-card .el-card__header) {
+  background: white;
+  padding: 18px 25px;
+  border-bottom: 2px solid #e3f2fd;
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-weight: 600;
-  color: #0d3d47;
+  color: #2c3e50;
   font-size: 16px;
 }
 
 .card-header i {
-  color: #17a2b8;
-  font-size: 18px;
+  color: #4fc3f7;
+  font-size: 20px;
+  background: #e3f2fd;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+:deep(.info-card .el-card__body) {
+  padding: 25px;
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 25px;
+  gap: 18px;
 }
 
 .info-item {
@@ -387,8 +422,8 @@ onMounted(() => {
 }
 
 .info-item label {
-  font-size: 13px;
-  color: #6c757d;
+  font-size: 12px;
+  color: #95a5a6;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -398,39 +433,84 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 15px;
-  background: #f8f9fa;
+  padding: 12px 14px;
+  background: #f8fbff;
   border-radius: 8px;
-  border-left: 3px solid #17a2b8;
+  border: 1px solid #e3f2fd;
+  transition: all 0.2s ease;
+}
+
+.info-value:hover {
+  border-color: #4fc3f7;
+  background: #e3f2fd;
 }
 
 .info-value i {
-  color: #17a2b8;
   font-size: 16px;
-  width: 20px;
+  width: 18px;
   text-align: center;
 }
 
+/* Màu sắc đa dạng cho các icon */
+.info-value i.fa-user {
+  color: #29b6f6;
+}
+
+.info-value i.fa-phone {
+  color: #66bb6a;
+}
+
+.info-value i.fa-envelope {
+  color: #ffa726;
+}
+
+.info-value i.fa-id-card {
+  color: #ab47bc;
+}
+
+.info-value i.fa-venus-mars {
+  color: #ec407a;
+}
+
+.info-value i.fa-calendar {
+  color: #5c6bc0;
+}
+
+.info-value i.fa-map-marker-alt {
+  color: #ef5350;
+}
+
+.info-value i.fa-key {
+  color: #26c6da;
+}
+
 .info-value span {
-  color: #0d3d47;
-  font-size: 15px;
+  color: #34495e;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .empty-card {
   margin-top: 50px;
   border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 768px) {
+  .profile-page {
+    padding: 20px 15px;
+  }
+
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+    padding: 20px;
   }
 
-  .info-grid {
-    grid-template-columns: 1fr;
+  .header-content {
+    gap: 15px;
   }
 
   .header-content i {
@@ -439,6 +519,19 @@ onMounted(() => {
 
   .header-content h2 {
     font-size: 22px;
+  }
+
+  .header-content p {
+    font-size: 13px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  :deep(.info-card .el-card__body) {
+    padding: 20px;
   }
 }
 </style>
