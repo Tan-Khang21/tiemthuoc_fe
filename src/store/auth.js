@@ -9,14 +9,10 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAdmin: (state) => {
-      // Only admin if ChucVu === 1 (not just having MaNV which staff also have)
+      // ChucVu is the source of truth: 1 = admin, 0 = staff
+      // Ignore conflicting IsAdmin/VaiTro fields from backend as they're unreliable
       if (!state.user) return false;
-      return (
-        state.user.ChucVu === 1 ||
-        state.user.ChucVu === '1' ||
-        state.user.IsAdmin === true ||
-        state.user.VaiTro === 'Admin'
-      );
+      return state.user.ChucVu === 1 || state.user.ChucVu === '1';
     },
     hasCustomerInfo: (state) => {
       return state.user && state.user.HasCustomerInfo === true;
@@ -57,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
             MaKH: response.data.maKH || response.data.MaKH,
             MaNV: response.data.maNV || response.data.MaNV || employeeData.maNV || employeeData.MaNV,
             VaiTro: response.data.vaiTro || response.data.VaiTro,
-            ChucVu: response.data.chucVu || response.data.ChucVu || employeeData.chucVu || employeeData.ChucVu,
+            ChucVu: response.data.chucVu !== undefined ? response.data.chucVu : (response.data.ChucVu !== undefined ? response.data.ChucVu : (employeeData.chucVu !== undefined ? employeeData.chucVu : employeeData.ChucVu)),
             HasCustomerInfo: response.data.hasCustomerInfo || response.data.HasCustomerInfo,
             IsAdmin: response.data.isAdmin || response.data.IsAdmin
           };

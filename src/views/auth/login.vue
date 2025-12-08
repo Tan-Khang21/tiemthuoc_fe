@@ -153,9 +153,9 @@ const handleLogin = async () => {
     ElMessage.success('Đăng nhập thành công!')
     
     // Redirect based on user role and customer info
-    if (authStore.isAdmin) {
-      // Nếu có mã nhân viên -> chuyển đến trang admin
-      router.push('/admin')
+    if (authStore.user?.MaNV) {
+      // Có mã nhân viên -> chuyển đến trang staff/admin
+      router.push('/admin/thong-ke')
     } else if (!authStore.hasCustomerInfo) {
       // Nếu chưa có mã khách hàng -> yêu cầu nhập thông tin
       router.push('/user/complete-profile')

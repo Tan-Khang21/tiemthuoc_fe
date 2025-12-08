@@ -216,13 +216,9 @@ const loading = ref(false);
 const supplierLoading = ref(false);
 const employeeLoading = ref(false);
 
-// Check if user is admin
+// Check if user is admin (ChucVu is the source of truth)
 const isAdmin = computed(() => {
-  const chucVu = authStore.user?.ChucVu;
-  const result = authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1' || 
-         authStore.user?.isAdmin === true || authStore.user?.VaiTro === 'Admin';
-  console.log('isAdmin debug (phieunhap):', { chucVu, user: authStore.user, result });
-  return result;
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
 });
 
 // format date param as YYYY-MM-DD (API expects date strings like 2025-11-01)
