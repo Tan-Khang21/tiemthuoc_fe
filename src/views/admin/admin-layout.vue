@@ -27,26 +27,6 @@
             active-text-color="#17a2b8"
             router
           >
-            <el-menu-item index="/admin/thuoc">
-              <i class="fas fa-pills"></i>
-              <span>Quản Lý Thuốc</span>
-            </el-menu-item>
-            <el-menu-item v-if="isAdmin" index="/admin/nhacungcap">
-              <i class="fas fa-building"></i>
-              <span>Nhà Cung Cấp</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/phieunhap">
-              <i class="fas fa-file-import"></i>
-              <span>Phiếu Nhập</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/binhluan">
-              <i class="fas fa-comments"></i>
-              <span>Bình Luận</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/chat">
-              <i class="fas fa-comment-dots"></i>
-              <span>Trò chuyện</span>
-            </el-menu-item>
             <!-- Hóa Đơn submenu: Hóa đơn / Xử lý hóa đơn online -->
             <div class="menu-item-custom" @click="hoadonOpen = !hoadonOpen" style="margin-bottom:6px">
               <i class="fas fa-receipt"></i>
@@ -71,6 +51,7 @@
                 <span>Xử lý hóa đơn online</span>
               </div>
             </div>
+            
             <!-- Kho Thuốc with submenu: Kho Thuốc / Quy đổi / Hủy thuốc -->
             <div class="menu-item-custom" @click="khoOpen = !khoOpen" style="margin-bottom:6px">
               <i class="fas fa-warehouse"></i>
@@ -112,6 +93,30 @@
               </div>
             </div>
             
+            <el-menu-item index="/admin/phieunhap">
+              <i class="fas fa-file-import"></i>
+              <span>Phiếu Nhập</span>
+            </el-menu-item>
+            
+            <el-menu-item v-if="isAdmin" index="/admin/nhacungcap">
+              <i class="fas fa-building"></i>
+              <span>Nhà Cung Cấp</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/binhluan">
+              <i class="fas fa-comments"></i>
+              <span>Bình Luận</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/chat">
+              <i class="fas fa-comment-dots"></i>
+              <span>Trò chuyện</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/thuoc">
+              <i class="fas fa-pills"></i>
+              <span>Quản Lý Thuốc</span>
+            </el-menu-item>
             
           </el-menu>
 
@@ -233,18 +238,10 @@ const activeMenu = computed(() => route.path);
 
 // Check if user is admin (chucVu === 1 means Admin, 0 means Nhân Viên)
 const isAdmin = computed(() => {
-  // Check ChucVu field (numeric: 1 = admin, 0 = staff)
+  // ChucVu is the source of truth: 1 = admin, 0 = staff
   const chucVu = authStore.user?.ChucVu ?? authStore.user?.chucVu;
-  if (chucVu === 1 || chucVu === '1') return true;
-  
-  // Fallback to IsAdmin field (boolean)
-  if (authStore.user?.IsAdmin === true) return true;
-  if (authStore.user?.isAdmin === true) return true;
-  
-  // Fallback to VaiTro field (string: "Admin")
-  if (authStore.user?.VaiTro === 'Admin' || authStore.user?.vaiTro === 'Admin') return true;
-  
-  return false;
+  // Only return true if ChucVu is exactly 1, ignore conflicting IsAdmin/VaiTro fields from backend
+  return chucVu === 1 || chucVu === '1';
 });
 
 // Get display role text
@@ -273,13 +270,13 @@ const canAccessMenu = (menuPath) => {
 };
 
 const currentPageName = computed(() => {
-  const names = {
+  const pathNames = {
     '/admin/thuoc': 'Quản Lý Thuốc',
     '/admin/nhacungcap': 'Nhà Cung Cấp',
     '/admin/phieunhap': 'Phiếu Nhập',
     '/admin/hoadon': 'Hóa Đơn',
     '/admin/kho': 'Kho Thuốc',
-        '/admin/nhomloai': 'Nhóm Loại',
+    '/admin/nhomloai': 'Nhóm Loại',
     '/admin/lieudung': 'Liều Dùng',
     '/admin/loaidonvi': 'Loại Đơn Vị',
     '/admin/loaithuoc': 'Loại Thuốc',
@@ -288,9 +285,25 @@ const currentPageName = computed(() => {
     '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí',
     '/admin/chat': 'Trò chuyện với khách',
     '/admin/nhanvien': 'Quản Lý Nhân Viên'
-
   };
-  return names[route.path] || 'Admin';
+  
+  const routeNames = {
+    'admin-phieunhap-detail': 'Chi tiết Phiếu Nhập',
+    'admin-hoadon-detail': 'Chi tiết Hóa Đơn',
+    'admin-nhanvien-detail': 'Chi tiết Nhân Viên'
+  };
+  
+  // First check route names (for detail pages with params)
+  if (route.name && routeNames[route.name]) {
+    return routeNames[route.name];
+  }
+  
+  // Then check route path
+  if (pathNames[route.path]) {
+    return pathNames[route.path];
+  }
+  
+  return 'Admin';
 });
 
 const goToUser = () => {

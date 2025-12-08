@@ -614,14 +614,9 @@ import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
 
-// Role-based access control
+// Check if user is admin (ChucVu is the source of truth)
 const isAdmin = computed(() => {
-  return (
-    authStore.user?.ChucVu === 1 ||
-    authStore.user?.ChucVu === '1' ||
-    authStore.user?.isAdmin === true ||
-    authStore.user?.VaiTro === 'Admin'
-  );
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
 });
 
 const start = ref(null);

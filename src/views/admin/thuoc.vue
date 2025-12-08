@@ -466,10 +466,9 @@ const pageSize = ref(10);
 // Auth store for role checking
 const authStore = useAuthStore();
 
-// Check if user is admin
+// Check if user is admin (ChucVu is the source of truth)
 const isAdmin = computed(() => {
-  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1' || 
-         authStore.user?.isAdmin === true || authStore.user?.VaiTro === 'Admin';
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
 });
 
 // Image selection variables

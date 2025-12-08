@@ -142,17 +142,9 @@ const statusOptions = [
   { value: 3, label: 'Đã nhận' },
 ];
 
-// Role-based access control
+// Check if user is admin (ChucVu is the source of truth)
 const isAdmin = computed(() => {
-  const chucVu = authStore.user?.ChucVu;
-  const result = (
-    authStore.user?.ChucVu === 1 ||
-    authStore.user?.ChucVu === '1' ||
-    authStore.user?.isAdmin === true ||
-    authStore.user?.VaiTro === 'Admin'
-  );
-  console.log('isAdmin debug:', { chucVu, user: authStore.user, result });
-  return result;
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
 });
 
 const applyFilters = () => {

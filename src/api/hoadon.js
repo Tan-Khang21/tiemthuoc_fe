@@ -40,4 +40,9 @@ export default {
   cancel(maHd) {
     return axios.post(`/HoaDon/Cancel/${maHd}`);
   },
+
+  // Lấy hóa đơn theo nhân viên
+  getByNhanVien(maNV) {
+    return axios.get(`/HoaDon/nhanvien/${maNV}`);
+  },
 };

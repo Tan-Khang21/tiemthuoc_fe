@@ -157,19 +157,6 @@
 
       <!-- Charts Container (only show for admin) -->
       <div class="charts-container-admin" v-if="isAdmin">
-        <!-- Bar Chart -->
-        <div class="bar-chart-wrapper">
-          <h3 class="chart-subtitle">Biểu đồ so sánh doanh thu, nhập hàng và tiền huỷ theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</h3>
-          <div class="chart-container">
-            <div v-if="loaded" class="chart-wrapper">
-              <Bar :data="chartData" :options="chartOptions" />
-            </div>
-            <div v-else class="loading-placeholder">
-              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
-            </div>
-          </div>
-        </div>
-
         <!-- Line Chart for Revenue Trend -->
         <div class="line-chart-wrapper">
           <h3 class="chart-subtitle">Xu hướng doanh thu vs tiền nhập theo {{ viewMode === 'year' ? 'tháng' : 'ngày' }}</h3>
@@ -203,18 +190,6 @@
           </div>
         </div>
 
-        <!-- Revenue by Category Chart -->
-        <div class="category-chart-wrapper">
-          <h3 class="chart-subtitle">Doanh thu theo danh mục thuốc</h3>
-          <div class="chart-container">
-            <div v-if="loaded && revenueByCategory.labels && revenueByCategory.labels.length > 0" class="chart-wrapper">
-              <Bar :data="revenueByCategory" :options="chartOptions" />
-            </div>
-            <div v-else class="loading-placeholder">
-              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Charts Container for Staff -->
@@ -246,14 +221,17 @@ import {
   BarElement,
   ArcElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  PointElement,
+  LineElement
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'vue-chartjs';
 import ThongKeService from '@/services/ThongKeService';
+import api from '@/api';
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 const authStore = useAuthStore();
 
@@ -266,10 +244,9 @@ const years = computed(() => {
   return Array.from({ length: 5 }, (_, i) => currentYear - i);
 });
 
-// Check if user is admin
+// Check if user is admin (ChucVu is the source of truth)
 const isAdmin = computed(() => {
-  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1' || 
-         authStore.user?.isAdmin === true || authStore.user?.VaiTro === 'Admin';
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
 });
 
 const chartData = ref({
@@ -431,8 +408,8 @@ const fetchData = async () => {
       // Fetch top medicines
       await fetchTopMedicines();
       
-      // Fetch revenue by category
-      await fetchRevenueByCategory();
+      // Fetch revenue by category (API endpoint not available yet)
+      // await fetchRevenueByCategory();
       
       // Fetch line chart data
       await fetchRevenueLineChart();
@@ -452,8 +429,9 @@ const fetchData = async () => {
 
 const fetchStaffCount = async () => {
   try {
-    const response = await axios.get('https://localhost:7283/api/NhanVien');
-    totalStaff.value = response.data.length;
+    const response = await api.nhanvien.getAll();
+    const staffList = response.data?.data || response.data || [];
+    totalStaff.value = staffList.length;
   } catch (error) {
     console.error('Error fetching staff count:', error);
   }
@@ -462,26 +440,11 @@ const fetchStaffCount = async () => {
 // Fetch revenue trends by category for admin
 const fetchRevenueByCategory = async () => {
   try {
-    const response = await axios.get('https://localhost:7283/api/ThongKe/revenue-by-category');
-    const categories = response.data || [];
-    
-    const labels = categories.map(c => c.categoryName);
-    const revenues = categories.map(c => c.totalRevenue);
-    const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
-    
-    revenueByCategory.value = {
-      labels: labels,
-      datasets: [{
-        label: 'Doanh Thu Theo Danh Mục',
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: colors.slice(0, labels.length),
-        data: revenues,
-        borderWidth: 2
-      }]
-    };
+    // This endpoint is not yet available in the backend
+    // For now, just leave it empty
+    revenueByCategory.value = { labels: [], datasets: [] };
   } catch (error) {
     console.error('Error fetching revenue by category:', error);
-    // Fallback: Leave empty, the chart will show loading placeholder
     revenueByCategory.value = { labels: [], datasets: [] };
   }
 };
@@ -518,6 +481,15 @@ const fetchRevenueLineChart = async () => {
           tension: 0.4,
           fill: true,
           borderWidth: 2
+        },
+        {
+          label: 'Tiền Huỷ',
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          data: data.tienHuyHang.map(item => item.value),
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
         }
       ]
     };
@@ -532,9 +504,22 @@ const fetchStaffStatistics = async () => {
     const maNV = authStore.user?.MaNV;
     if (!maNV) return;
 
-    // Get invoices for this staff
-    const invoicesResponse = await axios.get(`https://localhost:7283/api/HoaDon/nhanvien/${maNV}`);
-    const invoices = invoicesResponse.data || [];
+    // Get invoices for this staff using api service instead of hardcoded URL
+    const invoicesResponse = await api.hoadon.getByNhanVien(maNV);
+    
+    // Backend returns array directly (not wrapped in { data: ... })
+    let invoices = [];
+    if (Array.isArray(invoicesResponse.data)) {
+      invoices = invoicesResponse.data;
+    } else if (invoicesResponse.data?.data && Array.isArray(invoicesResponse.data.data)) {
+      invoices = invoicesResponse.data.data;
+    } else if (Array.isArray(invoicesResponse)) {
+      invoices = invoicesResponse;
+    }
+    
+    console.log('fetchStaffStatistics - maNV:', maNV);
+    console.log('fetchStaffStatistics - invoicesResponse:', invoicesResponse);
+    console.log('fetchStaffStatistics - invoices after parse:', invoices);
     
     staffTotalInvoices.value = invoices.length;
     staffTotalRevenue.value = invoices.reduce((sum, inv) => sum + (inv.tongTien || 0), 0);
@@ -826,7 +811,7 @@ onMounted(() => {
 
 .charts-container-admin {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-template-columns: 2fr 1fr;
   gap: 20px;
   align-items: start;
   overflow: hidden;
