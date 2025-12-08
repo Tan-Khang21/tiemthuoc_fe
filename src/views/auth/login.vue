@@ -3,21 +3,20 @@
     <div class="container">
       <div class="login-box">
         <div class="logo">
-          <i class="fas fa-user-md"></i>
-          <h1>medion</h1>
+          <img src="/src/assets/img/logo/logo.png" alt="Medion Logo" />
         </div>
 
         <h2>Đăng Nhập</h2>
         <p class="subtitle">Chào mừng bạn trở lại!</p>
 
-        <form class="login-form" @submit.prevent="handleLogin">
+        <div class="login-form">
           <div class="input-group">
             <i class="fas fa-user"></i>
             <input
               type="text"
               v-model="loginForm.username"
               placeholder="Tên đăng nhập"
-              required
+              @keyup.enter="handleLogin"
             />
           </div>
 
@@ -27,7 +26,7 @@
               :type="showPassword ? 'text' : 'password'"
               v-model="loginForm.password"
               placeholder="Mật khẩu"
-              required
+              @keyup.enter="handleLogin"
             />
             <i 
               class="fas toggle-password"
@@ -48,34 +47,19 @@
               <input type="checkbox" v-model="rememberMe" />
               <span>Ghi nhớ đăng nhập</span>
             </label>
-            <a href="#" class="forgot-password">Quên mật khẩu?</a>
+            <router-link to="/forgot-password" class="forgot-password">Quên mật khẩu?</router-link>
           </div>
 
-          <button type="submit" class="btn-login" :disabled="loading">
+          <button type="button" class="btn-login" :disabled="loading" @click="handleLogin">
             <span>{{ loading ? 'Đang đăng nhập...' : 'Đăng Nhập' }}</span>
             <i v-if="!loading" class="fas fa-arrow-right"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
           </button>
 
-          <div class="divider">
-            <span>Hoặc đăng nhập với</span>
-          </div>
-
-          <div class="social-login">
-            <button type="button" class="btn-social google">
-              <i class="fab fa-google"></i>
-              Google
-            </button>
-            <button type="button" class="btn-social facebook">
-              <i class="fab fa-facebook-f"></i>
-              Facebook
-            </button>
-          </div>
-
           <p class="register-link">
             Chưa có tài khoản? <router-link to="/register">Đăng ký ngay</router-link>
           </p>
-        </form>
+        </div>
       </div>
 
       <div class="info-box">
@@ -132,10 +116,11 @@ const handleLogin = async () => {
   // Validate
   if (!loginForm.value.username || !loginForm.value.password) {
     errorMessage.value = 'Vui lòng nhập đầy đủ thông tin!'
-    return
+    return false
   }
   
   loading.value = true
+  
   try {
     const credentials = {
       TenDangNhap: loginForm.value.username,
@@ -147,27 +132,31 @@ const handleLogin = async () => {
     if (!result.success) {
       errorMessage.value = result.message
       ElMessage.error(result.message)
-      return
+      return false
     }
     
     ElMessage.success('Đăng nhập thành công!')
     
     // Redirect based on user role and customer info
+
     if (authStore.user?.MaNV) {
       // Có mã nhân viên -> chuyển đến trang staff/admin
       router.push('/admin/thong-ke')
     } else if (!authStore.hasCustomerInfo) {
       // Nếu chưa có mã khách hàng -> yêu cầu nhập thông tin
-      router.push('/user/complete-profile')
+      await router.push('/user/complete-profile')
     } else {
       // Đã có đầy đủ thông tin -> vào trang user
-      router.push('/user')
+      await router.push('/user')
     }
+    
+    return true
   } catch (error) {
     console.error('Login error:', error)
     const errMsg = error.response?.data?.message || error.response?.data || 'Đăng nhập thất bại!'
     errorMessage.value = errMsg
     ElMessage.error(errMsg)
+    return false
   } finally {
     loading.value = false
   }
@@ -181,37 +170,49 @@ const handleLogin = async () => {
   box-sizing: border-box;
 }
 
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e0f5f7 0%, #c9eaef 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
 .container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   max-width: 1200px;
   width: 100%;
-  min-height: 100vh;
-  background: white;
+  background: linear-gradient(135deg, #d4f1f4 0%, #c9eaef 100%);
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  margin: 20px auto;
+  min-height: 600px;
 }
 
 /* Login Box - Left Side */
 .login-box {
+  flex: 1;
   padding: 60px 50px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: white;
+  border-radius: 20px 0 0 20px;
 }
 
 .logo {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   margin-bottom: 40px;
 }
 
-.logo i {
-  font-size: 32px;
-  color: #17a2b8;
+.logo img {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
 }
 
 .logo h1 {
@@ -222,69 +223,65 @@ const handleLogin = async () => {
 
 .login-box h2 {
   font-size: 32px;
-  color: #0d3d47;
+  color: #2d3748;
   margin-bottom: 10px;
   font-weight: 700;
 }
 
 .subtitle {
-  color: #6c757d;
+  color: #718096;
   margin-bottom: 30px;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .login-form {
   width: 100%;
+  box-shadow: none;
 }
 
 .input-group {
   position: relative;
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .input-group i {
   position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6c757d;
-  font-size: 16px;
+  left: 20px;
+  color: #a0aec0;
+  font-size: 18px;
+}
+
+.input-group i.toggle-password {
+  left: auto;
+  right: 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.input-group i.toggle-password:hover {
+  color: #17a2b8;
 }
 
 .input-group input {
   width: 100%;
-  padding: 15px 45px;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
+  padding: 16px 50px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 15px;
-  transition: all 0.3s ease;
-  outline: none;
+  transition: all 0.3s;
+  background: #f7fafc;
 }
 
 .input-group input[type="password"] {
-  padding-right: 45px;
+  padding-right: 50px;
 }
 
 .input-group input:focus {
+  outline: none;
   border-color: #17a2b8;
-  box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
-}
-
-.toggle-password {
-  position: absolute;
-  right: 15px;
-  left: auto !important;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: color 0.3s ease;
-  z-index: 10;
-  color: #6c757d;
-  font-size: 16px;
-}
-
-.toggle-password:hover {
-  color: #17a2b8;
+  background: white;
 }
 
 .error-message {
@@ -359,82 +356,6 @@ const handleLogin = async () => {
   cursor: not-allowed;
 }
 
-.divider {
-  text-align: center;
-  margin: 25px 0;
-  position: relative;
-}
-
-.divider::before,
-.divider::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: #dee2e6;
-}
-
-.divider::before {
-  left: 0;
-}
-
-.divider::after {
-  right: 0;
-}
-
-.divider span {
-  background: white;
-  padding: 0 15px;
-  color: #6c757d;
-  font-size: 14px;
-}
-
-.social-login {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.btn-social {
-  padding: 12px 20px;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-}
-
-.btn-social:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.btn-social.google {
-  color: #db4437;
-}
-
-.btn-social.google:hover {
-  border-color: #db4437;
-  background: #fff5f5;
-}
-
-.btn-social.facebook {
-  color: #4267b2;
-}
-
-.btn-social.facebook:hover {
-  border-color: #4267b2;
-  background: #f5f7ff;
-}
-
 .register-link {
   text-align: center;
   color: #6c757d;
@@ -455,13 +376,15 @@ const handleLogin = async () => {
 
 /* Info Box - Right Side */
 .info-box {
-  background: linear-gradient(135deg, #d4eef2 0%, #a8dde6 100%);
+  flex: 1;
+  background: linear-gradient(135deg, #d4f1f4 0%, #c9eaef 100%);
   padding: 60px 50px;
-  position: relative;
-  overflow: hidden;
+  color: #2d3748;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .info-content {
@@ -484,7 +407,7 @@ const handleLogin = async () => {
 
 .info-box h2 {
   font-size: 36px;
-  color: #0d3d47;
+  color: #2d3748;
   margin-bottom: 20px;
   line-height: 1.3;
   font-weight: 700;
@@ -495,7 +418,7 @@ const handleLogin = async () => {
 }
 
 .info-box p {
-  color: #495057;
+  color: #4a5568;
   line-height: 1.8;
   margin-bottom: 35px;
   font-size: 15px;
@@ -503,19 +426,18 @@ const handleLogin = async () => {
 
 .feature {
   background: white;
-  padding: 25px;
-  border-radius: 15px;
+  padding: 20px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  max-width: 300px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+  background: #ffa500;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -529,16 +451,17 @@ const handleLogin = async () => {
 }
 
 .feature-text h4 {
-  color: #6c757d;
+  color: #718096;
   font-size: 14px;
   font-weight: 500;
-  margin-bottom: 5px;
+  margin: 0 0 5px;
 }
 
 .feature-text h3 {
-  color: #0d3d47;
+  color: #2d3748;
   font-size: 24px;
   font-weight: 700;
+  margin: 0;
 }
 
 /* Decoration Circles */
@@ -573,21 +496,26 @@ const handleLogin = async () => {
 }
 
 /* Responsive Design */
-@media (max-width: 968px) {
+@media (max-width: 992px) {
   .container {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .info-box {
-    display: none;
+    order: -1;
+    padding: 40px 30px;
   }
 
   .login-box {
     padding: 40px 30px;
   }
+
+  .info-box h2 {
+    font-size: 28px;
+  }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
   .login-box {
     padding: 30px 20px;
   }
@@ -597,11 +525,11 @@ const handleLogin = async () => {
   }
 
   .login-box h2 {
-    font-size: 26px;
+    font-size: 24px;
   }
 
-  .social-login {
-    grid-template-columns: 1fr;
+  .input-group input {
+    padding: 14px 45px;
   }
 }
 </style>

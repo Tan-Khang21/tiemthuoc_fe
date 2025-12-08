@@ -32,8 +32,8 @@ export default {
   },
 
   // Gửi hóa đơn cho khách hàng
-  sendToCustomer(data) {
-    return axios.post('/HoaDon/SendToCustomer', data);
+  sendToCustomer(maHd) {
+    return axios.post(`/HoaDon/SendToCustomer/${maHd}`);
   },
 
   // Hủy hóa đơn

@@ -52,16 +52,6 @@
                 v-model="profileForm.ngaySinh"
               />
             </div>
-
-            <div class="input-group">
-              <label>CCCD/CMND</label>
-              <input
-                type="text"
-                v-model="profileForm.cccd"
-                placeholder="Nhập số CCCD/CMND"
-                pattern="[0-9]{9,12}"
-              />
-            </div>
           </div>
 
           <div class="input-group full-width">
@@ -107,7 +97,6 @@ const profileForm = ref({
   soDienThoai: '',
   gioiTinh: '',
   ngaySinh: '',
-  cccd: '',
   diaChi: ''
 })
 
@@ -176,7 +165,7 @@ const handleSubmit = async () => {
 <style scoped>
 .complete-profile-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
