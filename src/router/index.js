@@ -17,6 +17,11 @@ const routes = [
     component: () => import("@/views/auth/register.vue"),
   },
   {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("@/views/auth/forgot-password.vue"),
+  },
+  {
     path: "/user",
     component: () => import("@/views/user/user-layout.vue"),
     children: [
@@ -75,6 +80,7 @@ const routes = [
     children: [
       {
         path: "",
+        name: "admin-home",
         redirect: "/admin/thuoc",
       },
       {

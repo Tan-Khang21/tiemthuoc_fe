@@ -27,78 +27,8 @@
       </div>
       <!-- hero section end -->
 
-      <!-- search-product -->
-      <div class="search-product">
-        <div class="container">
-          <div class="col-lg-12 col-xl-9">
-            <div class="search-form">
-              <h5>Tìm kiếm sản phẩm</h5>
-              <form @submit.prevent="searchProducts">
-                <div class="row">
-                  <div class="col-md-6 col-lg-3">
-                    <div class="form-group">
-                      <select v-model="searchForm.category" class="select" name="category">
-                        <option value="">Tất cả danh mục</option>
-                        <option v-for="cat in categories" :key="cat.maLoaiThuoc" :value="cat.maLoaiThuoc">
-                          {{ cat.tenLoaiThuoc }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-md-6 col-lg-6">
-                    <div class="form-group">
-                      <input type="text" v-model="searchForm.keyword" class="form-control" placeholder="Nhập từ khóa...">
-                    </div>
-                  </div>
-                  <div class="col-md-12 col-lg-3">
-                    <button type="submit" class="theme-btn"><span class="far fa-search"></span>Tìm kiếm</button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- search-product end -->
-
-      <!-- category area -->
-      <div class="category-area pt-80 pb-100">
-        <div class="container">
-          <div class="row">
-            <div class="col-12 wow fadeInDown" data-wow-delay=".25s">
-              <div class="site-heading-inline">
-                <h2 class="site-title">Danh mục hàng đầu</h2>
-                <router-link to="/user/thuoc">Xem thêm <i class="fas fa-angle-double-right"></i></router-link>
-              </div>
-            </div>
-          </div>
-          <div class="row g-4 mt-3">
-            <div 
-              v-for="category in categories.slice(0, 8)" 
-              :key="category?.maLoaiThuoc || Math.random()"
-              class="col-6 col-md-4 col-lg-3"
-            >
-              <div class="category-item" v-if="category">
-                <router-link :to="`/user/thuoc?category=${category.maLoaiThuoc}`">
-                  <div class="category-info">
-                    <div class="icon">
-                      <i class="far fa-pills"></i>
-                    </div>
-                    <div class="content">
-                      <h4>{{ category.tenLoaiThuoc }}</h4>
-                      <p>{{ category.soLuongThuoc || 0 }} sản phẩm</p>
-                    </div>
-                  </div>
-                </router-link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- category area end -->
-
       <!-- small banner -->
-      <div class="small-banner pb-100">
+      <div class="small-banner pt-80 pb-100">
         <div class="container wow fadeInUp" data-wow-delay=".25s">
           <div class="row g-4">
             <div class="col-12 col-md-6 col-lg-4">
@@ -177,14 +107,18 @@
                     </router-link>
                   </h3>
                   <div class="product-rating">
-                    <div class="stars">
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star-half-alt"></i>
+                    <div class="stars" v-if="getProductRating(product.maThuoc).count > 0">
+                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                      <i v-if="renderStars(getProductRating(product.maThuoc).average).half" class="fas fa-star-half-alt"></i>
+                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
                     </div>
-                    <span class="rating-count">(4.5)</span>
+                    <div class="stars" v-else>
+                      <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
+                    </div>
+                    <span class="rating-count" v-if="getProductRating(product.maThuoc).count > 0">
+                      ({{ getProductRating(product.maThuoc).average.toFixed(1) }})
+                    </span>
+                    <span class="rating-count" v-else>(Chưa có đánh giá)</span>
                   </div>
                   
                   <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
@@ -218,7 +152,7 @@
           <div class="row">
             <div class="col-12 wow fadeInDown" data-wow-delay=".25s">
               <div class="site-heading-inline">
-                <h2 class="site-title">Sản phẩm tồn kho</h2>
+                <h2 class="site-title">Sản phẩm</h2>
                 <router-link to="/user/thuoc">Xem thêm <i class="fas fa-angle-double-right"></i></router-link>
               </div>
             </div>
@@ -253,14 +187,18 @@
                     </router-link>
                   </h3>
                   <div class="product-rating">
-                    <div class="stars">
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star"></i>
-                      <i class="fas fa-star-half-alt"></i>
+                    <div class="stars" v-if="getProductRating(product.maThuoc).count > 0">
+                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                      <i v-if="renderStars(getProductRating(product.maThuoc).average).half" class="fas fa-star-half-alt"></i>
+                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
                     </div>
-                    <span class="rating-count">(4.5)</span>
+                    <div class="stars" v-else>
+                      <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
+                    </div>
+                    <span class="rating-count" v-if="getProductRating(product.maThuoc).count > 0">
+                      ({{ getProductRating(product.maThuoc).average.toFixed(1) }})
+                    </span>
+                    <span class="rating-count" v-else>(Chưa có đánh giá)</span>
                   </div>
                   
                   <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
@@ -340,37 +278,6 @@
         </div>
       </div>
       <!-- feature area end -->
-
-      <!-- newsletter area -->
-      <div class="newsletter-area pb-100">
-        <div class="container wow fadeInUp" data-wow-delay=".25s">
-          <div class="newsletter-wrap">
-            <div class="row">
-              <div class="col-lg-6 mx-auto">
-                <div class="newsletter-content">
-                  <h3>Nhận <span>20%</span> giảm giá</h3>
-                  <p>Khi đăng ký nhận tin từ chúng tôi</p>
-                  <div class="subscribe-form">
-                    <form @submit.prevent="subscribe">
-                      <input 
-                        type="email" 
-                        v-model="emailSubscribe" 
-                        class="form-control" 
-                        placeholder="Địa chỉ email của bạn"
-                        required
-                      >
-                      <button class="theme-btn" type="submit">
-                        Đăng ký <i class="far fa-paper-plane"></i>
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- newsletter area end -->
     </main>
   </div>
 </template>
@@ -389,6 +296,7 @@ const cartStore = useCartStore()
 const categories = ref([])
 const trendingProducts = ref([])
 const inventoryProducts = ref([])
+const productRatings = ref({}) // Store ratings for each product
 const searchForm = ref({
   category: '',
   keyword: ''
@@ -421,11 +329,59 @@ const loadCategories = async () => {
   }
 }
 
+const loadProductRatings = async (products) => {
+  console.log('Loading ratings for products:', products.map(p => p.maThuoc))
+  for (const product of products) {
+    try {
+      const response = await api.danhgiathuoc.getByThuoc(product.maThuoc)
+      console.log(`Rating result for ${product.maThuoc}:`, response.data)
+      
+      if (response.data && response.data.status === 1 && response.data.data && response.data.data.length > 0) {
+        const ratings = response.data.data
+        const avgRating = ratings.reduce((sum, r) => sum + (r.soSao || 0), 0) / ratings.length
+        productRatings.value[product.maThuoc] = {
+          average: avgRating,
+          count: ratings.length
+        }
+        console.log(`Set rating for ${product.maThuoc}:`, productRatings.value[product.maThuoc])
+      } else {
+        productRatings.value[product.maThuoc] = { average: 0, count: 0 }
+      }
+    } catch (error) {
+      console.error(`Error loading ratings for ${product.maThuoc}:`, error)
+      productRatings.value[product.maThuoc] = { average: 0, count: 0 }
+    }
+  }
+}
+
+const getProductRating = (maThuoc) => {
+  return productRatings.value[maThuoc] || { average: 0, count: 0 }
+}
+
+const renderStars = (rating) => {
+  const fullStars = Math.floor(rating)
+  const hasHalfStar = rating % 1 >= 0.5
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+  
+  return {
+    full: fullStars,
+    half: hasHalfStar ? 1 : 0,
+    empty: emptyStars
+  }
+}
+
 const loadTrendingProducts = async () => {
   try {
     const response = await api.thuoc.getAll()
     trendingProducts.value = (response.data || []).filter(p => p && p.maThuoc)
     console.log('Trending products loaded:', trendingProducts.value.length)
+    console.log('About to load ratings for trending products')
+    // Load ratings for trending products
+    if (trendingProducts.value.length > 0) {
+      console.log('Calling loadProductRatings with', trendingProducts.value.slice(0, 8).length, 'products')
+      await loadProductRatings(trendingProducts.value.slice(0, 8))
+      console.log('Ratings loaded, productRatings:', productRatings.value)
+    }
   } catch (error) {
     console.error('Lỗi tải sản phẩm:', error)
     trendingProducts.value = []
@@ -477,8 +433,16 @@ const loadInventoryProducts = async () => {
     });
     
     console.log('Filtered inventory products:', inventoryProducts.value.length);
+    console.log('About to load ratings for inventory products')
+    
+    // Load ratings for inventory products
+    if (inventoryProducts.value.length > 0) {
+      console.log('Calling loadProductRatings with', inventoryProducts.value.slice(0, 8).length, 'products')
+      await loadProductRatings(inventoryProducts.value.slice(0, 8));
+      console.log('Ratings loaded for inventory, productRatings:', productRatings.value)
+    }
   } catch (error) {
-    console.error('Lỗi tải sản phẩm tồn kho:', error)
+    console.error('Lỗi tải sản phẩm:', error)
     inventoryProducts.value = []
   }
 }
