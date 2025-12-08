@@ -546,9 +546,9 @@ const loadTestData = () => {
 
 /* Search Box */
 .header-search-box {
-  flex: 1;
-  max-width: 1000px;
-  margin: 0 25px;
+  flex: 1 1 auto;
+  max-width: none;
+  margin: 0 8px 0 15px;
   position: relative;
 }
 
@@ -703,19 +703,21 @@ const loadTestData = () => {
 
 .navbar-nav {
   gap: 0;
-  margin-left: 10px;
+  margin-left: 3px;
+  flex: 0 0 auto;
 }
 
 .nav-link {
   color: #17181c;
   font-weight: 500;
-  padding: 25px 10px;
+  padding: 25px 4px;
   transition: all 0.3s;
   border-bottom: 3px solid transparent;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 14px;
+  gap: 2px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .nav-link:hover,

@@ -488,50 +488,51 @@ const handleCurrentChange = (val) => {
 }
 
 :deep(.compact-dialog .el-dialog__body) {
-  padding: 8px 15px;
-  overflow: visible;
+  padding: 12px 20px;
+  overflow: auto;
   flex: 1;
+  max-height: calc(90vh - 120px);
 }
 
 :deep(.compact-dialog .el-dialog__header) {
-  padding: 12px 15px;
+  padding: 15px 20px;
   margin-bottom: 0;
 }
 
 :deep(.compact-dialog .el-dialog__footer) {
-  padding: 10px 15px;
+  padding: 12px 20px;
   margin-top: 0;
 }
 
 /* Section Titles */
 .section-title {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid #e5e5e5;
 }
 
 /* Invoice Section */
 .invoice-section {
   background: #f8f9fa;
-  padding: 8px 10px;
+  padding: 12px 15px;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   border: 1px solid #e5e5e5;
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px 10px;
+  gap: 10px 15px;
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .info-item.full-width {
@@ -539,14 +540,14 @@ const handleCurrentChange = (val) => {
 }
 
 .info-label {
-  font-size: 11px;
+  font-size: 13px;
   color: #666;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .info-value {
-  font-size: 12px;
+  font-size: 14px;
   color: #333;
   font-weight: 600;
   overflow: hidden;
@@ -558,48 +559,49 @@ const handleCurrentChange = (val) => {
   background: #fff;
   padding: 0;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   border: 1px solid #e5e5e5;
 }
 
 /* Compact Table */
 :deep(.compact-table) {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 :deep(.compact-table .el-table__cell) {
-  padding: 4px 0;
+  padding: 6px 4px;
 }
 
 :deep(.compact-table .el-table__header .el-table__cell) {
   background-color: #f5f7fa;
   font-weight: 600;
-  padding: 6px 0;
+  padding: 8px 4px;
+  font-size: 14px;
 }
 
 :deep(.compact-table .el-table__body-wrapper) {
-  max-height: 350px;
+  max-height: 280px;
 }
 
 /* Total Section */
 .total-section {
   background: #e8f5e9;
-  padding: 8px 12px;
+  padding: 12px 15px;
   border-radius: 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid #4caf50;
+  border: 2px solid #4caf50;
 }
 
 .total-label {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
 .total-amount {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: #2e7d32;
 }
