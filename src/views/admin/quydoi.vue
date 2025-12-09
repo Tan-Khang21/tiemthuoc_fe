@@ -244,14 +244,15 @@ const formatDate = (d) => {
 // Set default range: from first day of current month to today
 const setDefaultRange = () => {
   const today = new Date();
-  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  // Start from 1 month ago (same date, but one month back)
+  const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
   const fmt = (dt) => {
     const y = dt.getFullYear();
     const m = String(dt.getMonth() + 1).padStart(2, '0');
     const d = String(dt.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   };
-  start.value = fmt(first);
+  start.value = fmt(oneMonthAgo);
   end.value = fmt(today);
 };
 

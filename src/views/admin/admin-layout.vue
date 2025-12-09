@@ -27,26 +27,6 @@
             active-text-color="#17a2b8"
             router
           >
-            <el-menu-item index="/admin/thuoc">
-              <i class="fas fa-pills"></i>
-              <span>Quản Lý Thuốc</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/nhacungcap">
-              <i class="fas fa-building"></i>
-              <span>Nhà Cung Cấp</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/phieunhap">
-              <i class="fas fa-file-import"></i>
-              <span>Phiếu Nhập</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/binhluan">
-              <i class="fas fa-comments"></i>
-              <span>Bình Luận</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/chat">
-              <i class="fas fa-comment-dots"></i>
-              <span>Trò chuyện</span>
-            </el-menu-item>
             <!-- Hóa Đơn submenu: Hóa đơn / Xử lý hóa đơn online -->
             <div class="menu-item-custom" @click="hoadonOpen = !hoadonOpen" style="margin-bottom:6px">
               <i class="fas fa-receipt"></i>
@@ -71,6 +51,7 @@
                 <span>Xử lý hóa đơn online</span>
               </div>
             </div>
+            
             <!-- Kho Thuốc with submenu: Kho Thuốc / Quy đổi / Hủy thuốc -->
             <div class="menu-item-custom" @click="khoOpen = !khoOpen" style="margin-bottom:6px">
               <i class="fas fa-warehouse"></i>
@@ -111,17 +92,43 @@
                 <span>Hủy thuốc</span>
               </div>
             </div>
+            
+            <el-menu-item index="/admin/phieunhap">
+              <i class="fas fa-file-import"></i>
+              <span>Phiếu Nhập</span>
+            </el-menu-item>
+            
+            <el-menu-item v-if="isAdmin" index="/admin/nhacungcap">
+              <i class="fas fa-building"></i>
+              <span>Nhà Cung Cấp</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/binhluan">
+              <i class="fas fa-comments"></i>
+              <span>Bình Luận</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/chat">
+              <i class="fas fa-comment-dots"></i>
+              <span>Trò chuyện</span>
+            </el-menu-item>
+            
+            <el-menu-item index="/admin/thuoc">
+              <i class="fas fa-pills"></i>
+              <span>Quản Lý Thuốc</span>
+            </el-menu-item>
+            
           </el-menu>
 
           <!-- Custom Tổng Hợp toggle placed under Kho Thuốc -->
-          <div class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
+          <div v-if="isAdmin" class="menu-item-custom" @click="toggleSummary" style="margin-bottom:6px">
             <i class="fas fa-chart-pie"></i>
             <span> Tổng Hợp</span>
             <i :class="['fas', summaryOpen ? 'fa-chevron-up' : 'fa-chevron-down']" style="margin-left: auto"></i>
           </div>
 
           <!-- Custom submenu items -->
-          <div v-show="summaryOpen" class="custom-submenu">
+          <div v-if="isAdmin && summaryOpen" class="custom-submenu">
             <div
               class="submenu-item"
               :class="{ 'is-active': activeMenu === '/admin/lieudung' }"
@@ -155,15 +162,21 @@
               <span>Nhóm loại</span>
             </div>
           </div>
+          
+          <!-- Nhân Viên Menu Item - Admin only -->
+          <div v-if="isAdmin" class="menu-item-custom" @click="goToPage('/admin/nhanvien')" :class="{ 'is-active': activeMenu === '/admin/nhanvien' }">
+            <i class="fas fa-users"></i>
+            <span>Nhân Viên</span>
+          </div>
         </div>
           <div class="sidebar-footer">
-            <div class="user-info">
+            <div class="user-info" @click="viewMyProfile" style="cursor: pointer;">
               <div class="avatar">
                 <i class="fas fa-user-shield"></i>
               </div>
               <div class="user-details">
                 <p class="user-name">{{ authStore.user?.TenDangNhap || 'Admin' }}</p>
-                <p class="user-role">Quản Trị Viên</p>
+                <p class="user-role">{{ userRoleDisplay }}</p>
               </div>
             </div>
           </div>
@@ -223,26 +236,74 @@ const authStore = useAuthStore();
 
 const activeMenu = computed(() => route.path);
 
+// Check if user is admin (chucVu === 1 means Admin, 0 means Nhân Viên)
+const isAdmin = computed(() => {
+  // ChucVu is the source of truth: 1 = admin, 0 = staff
+  const chucVu = authStore.user?.ChucVu ?? authStore.user?.chucVu;
+  // Only return true if ChucVu is exactly 1, ignore conflicting IsAdmin/VaiTro fields from backend
+  return chucVu === 1 || chucVu === '1';
+});
+
+// Get display role text
+const userRoleDisplay = computed(() => {
+  const chucVu = authStore.user?.ChucVu ?? authStore.user?.chucVu;
+  if (chucVu === 1 || chucVu === '1') return 'Quản Trị Viên';
+  if (chucVu === 0 || chucVu === '0') return 'Nhân Viên';
+  if (authStore.user?.VaiTro === 'Admin' || authStore.user?.isAdmin === true) return 'Quản Trị Viên';
+  return 'Nhân Viên';
+});
+
+// Menu items that only admins can see
+const adminOnlyMenus = [
+  '/admin/nhacungcap',
+  '/admin/nhanvien',
+  '/admin/lieudung',
+  '/admin/loaidonvi',
+  '/admin/loaithuoc',
+  '/admin/nhomloai'
+];
+
+// Check if a menu should be visible
+const canAccessMenu = (menuPath) => {
+  if (isAdmin.value) return true; // Admin can access all
+  return !adminOnlyMenus.includes(menuPath);
+};
+
 const currentPageName = computed(() => {
-  const names = {
+  const pathNames = {
     '/admin/thuoc': 'Quản Lý Thuốc',
     '/admin/nhacungcap': 'Nhà Cung Cấp',
     '/admin/phieunhap': 'Phiếu Nhập',
     '/admin/hoadon': 'Hóa Đơn',
     '/admin/kho': 'Kho Thuốc',
-        '/admin/nhomloai': 'Nhóm Loại',
+    '/admin/nhomloai': 'Nhóm Loại',
     '/admin/lieudung': 'Liều Dùng',
     '/admin/loaidonvi': 'Loại Đơn Vị',
     '/admin/loaithuoc': 'Loại Thuốc',
     '/admin/thuoc-can-xu-ly': 'Thuốc cần xử lý',
     '/admin/binhluan': 'Bình Luận & Hỏi Đáp',
-
-    '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí'
-
-    '/admin/chat': 'Trò chuyện với khách'
-
+    '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí',
+    '/admin/chat': 'Trò chuyện với khách',
+    '/admin/nhanvien': 'Quản Lý Nhân Viên'
   };
-  return names[route.path] || 'Admin';
+  
+  const routeNames = {
+    'admin-phieunhap-detail': 'Chi tiết Phiếu Nhập',
+    'admin-hoadon-detail': 'Chi tiết Hóa Đơn',
+    'admin-nhanvien-detail': 'Chi tiết Nhân Viên'
+  };
+  
+  // First check route names (for detail pages with params)
+  if (route.name && routeNames[route.name]) {
+    return routeNames[route.name];
+  }
+  
+  // Then check route path
+  if (pathNames[route.path]) {
+    return pathNames[route.path];
+  }
+  
+  return 'Admin';
 });
 
 const goToUser = () => {
@@ -282,6 +343,16 @@ const goToPage = (path) => {
 const goToStatistics = () => {
   router.push('/admin/thong-ke');
 };
+
+const viewMyProfile = () => {
+  // Get maNV from user info - it should be stored in authStore
+  const maNV = authStore.user?.MaNV;
+  if (maNV) {
+    router.push(`/admin/staff/${maNV}`);
+  } else {
+    ElMessage.warning('Không tìm thấy thông tin nhân viên');
+  }
+};
 </script>
 
 <style scoped>
@@ -301,7 +372,6 @@ const goToStatistics = () => {
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  transition: width 260ms cubic-bezier(.4,0,.2,1);
   overflow-y: auto;
   position: fixed;
   top: 0;
@@ -309,24 +379,27 @@ const goToStatistics = () => {
   bottom: 0;
   height: 100vh;
   z-index: 1000;
+  width: var(--sidebar-width);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo {
-  padding: 20px 10px;
+  padding: 12px 10px;
   text-align: center;
   color: #0d3d47;
-  border-bottom: 2px solid rgba(13, 61, 71, 0.1);
-  background: rgba(255, 255, 255, 0.3);
-  transition: padding 260ms cubic-bezier(.4,0,.2,1), border 260ms ease;
+  border-bottom: 1px solid rgba(13, 61, 71, 0.08);
+  background: linear-gradient(135deg, rgba(23, 162, 184, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar.collapsed .logo {
   /* remove horizontal padding so content centers exactly inside narrow sidebar */
-  padding: 14px 0;
+  padding: 10px 0;
   border-bottom: none;
   justify-content: center;
   align-items: center;
@@ -341,35 +414,35 @@ const goToStatistics = () => {
 
 .logo-img {
   display: block;
-  width: 72px;
-  height: 72px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
-  margin: 0 auto 12px;
-  transition: width 260ms cubic-bezier(.4,0,.2,1), margin 260ms cubic-bezier(.4,0,.2,1);
+  margin: 0 auto 8px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
 }
 
 .sidebar.collapsed .logo-img {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 4px;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 0px;
 }
 
 .logo h2 {
-  margin: 10px 0 5px;
-  font-size: 22px;
+  margin: 6px 0 2px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   display: inline-block;
-  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
+  line-height: 1.2;
 }
 
 .logo p {
   margin: 0;
-  font-size: 12px;
-  color: #0d3d47;
-  opacity: 0.8;
+  font-size: 10px;
+  color: #6c757d;
+  opacity: 0.9;
   font-weight: 500;
-  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
+  letter-spacing: 0.3px;
 }
 
 .collapse-btn {
@@ -391,12 +464,11 @@ const goToStatistics = () => {
 .sidebar.collapsed .menu-item-custom span,
 .sidebar.collapsed .sidebar-footer {
   opacity: 0;
-  transform: translateX(-6px);
-  /* keep inline-block so opacity transition works; limit width for animation */
   max-width: 0;
   overflow: hidden;
   position: absolute;
   pointer-events: none;
+  transition: opacity 0.25s ease-out, max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar.collapsed .logo i {
@@ -481,11 +553,11 @@ const goToStatistics = () => {
   height: 50px;
   line-height: 50px;
   font-weight: 500;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-left: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .admin-menu .el-menu-item i {
@@ -498,14 +570,13 @@ const goToStatistics = () => {
 .admin-menu .el-menu-item span {
   display: inline-block;
   white-space: nowrap;
-  transition: opacity 220ms ease, transform 220ms ease, max-width 260ms ease;
   max-width: 240px;
   overflow: hidden;
 }
 
 .admin-menu .el-menu-item:hover {
   background: rgba(255, 255, 255, 0.5);
-  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.15);
 }
 
 .admin-menu .el-menu-item.is-active {
@@ -529,6 +600,13 @@ const goToStatistics = () => {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-info:hover {
+  background: linear-gradient(135deg, #c8e9ee 0%, #a8dde6 100%);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+  transform: translateY(-2px);
 }
 
 .avatar {
@@ -630,7 +708,6 @@ const goToStatistics = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
   border: none;
 }
 
@@ -641,7 +718,6 @@ const goToStatistics = () => {
 
 .btn-user:hover {
   background: linear-gradient(135deg, #a8dde6 0%, #88cdd8 100%);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(168, 221, 230, 0.4);
 }
 
@@ -652,22 +728,23 @@ const goToStatistics = () => {
 
 .btn-logout:hover {
   background: linear-gradient(135deg, #138496 0%, #0f6b7a 100%);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
 }
 
 /* Main Content */
 .main-wrapper {
   margin-left: var(--sidebar-width);
-  transition: margin-left 260ms cubic-bezier(.4,0,.2,1);
   min-height: 100vh;
   flex-direction: column;
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-content {
   background: #f5f7fa;
   padding: 25px;
+  padding-top: calc(70px + 25px);
   flex: 1;
+  margin-top: 0;
 }
 
 /* Custom menu item styling - match Element Plus menu item */
@@ -679,18 +756,25 @@ const goToStatistics = () => {
   padding: 0 20px 0 12px;
   margin: 0 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-weight: 500;
   color: #0d3d47;
   border-radius: 12px;
   position: relative;
   box-sizing: border-box;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-item-custom:hover {
   background: rgba(255, 255, 255, 0.5);
   color: #17a2b8;
-  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
+}
+
+.menu-item-custom.is-active {
+  background: white;
+  color: #17a2b8;
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+  font-weight: 600;
 }
 
 .menu-item-custom i:first-child {
@@ -710,7 +794,6 @@ const goToStatistics = () => {
 .menu-item-custom i:last-child {
   font-size: 12px;
   margin-left: auto;
-  transition: transform 0.3s ease;
 }
 
 .custom-submenu {
@@ -721,6 +804,7 @@ const goToStatistics = () => {
   margin-left: 30px;
   border-radius: 0 8px 8px 0;
   padding-right: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .submenu-item {
@@ -733,15 +817,15 @@ const goToStatistics = () => {
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.2);
   color: #0d3d47;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .submenu-item:hover {
   background: rgba(255, 255, 255, 0.6);
   color: #17a2b8;
-  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
 }
 
 /* active style for submenu items to match el-menu-item.is-active */
@@ -815,12 +899,15 @@ body[style] {
   z-index: 1030 !important;
 }
 
-/* Admin header: use sticky so it remains in flow and won't create gaps */
+/* Admin header: use fixed position to prevent scroll jitter */
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 1030;
-  background: white; /* ensure background covers content when sticky */
+  left: var(--sidebar-width);
+  right: 0;
+  z-index: 1020;
+  background: white;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header.fixed-top {

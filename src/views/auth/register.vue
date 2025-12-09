@@ -28,8 +28,7 @@
 
       <div class="register-box">
         <div class="logo">
-          <i class="fas fa-user-md"></i>
-          <h1>medion</h1>
+          <img src="/src/assets/img/logo/logo.png" alt="Medion Logo" />
         </div>
 
         <h2>Đăng Ký</h2>
@@ -107,21 +106,6 @@
             <i v-if="!loading" class="fas fa-arrow-right"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
           </button>
-
-          <div class="divider">
-            <span>Hoặc đăng ký với</span>
-          </div>
-
-          <div class="social-register">
-            <button type="button" class="btn-social google">
-              <i class="fab fa-google"></i>
-              Google
-            </button>
-            <button type="button" class="btn-social facebook">
-              <i class="fab fa-facebook-f"></i>
-              Facebook
-            </button>
-          </div>
 
           <p class="login-link">
             Đã có tài khoản? <router-link to="/login">Đăng nhập ngay</router-link>
@@ -350,18 +334,18 @@ const goToLogin = () => {
   grid-template-columns: 1fr 1fr;
   max-width: 1200px;
   width: 100%;
-  min-height: 100vh;
+  min-height: 600px;
   background: white;
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  margin: 20px auto;
+  margin: 10px auto;
 }
 
 /* Info Box - Left Side */
 .info-box {
   background: linear-gradient(135deg, #d4eef2 0%, #a8dde6 100%);
-  padding: 60px 50px;
+  padding: 40px 40px;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -377,20 +361,20 @@ const goToLogin = () => {
 .badge {
   background: #17a2b8;
   color: white;
-  padding: 8px 20px;
+  padding: 6px 16px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   display: inline-block;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
   text-transform: uppercase;
 }
 
 .info-box h2 {
-  font-size: 36px;
+  font-size: 30px;
   color: #0d3d47;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   line-height: 1.3;
   font-weight: 700;
 }
@@ -401,25 +385,25 @@ const goToLogin = () => {
 
 .info-box p {
   color: #495057;
-  line-height: 1.8;
-  margin-bottom: 35px;
-  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  font-size: 14px;
 }
 
 .feature {
   background: white;
-  padding: 25px;
+  padding: 20px;
   border-radius: 15px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  max-width: 300px;
+  max-width: 280px;
 }
 
 .feature-icon {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
   border-radius: 12px;
   display: flex;
@@ -429,20 +413,20 @@ const goToLogin = () => {
 }
 
 .feature-icon i {
-  font-size: 28px;
+  font-size: 24px;
   color: white;
 }
 
 .feature-text h4 {
   color: #6c757d;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .feature-text h3 {
   color: #0d3d47;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -479,7 +463,7 @@ const goToLogin = () => {
 
 /* Register Box - Right Side */
 .register-box {
-  padding: 50px 50px;
+  padding: 30px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -489,32 +473,34 @@ const goToLogin = () => {
 .logo {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
-.logo i {
-  font-size: 32px;
-  color: #17a2b8;
+.logo img {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
 }
 
 .logo h1 {
-  font-size: 28px;
+  font-size: 24px;
   color: #0d3d47;
   font-weight: 700;
 }
 
 .register-box h2 {
-  font-size: 32px;
+  font-size: 28px;
   color: #0d3d47;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-weight: 700;
 }
 
 .subtitle {
   color: #6c757d;
-  margin-bottom: 25px;
-  font-size: 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
 }
 
 .register-form {
@@ -523,7 +509,7 @@ const goToLogin = () => {
 
 .input-group {
   position: relative;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .username-status {
@@ -681,58 +667,6 @@ const goToLogin = () => {
 
 .divider::after {
   right: 0;
-}
-
-.divider span {
-  background: white;
-  padding: 0 15px;
-  color: #6c757d;
-  font-size: 14px;
-}
-
-.social-register {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.btn-social {
-  padding: 12px 20px;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-}
-
-.btn-social:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.btn-social.google {
-  color: #db4437;
-}
-
-.btn-social.google:hover {
-  border-color: #db4437;
-  background: #fff5f5;
-}
-
-.btn-social.facebook {
-  color: #4267b2;
-}
-
-.btn-social.facebook:hover {
-  border-color: #4267b2;
-  background: #f5f7ff;
 }
 
 .login-link {

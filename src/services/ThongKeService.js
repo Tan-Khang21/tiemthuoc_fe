@@ -8,5 +8,11 @@ export default {
     },
     getThongKeThang(month, year) {
         return axios.get(`${API_URL}/thang/${month}/${year}`);
+    },
+    getTopSellingMedicines(year, topCount = 3) {
+        return axios.get(`${API_URL}/top-selling/${year}?topCount=${topCount}`);
+    },
+    getTopSellingMedicinesByMonth(month, year, topCount = 3) {
+        return axios.get(`${API_URL}/top-selling/${month}/${year}?topCount=${topCount}`);
     }
 };

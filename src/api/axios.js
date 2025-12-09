@@ -34,11 +34,15 @@ instance.interceptors.response.use(
     if (error.response) {
       // Server trả về error response
       if (error.response.status === 401) {
-        // Unauthorized - clear user data và redirect to login
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Chỉ redirect nếu đã có user (tức là token expired)
+        // Không redirect khi đang ở trang login để tránh reload
+        const user = localStorage.getItem('user');
+        if (user && !window.location.pathname.includes('/login')) {
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       }
-      return Promise.reject(error.response.data || error.response);
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }

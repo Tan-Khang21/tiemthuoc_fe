@@ -331,25 +331,13 @@ const loadSummary = async () => {
 const loadData = async () => { if (isSummary.value) await loadSummary(); else await loadChiTiet(); };
 
 const printDetail = () => {
-  // Build print page similar to `phieunhap-detail.vue` layout
+  // Build thermal receipt 80x297mm layout
   const rows = displayRows.value || [];
   const itemsOnly = rows.filter(r => r._rtype === 'item');
   const totalAmount = invoice.value.tongTien || invoice.value.TongTien || itemsOnly.reduce((s, r) => s + (Number(r.thanhTien || r.ThanhTien || r.tongThanhTien || 0) || 0), 0);
 
-  // resolve username for print (use invoice.tenNV if available)
   let tenNhanVien = invoice.value.tenNV || invoice.value.TenNV || '';
 
-  // resolve logos (use Vite asset resolution if available)
-  let logoPrimary = '/assets/img/logo/favicon.png';
-  let logoFallback = '/assets/img/logo/logo.png';
-  try {
-    logoPrimary = new URL('../../assets/img/logo/favicon.png', import.meta.url).href;
-    try { logoFallback = new URL('../../assets/img/logo/logo.png', import.meta.url).href; } catch (e) { /* ignore */ }
-  } catch (e) { /* ignore */ }
-
-  const printWindow = window.open('', '_blank');
-
-  // determine printed-by and time (prefer current user from localStorage, fallback to invoice.tenNV)
   const userStr = localStorage.getItem('user');
   let printedBy = tenNhanVien || '';
   try {
@@ -360,28 +348,53 @@ const printDetail = () => {
   } catch (e) { /* ignore parse errors */ }
   const printedAt = new Date().toLocaleString('vi-VN');
 
-  // Table body generation: include dose rows as separate rows with colspan
-  const tbody = (() => {
+  // Resolve logo assets (Vite) for print — primary favicon, fallback logo
+  const logoPrimary = (() => {
+    try {
+      return new URL('../../assets/img/logo/favicon.png', import.meta.url).href;
+    } catch (e) {
+      return '';
+    }
+  })();
+  const logoFallback = (() => {
+    try {
+      return new URL('../../assets/img/logo/logo.png', import.meta.url).href;
+    } catch (e) {
+      return '';
+    }
+  })();
+
+  // Generate items HTML
+  const itemsHtml = (() => {
     let html = '';
     let idx = 0;
     for (const r of rows) {
       if (r._rtype === 'item') {
         idx += 1;
         const it = r;
-        if (isSummary.value) {
-          html += `\n<tr>\n<td class="text-center">${idx}</td>\n<td>${it.maThuoc||''}</td>\n<td>${it.tenThuoc||''}</td>\n<td class="text-center">${it.tenLoaiDonVi||''}</td>\n<td class="text-center">${it.tongSoLuong||''}</td>\n<td class="text-right">${formatPrice(it.donGiaTrungBinh)||''}</td>\n<td class="text-right">${formatPrice(it.tongThanhTien)||''}</td>\n<td class="text-center">${formatDate(it.hanSuDungGanNhat)||''}</td>\n</tr>`;
-        } else {
-          html += `\n<tr>\n<td class="text-center">${idx}</td>\n<td>${it.maThuoc||''}</td>\n<td>${it.tenThuoc||''}</td>\n<td class="text-center">${it.tenLoaiDonVi||''}</td>\n<td class="text-center">${it.soLuong||''}</td>\n<td class="text-right">${formatPrice(it.donGia||it.DonGia)||''}</td>\n<td class="text-right">${formatPrice(it.thanhTien||it.ThanhTien)||''}</td>\n<td class="text-center">${formatDate(it.hanSuDung||it.HanSuDung)||''}</td>\n</tr>`;
-        }
-      } else if (r._rtype === 'dose') {
-        const safeDose = r.__dose || '';
-        html += `\n<tr>\n<td colspan="7">Liều dùng: ${safeDose}</td>\n</tr>`;
+        const qty = it.soLuong || it.tongSoLuong || 0;
+        const price = it.donGia || it.donGiaTrungBinh || 0;
+        const total = it.thanhTien || it.tongThanhTien || 0;
+        const product = it.tenThuoc || '';
+        const unit = it.tenLoaiDonVi || it.TenLoaiDonVi || '';
+        const dose = it.tenLD || it.tenLieuDung || it.TenLieuDung || it.tenLieu || '';
+        
+        html += `
+          <div class="item">
+            <div class="item-row">
+              <span class="item-num">${idx}</span>
+              <span class="item-product">${product}</span>
+              <span class="item-qty">${qty}</span>
+              <span class="item-price">${formatPrice(price)}</span>
+              <span class="item-total">${formatPrice(total)}</span>
+            </div>
+            <div class="item-info">${unit}${dose ? ' | ' + dose : ''}</div>
+          </div>
+        `;
       }
     }
     return html;
   })();
-
-  const title = isSummary.value ? 'TỔNG HỢP HÓA ĐƠN' : 'CHI TIẾT HÓA ĐƠN';
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -389,90 +402,212 @@ const printDetail = () => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Hóa đơn - ${maHD}</title>
+      <title>Hoá đơn - ${maHD}</title>
       <style>
-        body { font-family: 'Times New Roman', serif; margin: 0; padding: 20px; font-size: 13px; }
-        .container { max-width: 900px; margin: 0 auto; border: 2px solid #000; padding: 16px; }
-        .header { display:flex; gap:12px; align-items:center; justify-content:center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
-        .logo-small { width:100px; max-height:100px; object-fit:contain; margin-right:12px; }
-        .company-name { font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .company-info { font-size: 12px; margin: 2px 0; }
-        .title { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 12px 0; text-align: center; }
-        .info-section { display:flex; justify-content:space-between; margin-bottom: 12px; }
-        table { width:100%; border-collapse: collapse; }
-        th, td { border:1px solid #000; padding:6px; vertical-align: top; }
-        th { background:#f0f0f0; text-align:center; }
-        .text-center { text-align:center; }
-        .text-right { text-align:right; }
-        .total-section { margin-top:12px; text-align:right; }
-        .signature-section { margin-top:24px; display:flex; justify-content:space-between; }
-        .signature-box { width:30%; text-align:center; }
-        @media print { body { margin:0; } .container { border:none; } }
-        .print-info { margin-top: 12px; font-size: 12px; text-align: right; border-top: 1px dashed #000; padding-top: 8px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: 'Courier New', monospace; 
+          margin: 0; 
+          padding: 0;
+          line-height: 1.3;
+        }
+        .receipt {
+          width: 80mm;
+          margin: 0 auto;
+          background: white;
+          font-size: 11px;
+          color: #000;
+          padding: 0;
+        }
+        .receipt-section { padding: 6px 8px; }
+        .header-section { 
+          text-align: center; 
+          border-bottom: 2px solid #000;
+          padding: 8px;
+        }
+        .logo-container { margin-bottom: 6px; }
+        .logo { max-width: 70px; height: auto; margin-bottom: 6px; }
+        .company-name { font-weight: bold; font-size: 13px; text-transform: uppercase; margin: 2px 0; }
+        .company-phone { font-size: 9px; margin: 1px 0; }
+        .company-address { font-size: 9px; line-height: 1.2; margin: 1px 0; }
+        .receipt-title { 
+          font-weight: bold; 
+          font-size: 12px; 
+          text-transform: uppercase; 
+          text-align: center;
+          margin: 6px 0;
+        }
+        .invoice-number { text-align: center; font-weight: bold; margin: 4px 0; }
+        .divider { border-top: 1px dotted #000; margin: 6px 0; }
+        .divider-thick { border-top: 2px solid #000; margin: 6px 0; }
+        .info-row { 
+          display: flex; 
+          justify-content: space-between; 
+          font-size: 10px; 
+          margin: 2px 0;
+          line-height: 1.2;
+        }
+        .info-label { font-weight: bold; min-width: 45%; }
+        .info-value { text-align: right; flex: 1; word-break: break-word; }
+        .items-header {
+          display: grid;
+          grid-template-columns: 8% 35% 10% 18% 20%;
+          gap: 2px;
+          font-weight: bold;
+          font-size: 9px;
+          margin: 4px 0;
+          padding: 2px 0;
+          border-bottom: 1px dotted #000;
+        }
+        .item {
+          display: grid;
+          grid-template-columns: 1fr;
+          margin: 4px 0;
+          font-size: 10px;
+        }
+        .item-row {
+          display: grid;
+          grid-template-columns: 8% 35% 10% 18% 20%;
+          gap: 2px;
+          align-items: center;
+        }
+        .item-num { text-align: center; }
+        .item-product { text-align: left; }
+        .item-qty { text-align: center; }
+        .item-price { text-align: right; }
+        .item-total { text-align: right; font-weight: bold; }
+        .item-info { 
+          font-size: 9px; 
+          color: #666; 
+          margin-top: 2px;
+          padding-left: 8%;
+        }
+        .summary { margin: 6px 0; }
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          margin: 2px 0;
+        }
+        .summary-label { font-weight: bold; }
+        .summary-value { text-align: right; min-width: 50px; }
+        .total-row {
+          font-size: 11px;
+          font-weight: bold;
+          border-top: 1px solid #000;
+          border-bottom: 1px solid #000;
+          padding: 3px 0;
+        }
+        .footer { 
+          text-align: center; 
+          font-size: 9px;
+          margin-top: 6px;
+        }
+        .footer-text { font-weight: bold; margin: 2px 0; }
+        .footer-note { color: #666; margin: 2px 0; }
+        .print-time { 
+          font-size: 8px; 
+          color: #999;
+          margin-top: 4px;
+          border-top: 1px dotted #000;
+          padding-top: 3px;
+        }
+        @media print {
+          body { margin: 0; padding: 0; }
+          .receipt { width: 80mm; margin: 0; }
+          @page { size: 80mm 297mm; margin: 0; }
+        }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <img src="${logoPrimary}" class="logo-small" onerror="if(this.dataset.fallback=='1'){this.style.display='none';}else{this.dataset.fallback='1'; this.src='${logoFallback}';}" />
-          <div>
-            <div class="company-name">NHÀ THUỐC MEDION</div>
-            <div class="company-info">Địa chỉ: 140 Lê Trọng Tấn, Tây Thạnh, Tân Phú, TP.HCM</div>
-            <div class="company-info">Điện thoại: 0123-456-789</div>
+      <div class="receipt">
+        <!-- Header with Logo -->
+        <div class="header-section">
+          <div class="logo-container">
+            <img src="${logoPrimary}" class="logo" alt="Logo" onerror="if(this.dataset.fallback=='1'){this.style.display='none';}else{this.dataset.fallback='1'; this.src='${logoFallback}';}" />
+          </div>
+          <div class="company-name">NHÀ THUỐC MEDION</div>
+          <div class="company-phone">SDT: 0123-456-789</div>
+          <div class="company-address">140 Lê Trọng Tấn, Tây Thạnh,<br>Tân Phú, TP.HCM</div>
+        </div>
+
+        <!-- Title -->
+        <div class="receipt-section">
+          <div class="receipt-title">HÓA ĐƠN BÁN HÀNG</div>
+          <div class="invoice-number">Số: ${maHD}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Invoice Info -->
+        <div class="receipt-section">
+          <div class="info-row">
+            <span class="info-label">Ngày lập:</span>
+            <span class="info-value">${formatDate(invoice.value.ngayLap||invoice.value.NgayLap)||''}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Khách hàng:</span>
+            <span class="info-value">${invoice.value.tenKH||invoice.value.tenKh||invoice.value.TenKH}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Điện thoại:</span>
+            <span class="info-value">${invoice.value.sdtKH||invoice.value.SdtKH||'-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Địa chỉ:</span>
+            <span class="info-value">${invoice.value.diaChiKH||invoice.value.DiaChiKH||'-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Nhân viên:</span>
+            <span class="info-value">${tenNhanVien}</span>
           </div>
         </div>
 
-        <div class="title">${title}</div>
+        <div class="divider"></div>
 
-        <div class="info-section">
-          <div>
-            <div><strong>Mã HĐ:</strong> ${maHD}</div>
-            <div><strong>Ngày:</strong> ${formatDate(invoice.value.ngayLap||invoice.value.NgayLap)||''}</div>
-            <div><strong>Khách:</strong> ${invoice.value.tenKH||''}</div>
+        <!-- Items -->
+        <div class="receipt-section">
+          <div class="items-header">
+            <span>STT</span>
+            <span>Sản phẩm</span>
+            <span>SL</span>
+            <span>Giá</span>
+            <span>Thành tiền</span>
           </div>
-          <div>
-            <div><strong>Nhân viên:</strong> ${tenNhanVien}</div>
+          ${itemsHtml}
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Summary -->
+        <div class="receipt-section summary">
+          <div class="summary-row">
+            <span class="summary-label">Cộng:</span>
+            <span class="summary-value">${formatPrice(totalAmount)}</span>
+          </div>
+          <div class="summary-row total-row">
+            <span class="summary-label">TỔNG CỘNG:</span>
+            <span class="summary-value">${formatPrice(totalAmount)}</span>
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th style="width:5%">STT</th>
-              <th style="width:10%">Mã thuốc</th>
-              <th style="width:40%">Tên thuốc</th>
-              <th style="width:10%">Đơn vị</th>
-              <th style="width:8%">SL</th>
-              <th style="width:12%">Đơn giá</th>
-              <th style="width:15%">Thành tiền</th>
-              <th style="width:12%">Hạn SD</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tbody}
-          </tbody>
-        </table>
-
-        <div class="total-section">
-          <div><strong>Tổng cộng:</strong> ${formatPrice(totalAmount)}</div>
-          <div><strong>Bằng chữ:</strong> ${numberToWords(Math.floor(totalAmount))} đồng</div>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-box">Người lập<br/><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
-          <div class="signature-box">Người giao<br/><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
-          <div class="signature-box">Người nhận<br/><div class="signature-line">(Ký, ghi rõ họ tên)</div></div>
-        </div>
-
-        <div class="print-info">
-          <div>Thời gian in: ${printedAt}</div>
-          <div>Người in: ${printedBy}</div>
+        <!-- Footer -->
+        <div class="receipt-section">
+          <div class="divider"></div>
+          <div class="footer">
+            <div class="footer-text">Cảm ơn quý khách đã mua hàng!</div>
+            <div class="print-time">
+              <div>In lúc: ${printedAt}</div>
+              <div>Người in: ${printedBy}</div>
+            </div>
+          </div>
         </div>
       </div>
     </body>
     </html>
   `;
 
+  const printWindow = window.open('', '_blank');
   printWindow.document.write(htmlContent);
   printWindow.document.close();
   printWindow.print();

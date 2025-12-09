@@ -34,7 +34,7 @@
           </el-select>
         </el-col>
         <el-col :span="4" style="display:flex; justify-content:flex-end; align-items:center">
-          <el-button type="primary" @click="addNewThuoc" size="medium" style="height:40px; padding:0 14px; display:inline-flex; align-items:center;">
+          <el-button v-if="isAdmin" type="primary" @click="addNewThuoc" size="medium" style="height:40px; padding:0 14px; display:inline-flex; align-items:center;">
             <span style="margin-right:8px; font-size:16px">➕</span>
             <span>Thêm thuốc mới</span>
           </el-button>
@@ -69,12 +69,12 @@
                   <el-icon><View /></el-icon>
                 </button>
               </el-tooltip>
-              <el-tooltip content="Sửa" placement="top">
+              <el-tooltip v-if="isAdmin" content="Sửa" placement="top">
                 <button class="btn-action btn-edit" @click="editThuoc(row)">
                   <el-icon><Edit /></el-icon>
                 </button>
               </el-tooltip>
-              <el-tooltip content="Xóa" placement="top">
+              <el-tooltip v-if="isAdmin" content="Xóa" placement="top">
                 <button class="btn-action btn-delete" @click="deleteThuoc(row)">
                   <el-icon><Delete /></el-icon>
                 </button>
@@ -449,6 +449,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import api from '@/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { View, Edit, Delete } from '@element-plus/icons-vue';
+import { useAuthStore } from '@/store/auth';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -461,6 +462,14 @@ const selectedCategory = ref('');
 // Pagination
 const currentPage = ref(1);
 const pageSize = ref(10);
+
+// Auth store for role checking
+const authStore = useAuthStore();
+
+// Check if user is admin (ChucVu is the source of truth)
+const isAdmin = computed(() => {
+  return authStore.user?.ChucVu === 1 || authStore.user?.ChucVu === '1';
+});
 
 // Image selection variables
 const imageChoice = ref('upload'); // 'existing', 'upload', 'url'

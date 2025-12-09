@@ -618,13 +618,12 @@ watch(createDialog, (val) => {
   flex-direction: column;
   height: 100%;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 10px;
   overflow: hidden;
 }
 
 .drug-card:hover {
-  transform: translateY(-6px);
+  /* no transform to prevent layout shift */
 }
 
 .drug-card-inner {
@@ -633,7 +632,6 @@ watch(createDialog, (val) => {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -659,11 +657,10 @@ watch(createDialog, (val) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
 .drug-card:hover .drug-image {
-  transform: scale(1.08);
+  /* no transform to prevent layout shift */
 }
 
 .drug-image-placeholder {

@@ -17,6 +17,11 @@ const routes = [
     component: () => import("@/views/auth/register.vue"),
   },
   {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("@/views/auth/forgot-password.vue"),
+  },
+  {
     path: "/user",
     component: () => import("@/views/user/user-layout.vue"),
     children: [
@@ -75,6 +80,7 @@ const routes = [
     children: [
       {
         path: "",
+        name: "admin-home",
         redirect: "/admin/thuoc",
       },
       {
@@ -178,7 +184,26 @@ const routes = [
         path: "chat",
         name: "admin-chat",
         component: () => import("@/views/admin/chat.vue"),
-
+      },
+      {
+        path: "nhanvien",
+        name: "admin-nhanvien",
+        component: () => import("@/views/admin/NhanVien.vue"),
+      },
+      {
+        path: "nhanvien/create",
+        name: "admin-nhanvien-create",
+        component: () => import("@/views/admin/NhanVien-create.vue"),
+      },
+      {
+        path: "nhanvien/:maNV",
+        name: "admin-nhanvien-detail",
+        component: () => import("@/views/admin/NhanVien-detail.vue"),
+      },
+      {
+        path: "staff/:maNV",
+        name: "admin-staff-profile",
+        component: () => import("@/views/admin/ProfileStaff.vue"),
       },
     ],
   },
