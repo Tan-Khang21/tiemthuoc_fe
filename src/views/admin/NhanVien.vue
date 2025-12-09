@@ -109,9 +109,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import axios from 'axios';
+import api from '@/api/axios';
 
-const API_URL = 'https://localhost:7283/api';
+const API_URL = '';
 const router = useRouter();
 
 // Data
@@ -174,7 +174,7 @@ const formatPaymentStatus = (row, column, cellValue) => {
 
 const fetchStaff = async () => {
   try {
-    const response = await axios.get(`${API_URL}/NhanVien`);
+    const response = await api.get(`${API_URL}/NhanVien`);
     staffList.value = response.data;
     
     // Tải trạng thái tài khoản cho mỗi nhân viên
@@ -204,10 +204,10 @@ const saveStaff = async () => {
 
   try {
     if (isEdit.value) {
-      await axios.put(`${API_URL}/NhanVien/${formData.value.maNV}`, formData.value);
+      await api.put(`${API_URL}/NhanVien/${formData.value.maNV}`, formData.value);
       ElMessage.success('Cập nhật nhân viên thành công');
     } else {
-      await axios.post(`${API_URL}/NhanVien`, formData.value);
+      await api.post(`${API_URL}/NhanVien`, formData.value);
       ElMessage.success('Thêm nhân viên thành công');
     }
     dialogVisible.value = false;
@@ -220,7 +220,7 @@ const saveStaff = async () => {
 // Lấy trạng thái tài khoản
 const getAccountStatus = async (maNV) => {
   try {
-    const response = await axios.get(`${API_URL}/NhanVien/${maNV}/account-status`);
+    const response = await api.get(`${API_URL}/NhanVien/${maNV}/account-status`);
     if (response.data.success) {
       accountStatusMap.value[maNV] = response.data.data.isEnabled;
       return response.data.data.isEnabled;
@@ -268,7 +268,7 @@ const toggleAccountStatus = async (row) => {
     .then(async () => {
       try {
         const endpoint = isEnabled ? 'disable-account' : 'enable-account';
-        const response = await axios.post(`${API_URL}/NhanVien/${row.maNV}/${endpoint}`);
+        const response = await api.post(`${API_URL}/NhanVien/${row.maNV}/${endpoint}`);
         
         if (response.data.success) {
           ElMessage.success(response.data.message);
@@ -297,7 +297,7 @@ const deleteStaff = (row) => {
   )
     .then(async () => {
       try {
-        const response = await axios.post(`${API_URL}/NhanVien/${row.maNV}/disable-account`);
+        const response = await api.post(`${API_URL}/NhanVien/${row.maNV}/disable-account`);
         if (response.data.success) {
           ElMessage.success(response.data.message || 'Tài khoản đã được vô hiệu hoá');
           fetchStaff();
@@ -596,3 +596,4 @@ onMounted(() => {
   }
 }
 </style>
+

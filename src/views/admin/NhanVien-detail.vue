@@ -227,9 +227,9 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import axios from 'axios';
+import api from '@/api/axios';
 
-const API_URL = 'https://localhost:7283/api';
+const API_URL = '';
 const router = useRouter();
 const route = useRoute();
 
@@ -319,7 +319,7 @@ const formatDeliveryStatus = (row, column, cellValue) => {
 const fetchStaffDetail = async () => {
   try {
     const maNV = route.params.maNV;
-    const response = await axios.get(`${API_URL}/NhanVien/${maNV}`);
+    const response = await api.get(`${API_URL}/NhanVien/${maNV}`);
     staff.value = response.data;
     editFormData.value = { ...response.data };
   } catch (error) {
@@ -332,7 +332,7 @@ const fetchInvoices = async () => {
   loadingInvoices.value = true;
   try {
     const maNV = route.params.maNV;
-    const response = await axios.get(`${API_URL}/HoaDon/nhanvien/${maNV}`);
+    const response = await api.get(`${API_URL}/HoaDon/nhanvien/${maNV}`);
     staffInvoices.value = response.data || [];
   } catch (error) {
     ElMessage.error('Lỗi khi tải danh sách hóa đơn');
@@ -356,7 +356,7 @@ const saveEdit = async () => {
   await formRef.value.validate();
 
   try {
-    await axios.put(`${API_URL}/NhanVien/${staff.value.maNV}`, editFormData.value);
+    await api.put(`${API_URL}/NhanVien/${staff.value.maNV}`, editFormData.value);
     ElMessage.success('Cập nhật thông tin thành công');
     editDialogVisible.value = false;
     fetchStaffDetail();
@@ -377,7 +377,7 @@ const confirmDelete = () => {
   )
     .then(async () => {
       try {
-        await axios.delete(`${API_URL}/NhanVien/${staff.value.maNV}`);
+        await api.delete(`${API_URL}/NhanVien/${staff.value.maNV}`);
         ElMessage.success('Xóa nhân viên thành công');
         router.push('/admin/nhanvien');
       } catch (error) {
@@ -395,7 +395,7 @@ const confirmResetPassword = () => {
 
 const resetPassword = async () => {
   try {
-    await axios.post(`${API_URL}/TaiKhoan/reset-password/${staff.value.maNV}`, {
+    await api.post(`${API_URL}/TaiKhoan/reset-password/${staff.value.maNV}`, {
       newPassword: '123456'
     });
     ElMessage.success('Reset mật khẩu thành công! Mật khẩu mới: 123456');
@@ -408,12 +408,12 @@ const resetPassword = async () => {
 const fetchInvoiceDetail = async (invoice) => {
   loadingInvoiceDetail.value = true;
   try {
-    const response = await axios.get(`${API_URL}/HoaDon/${invoice.maHD}`);
+    const response = await api.get(`${API_URL}/HoaDon/${invoice.maHD}`);
     selectedInvoice.value = response.data;
     
     // Fetch invoice items (chi tiết dòng hóa đơn)
     try {
-      const itemsResponse = await axios.get(`${API_URL}/HoaDon/${invoice.maHD}/items`);
+      const itemsResponse = await api.get(`${API_URL}/HoaDon/${invoice.maHD}/items`);
       invoiceItems.value = itemsResponse.data || [];
     } catch (error) {
       console.error('Lỗi khi tải chi tiết sản phẩm:', error);
@@ -1057,3 +1057,4 @@ onMounted(() => {
   }
 }
 </style>
+

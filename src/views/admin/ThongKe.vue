@@ -228,7 +228,6 @@ import {
 import { Bar, Doughnut, Line } from 'vue-chartjs';
 import ThongKeService from '@/services/ThongKeService';
 import api from '@/api';
-import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend);

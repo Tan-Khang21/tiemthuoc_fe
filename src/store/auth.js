@@ -23,14 +23,29 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     // Khởi tạo auth state từ localStorage
     initAuth() {
+      const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      if (userData) {
+      
+      if (token && userData) {
         try {
+          // Kiểm tra token còn hạn không
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const isExpired = payload.exp * 1000 < Date.now();
+          
+          if (isExpired) {
+            // Token hết hạn - logout
+            this.logout();
+            return;
+          }
+          
           this.user = JSON.parse(userData);
           this.isAuthenticated = true;
         } catch (e) {
           this.logout();
         }
+      } else {
+        // Không có token hoặc user data - clear cả hai
+        this.logout();
       }
     },
 
@@ -41,8 +56,14 @@ export const useAuthStore = defineStore('auth', {
         console.log('Login response:', response);
         console.log('Login response.data:', response.data);
         
-        // Backend trả về response.data chứa LoginResponse
+        // Backend trả về response.data chứa LoginResponse với Token JWT
         if (response.data) {
+          // Lưu JWT Token vào localStorage
+          if (response.data.Token || response.data.token) {
+            const token = response.data.Token || response.data.token;
+            localStorage.setItem('token', token);
+          }
+          
           // Lấy hoTen từ employee data hoặc từ response trực tiếp
           const employeeData = response.data.nhanVien || response.data.employee || response.data;
           const tenDangNhap = response.data.tenDangNhap || response.data.TenDangNhap;
@@ -149,6 +170,7 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null;
       this.isAuthenticated = false;
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
     },
 

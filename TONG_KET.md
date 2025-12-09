@@ -148,7 +148,7 @@ Truy cập: http://localhost:5173
 
 ## 🔗 Backend API
 
-Backend phải chạy tại: https://localhost:7283/api
+Backend phải chạy tại: https://kltn-l679.onrender.com/api
 
 Đảm bảo CORS được cấu hình cho phép: http://localhost:5173
 

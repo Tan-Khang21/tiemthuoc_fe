@@ -386,7 +386,7 @@ watch(() => route.query.search, (newSearch) => {
 
 const loadCategories = async () => {
   try {
-    const response = await fetch('https://localhost:7283/api/Thuoc/TopLoaiThuoc', {
+    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/TopLoaiThuoc', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       mode: 'cors'
@@ -412,14 +412,14 @@ const loadThuocList = async () => {
   try {
     let response;
     if (selectedCategory.value) {
-      response = await fetch(`https://localhost:7283/api/Thuoc/ByLoai/${selectedCategory.value}`, {
+      response = await fetch(`https://kltn-l679.onrender.com/api/Thuoc/ByLoai/${selectedCategory.value}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
       });
       response = await response.json();
     } else {
-      response = await fetch('https://localhost:7283/api/Thuoc/ListThuocTonKho', {
+      response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/ListThuocTonKho', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
