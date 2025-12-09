@@ -342,7 +342,7 @@ Tương tự, bạn cần tạo các view cho Admin với các chức năng CRUD
 
 ## Chạy thử nghiệm
 
-1. Đảm bảo Backend đang chạy tại https://localhost:7283
+1. Đảm bảo Backend đang chạy tại https://kltn-l679.onrender.com/api
 2. Chạy frontend: `npm run dev`
 3. Truy cập: http://localhost:5173
 

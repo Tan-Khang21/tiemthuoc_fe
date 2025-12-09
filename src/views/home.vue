@@ -306,7 +306,7 @@ const emailSubscribe = ref('')
 // Methods
 const loadCategories = async () => {
   try {
-    const response = await fetch('https://localhost:7283/api/Thuoc/TopLoaiThuoc', {
+    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/TopLoaiThuoc', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       mode: 'cors'
@@ -390,7 +390,7 @@ const loadTrendingProducts = async () => {
 
 const loadInventoryProducts = async () => {
   try {
-    const response = await fetch('https://localhost:7283/api/Thuoc/ListThuocTonKho', {
+    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/ListThuocTonKho', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

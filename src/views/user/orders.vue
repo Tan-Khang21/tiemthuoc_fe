@@ -202,6 +202,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import api from '@/api/axios';
 
 const loading = ref(false);
 const activeTab = ref('current');
@@ -251,8 +252,8 @@ const loadOrders = async () => {
 
     console.log('Loading orders for:', maKH);
     
-    const response = await fetch(`https://localhost:7283/api/HoaDon/HistoryByKhachHang/${maKH}`);
-    const result = await response.json();
+    const response = await api.get(`/HoaDon/HistoryByKhachHang/${maKH}`);
+    const result = response.data;
     
     console.log('Orders result:', result);
     
@@ -276,8 +277,8 @@ const viewOrderDetail = async (maHD) => {
   orderDetail.value = null;
 
   try {
-    const response = await fetch(`https://localhost:7283/api/HoaDon/ChiTiet/Summary/${maHD}`);
-    const result = await response.json();
+    const response = await api.get(`/HoaDon/ChiTiet/Summary/${maHD}`);
+    const result = response.data;
     
     console.log('Order detail result:', result);
     
@@ -306,15 +307,8 @@ const sendInvoiceToEmail = async () => {
   sendingEmail.value = true;
 
   try {
-    const response = await fetch(`https://localhost:7283/api/HoaDon/SendToCustomer/${maHD}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': '*/*'
-      }
-    });
-
-    const result = await response.json();
+    const response = await api.post(`/HoaDon/SendToCustomer/${maHD}`);
+    const result = response.data;
     console.log('Send email result:', result);
 
     if (result.status === 1) {
@@ -334,15 +328,8 @@ const sendOrderEmail = async (maHD) => {
   sendingEmailMap.value[maHD] = true;
 
   try {
-    const response = await fetch(`https://localhost:7283/api/HoaDon/SendToCustomer/${maHD}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': '*/*'
-      }
-    });
-
-    const result = await response.json();
+    const response = await api.post(`/HoaDon/SendToCustomer/${maHD}`);
+    const result = response.data;
     console.log('Send email result:', result);
 
     if (result.status === 1) {
@@ -393,36 +380,20 @@ const cancelOrder = async () => {
 
     cancelingOrder.value = true;
 
-    const response = await fetch('https://localhost:7283/api/HoaDon/UpdateStatus', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        maHD: maHD,
-        trangThaiGiaoHang: -1
-      })
+    const response = await api.patch('/HoaDon/UpdateStatus', {
+      maHD: maHD,
+      trangThaiGiaoHang: -1
     });
 
-    const result = await response.json();
+    const result = response.data;
 
     if (result.status === 1) {
       ElMessage.success('Đã hủy đơn hàng thành công');
       
       // Gửi email thông báo hủy đơn hàng
       try {
-        const emailResponse = await fetch(`https://localhost:7283/api/HoaDon/SendToCustomer/${maHD}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (emailResponse.ok) {
-          ElMessage.success('Đã gửi email thông báo hủy đơn hàng');
-        } else {
-          console.warn('Không thể gửi email thông báo');
-        }
+        await api.post(`/HoaDon/SendToCustomer/${maHD}`);
+        ElMessage.success('Đã gửi email thông báo hủy đơn hàng');
       } catch (emailError) {
         console.error('Send email error:', emailError);
         // Không hiển thị lỗi email cho người dùng vì đơn hàng đã được hủy thành công

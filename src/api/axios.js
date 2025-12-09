@@ -2,20 +2,37 @@ import axios from 'axios';
 
 // Tạo axios instance với base URL của API backend
 const instance = axios.create({
-  baseURL: 'https://localhost:7283/api', // Thay đổi URL này theo cấu hình của bạn
+  baseURL: 'https://kltn-l679.onrender.com/api',
   timeout: 30000,
-  // Remove default Content-Type to let axios set it based on data type
 });
 
-// Request interceptor - thêm token vào header nếu có
+// Helper function: Kiểm tra token còn hạn không
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
+// Request interceptor - thêm JWT token vào header nếu có
 instance.interceptors.request.use(
   (config) => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.token) {
-        config.headers.Authorization = `Bearer ${userData.token}`;
+    // Lấy token từ localStorage (key 'token')
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Kiểm tra token còn hạn không
+      if (isTokenExpired(token)) {
+        // Token hết hạn - xóa và redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error('Token expired'));
       }
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -27,22 +44,26 @@ instance.interceptors.request.use(
 // Response interceptor - xử lý response và error
 instance.interceptors.response.use(
   (response) => {
-    // Trả về response nguyên bản, không extract data
     return response;
   },
   (error) => {
     if (error.response) {
-      // Server trả về error response
-      if (error.response.status === 401) {
-        // Chỉ redirect nếu đã có user (tức là token expired)
-        // Không redirect khi đang ở trang login để tránh reload
-        const user = localStorage.getItem('user');
-        if (user && !window.location.pathname.includes('/login')) {
-          localStorage.removeItem('user');
+      const status = error.response.status;
+      
+      // 401 Unauthorized - Token không hợp lệ hoặc hết hạn
+      if (status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
       }
-      return Promise.reject(error);
+      
+      // 403 Forbidden - Không có quyền truy cập
+      if (status === 403) {
+        console.error('Không có quyền truy cập tài nguyên này');
+        // Có thể hiển thị thông báo lỗi ở đây
+      }
     }
     return Promise.reject(error);
   }

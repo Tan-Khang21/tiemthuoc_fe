@@ -283,9 +283,9 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import axios from 'axios';
+import api from '@/api/axios';
 
-const API_URL = 'https://localhost:7283/api';
+const API_URL = '';
 const router = useRouter();
 
 // Data
@@ -344,7 +344,7 @@ const goBack = () => {
 // Load existing usernames on component mount
 const loadExistingUsernames = async () => {
   try {
-    const response = await axios.get(`${API_URL}/NhanVien/usernames`);
+    const response = await api.get(`${API_URL}/NhanVien/usernames`);
     if (Array.isArray(response.data)) {
       existingUsernames.value = response.data;
     }
@@ -374,7 +374,7 @@ const createStaff = async () => {
       tenDangNhap: createFormData.value.tenDangNhap
     };
 
-    const response = await axios.post(
+    const response = await api.post(
       `${API_URL}/NhanVien/create-with-account`,
       payload
     );
@@ -902,3 +902,4 @@ const handleSelect = (item) => {
   }
 }
 </style>
+
