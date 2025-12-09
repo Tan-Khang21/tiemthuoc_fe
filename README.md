@@ -43,7 +43,7 @@ npm install
 ### Bước 2: Cấu hình API URL
 Kiểm tra file `src/api/axios.js`:
 ```javascript
-baseURL: 'https://localhost:7283/api'
+baseURL: 'https://kltn-l679.onrender.com/api'
 ```
 
 ### Bước 3: Chạy ứng dụng
