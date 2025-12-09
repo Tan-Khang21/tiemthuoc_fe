@@ -160,6 +160,14 @@
               <el-icon><List /></el-icon>
               Danh sách mặt hàng
             </h3>
+            <el-button 
+              v-if="!confirmMode" 
+              type="primary" 
+              size="small" 
+              @click="openScanDialog"
+              :icon="Search">
+              Quét Mã Vạch
+            </el-button>
           </div>
         </template>
 
@@ -302,6 +310,61 @@
         </div>
     </el-card>
 
+    <!-- Scan Dialog -->
+    <el-dialog 
+      title="Quét Mã Vạch Thuốc" 
+      v-model="scanDialog" 
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Instructions -->
+        <div style="padding: 12px; background: #e6f7ff; border-radius: 8px; border-left: 3px solid #1890ff;">
+          <p style="margin: 0; color: #0050b3; font-size: 14px;">
+            📍 Đặt con trỏ vào ô dưới và quét mã vạch từ máy
+          </p>
+        </div>
+
+        <!-- Input Field -->
+        <div style="display: flex; gap: 8px;">
+          <el-input
+            v-model="scanCodeValue"
+            placeholder="Quét mã vạch..."
+            size="large"
+            @keyup.enter="processScanCode"
+            autofocus
+            clearable
+          />
+          <el-button type="primary" :loading="scanLoading" @click="processScanCode">
+            Tìm
+          </el-button>
+        </div>
+
+        <!-- Scanned Result -->
+        <div v-if="scannedMedicine" style="padding: 12px; background: #f6ffed; border-radius: 8px; border-left: 3px solid #52c41a;">
+          <div style="color: #274e2b; font-size: 14px;">
+            <p style="margin: 0 0 8px 0; font-weight: 600;">✅ Tìm thấy thuốc:</p>
+            <div style="margin-left: 12px;">
+              <p style="margin: 4px 0;"><strong>Mã:</strong> {{ scannedMedicine.maThuoc }}</p>
+              <p style="margin: 4px 0;"><strong>Tên:</strong> {{ scannedMedicine.tenThuoc }}</p>
+              <p style="margin: 4px 0;"><strong>Barcode:</strong> {{ scannedMedicine.code }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div v-if="scanError" style="padding: 12px; background: #fff1f0; border-radius: 8px; border-left: 3px solid #ff4d4f;">
+          <p style="margin: 0; color: #5f0f1b; font-size: 14px;">❌ {{ scanError }}</p>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="scanLoading" style="display: flex; justify-content: center; gap: 8px; padding: 12px;">
+          <el-icon class="is-loading" style="font-size: 20px;"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="2" r="1" fill="currentColor" opacity="0.27"/><circle cx="19" cy="5" r="1" fill="currentColor" opacity="0.27"/><circle cx="22" cy="12" r="1" fill="currentColor" opacity="0.27"/><circle cx="19" cy="19" r="1" fill="currentColor" opacity="0.27"/><circle cx="12" cy="22" r="1" fill="currentColor" opacity="0.27"/><circle cx="5" cy="19" r="1" fill="currentColor" opacity="0.27"/><circle cx="2" cy="12" r="1" fill="currentColor" opacity="0.27"/><circle cx="5" cy="5" r="1" fill="currentColor"/></svg></el-icon>
+          <span>Đang tìm kiếm...</span>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- Footer Summary -->
     <el-card class="footer-card" shadow="hover">
       <div class="footer-content">
@@ -380,6 +443,13 @@ const form = ref({
 const items = ref([]);
 
 const newItemSearch = ref('');
+
+// Scan medicine by code
+const scanDialog = ref(false);
+const scanLoading = ref(false);
+const scanCodeValue = ref('');  // Separate ref for the input value
+const scannedMedicine = ref(null);
+const scanError = ref('');
 
 // Medicine list for select
 const medicines = ref([]);
@@ -489,6 +559,133 @@ const addEmptyItem = () => {
 };
 
 const removeItem = (idx) => { items.value.splice(idx, 1); };
+
+// Scan by barcode code
+const openScanDialog = () => {
+  scanDialog.value = true;
+  scanCodeValue.value = '';
+  scannedMedicine.value = null;
+  scanError.value = '';
+};
+
+const processScanCode = async () => {
+  const code = (scanCodeValue.value || '').trim();
+  if (!code) {
+    scanError.value = 'Vui lòng nhập mã vạch';
+    return;
+  }
+
+  scanError.value = '';
+  scanLoading.value = true;
+  scannedMedicine.value = null;
+
+  try {
+    // Call API: GET /api/Thuoc/ByCode/{code}
+    const resp = await api.thuoc.getByCode(code);
+    const r = resp && resp.data ? resp.data : resp;
+    const results = r && r.data && Array.isArray(r.data) ? r.data : [];
+
+    if (results.length === 0) {
+      scanError.value = `Không tìm thấy thuốc với mã vạch: ${code}`;
+      scannedMedicine.value = null;
+      return;
+    }
+
+    // Use first result
+    const found = results[0];
+    scannedMedicine.value = {
+      maThuoc: found.maThuoc,
+      tenThuoc: found.tenThuoc,
+      code: found.code
+    };
+
+    scanError.value = '';
+    ElMessage.success(`Tìm thấy: ${found.tenThuoc}`);
+    
+    // Auto add to items after 500ms
+    setTimeout(() => {
+      addScannedMedicine();
+    }, 500);
+  } catch (err) {
+    console.error('processScanCode err', err);
+    scanError.value = 'Lỗi quét mã vạch: ' + (err.message || 'Không xác định');
+    scannedMedicine.value = null;
+  } finally {
+    scanLoading.value = false;
+  }
+};
+
+const addScannedMedicine = async () => {
+  if (!scannedMedicine.value) return;
+
+  const { maThuoc } = scannedMedicine.value;
+
+  // Find medicine in list
+  let medicine = medicines.value.find(m => m.maThuoc === maThuoc);
+  
+  // If not in list, try to load it
+  if (!medicine) {
+    try {
+      const resp = await api.thuoc.getById(maThuoc);
+      const r = resp && resp.data ? resp.data : resp;
+      const m = r && r.data ? r.data : r;
+      medicine = {
+        maThuoc: m.maThuoc || m.MaThuoc || '',
+        tenThuoc: m.tenThuoc || m.TenThuoc || '',
+        thanhPhan: m.thanhPhan || m.ThanhPhan || '',
+        tenLoaiDonVi: m.tenLoaiDonVi || '',
+        soLuongCon: m.soLuongCon ?? 0,
+        giaBan: m.giaBan || 0,
+        hanSuDung: m.hanSuDung || '',
+        raw: m
+      };
+    } catch (e) {
+      console.error('load medicine err', e);
+      ElMessage.error('Không thể tải thông tin thuốc');
+      return;
+    }
+  }
+
+  // Create new row
+  const newRow = {
+    maThuoc: medicine.maThuoc,
+    tenThuoc: medicine.tenThuoc || '',
+    thanhPhan: medicine.thanhPhan || '',
+    tenLoaiDonVi: medicine.tenLoaiDonVi || '',
+    soLuongCon: medicine.soLuongCon ?? 0,
+    hanSuDung: medicine.hanSuDung || '',
+    soLuong: 1,
+    donGia: medicine.giaBan || 0,
+    thanhTien: medicine.giaBan || 0,
+    maGiaThuoc: null,
+    tenLD: '',
+    giaThuocs: [],
+    raw: medicine.raw
+  };
+
+  // Load giaThuocs for this medicine
+  await loadGiaThuocsForMedicine(medicine);
+  newRow.giaThuocs = medicine.giaThuocs || [];
+
+  // Auto-select default unit
+  const sel = newRow.giaThuocs.find(g => g.trangThai) || newRow.giaThuocs[0] || null;
+  if (sel) {
+    newRow.maGiaThuoc = sel.maGiaThuoc;
+    newRow.tenLoaiDonVi = sel.tenLoaiDonVi || '';
+    newRow.soLuongCon = sel.soLuongCon ?? sel.soLuong ?? 0;
+    newRow.donGia = sel.donGia || 0;
+    newRow.hanSuDung = sel.nearestHanSuDung || '';
+  }
+
+  recalcRow(newRow);
+  items.value.push(newRow);
+
+  // Close dialog
+  ElMessage.success(`Thêm ${medicine.tenThuoc} vào danh sách`);
+  scanDialog.value = false;
+  scanCodeValue.value = '';
+  scannedMedicine.value = null;
+};
 
 // Tach (quick-split) flow: open dialog to choose new unit and expiry, call API then split locally
 const tachIndex = ref(-1);
@@ -1839,6 +2036,27 @@ const loadInvoice = async (maHD) => {
 }
 .action-buttons :deep(.el-button) {
   padding: 6px;
+}
+
+/* Scan Dialog Styles */
+.scan-input-field {
+  margin: 20px 0;
+}
+.scan-input-field :deep(.el-input__inner),
+.scan-input-field :deep(.el-input__wrapper) {
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.is-loading {
+  animation: spin 2s linear infinite;
 }
 
 </style>

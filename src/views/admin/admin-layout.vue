@@ -118,6 +118,11 @@
               <span>Khách hàng</span>
             </el-menu-item>
             
+            <el-menu-item index="/admin/qr-scanner">
+              <i class="fas fa-qrcode"></i>
+              <span>Quét Mã Vạch</span>
+            </el-menu-item>
+            
             <el-menu-item index="/admin/thuoc">
               <i class="fas fa-pills"></i>
               <span>Quản Lý Thuốc</span>
@@ -290,6 +295,7 @@ const currentPageName = computed(() => {
     '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí',
     '/admin/chat': 'Trò chuyện với khách',
     '/admin/khachhang': 'Quản Lý Khách Hàng',
+    '/admin/qr-scanner': 'Quét Mã Vạch / QR Code',
     '/admin/nhanvien': 'Quản Lý Nhân Viên'
   };
   

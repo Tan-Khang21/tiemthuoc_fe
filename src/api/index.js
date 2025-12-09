@@ -13,6 +13,7 @@ import binhluanApi from './binhluan';
 import simplePaymentApi from './simplePayment';
 import chatApi from './chat';
 import loaithuocApi from './loaithuoc';
+import maApi from './ma';
 
 export default {
   thuoc: thuocApi,
@@ -29,4 +30,5 @@ export default {
   simplePayment: simplePaymentApi,
   chat: chatApi,
   loaithuoc: loaithuocApi,
+  ma: maApi,
 };

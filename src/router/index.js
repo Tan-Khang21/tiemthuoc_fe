@@ -191,6 +191,11 @@ const routes = [
         component: () => import("@/views/admin/khachhang.vue"),
       },
       {
+        path: "qr-scanner",
+        name: "admin-qr-scanner",
+        component: () => import("@/views/admin/qr-scanner.vue"),
+      },
+      {
         path: "nhanvien",
         name: "admin-nhanvien",
         component: () => import("@/views/admin/NhanVien.vue"),
