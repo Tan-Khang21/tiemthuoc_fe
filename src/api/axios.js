@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Tạo axios instance với base URL của API backend
 const instance = axios.create({
-  baseURL: 'https://kltn-l679.onrender.com/api',
+  baseURL: 'https://localhost:7283/api',
   timeout: 30000,
 });
 
