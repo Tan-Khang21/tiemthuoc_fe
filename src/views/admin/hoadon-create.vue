@@ -163,8 +163,25 @@
           </div>
         </template>
 
+        <!-- Scan Input Row - HIDDEN -->
+        <div style="display: none;">
+          <el-input
+            v-model="scanCodeValue"
+            placeholder="Quét mã vạch hoặc nhập tay..."
+            size="large"
+            @keyup.enter="processScanCode"
+            clearable
+            autofocus
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div v-if="scanError" style="display: none; padding: 12px 16px; background: #fff1f0; color: #c41d7f; border-bottom: 1px solid #ffccc7; display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 16px;">❌</span>
+          <span>{{ scanError }}</span>
+        </div>
+
         <el-table :data="items" class="modern-table" stripe style="width:100%">
-        <!-- "Mã thuốc" column removed per request -->
         <el-table-column label="Tên thuốc" min-width="200">
           <template #default="{ row, $index }">
             <div v-if="!confirmMode">
@@ -353,7 +370,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Document, Calendar, User, Avatar, InfoFilled, Printer, List, Search, Plus, Close, Delete, EditPen, Check, Phone, CopyDocument, Upload, FullScreen } from '@element-plus/icons-vue';
@@ -380,6 +397,12 @@ const form = ref({
 const items = ref([]);
 
 const newItemSearch = ref('');
+
+// Scan medicine by code
+const scanLoading = ref(false);
+const scanCodeValue = ref('');
+const scannedMedicine = ref(null);
+const scanError = ref('');
 
 // Medicine list for select
 const medicines = ref([]);
@@ -489,6 +512,125 @@ const addEmptyItem = () => {
 };
 
 const removeItem = (idx) => { items.value.splice(idx, 1); };
+
+// Scan by barcode code
+const processScanCode = async () => {
+  const code = (scanCodeValue.value || '').trim();
+  if (!code) {
+    scanError.value = 'Vui lòng nhập mã vạch';
+    return;
+  }
+
+  scanError.value = '';
+  scanLoading.value = true;
+  scannedMedicine.value = null;
+
+  try {
+    // Call API: GET /api/Thuoc/ByCode/{code}
+    const resp = await api.thuoc.getByCode(code);
+    const r = resp && resp.data ? resp.data : resp;
+    const results = r && r.data && Array.isArray(r.data) ? r.data : [];
+
+    if (results.length === 0) {
+      scanError.value = `Không tìm thấy thuốc với mã vạch: ${code}`;
+      scannedMedicine.value = null;
+      return;
+    }
+
+    // Use first result
+    const found = results[0];
+    scannedMedicine.value = {
+      maThuoc: found.maThuoc,
+      tenThuoc: found.tenThuoc,
+      code: found.code
+    };
+
+    scanError.value = '';
+    
+    // Auto add to items after 500ms
+    setTimeout(() => {
+      addScannedMedicine();
+    }, 500);
+  } catch (err) {
+    console.error('processScanCode err', err);
+    scanError.value = 'Lỗi quét mã vạch: ' + (err.message || 'Không xác định');
+    scannedMedicine.value = null;
+  } finally {
+    scanLoading.value = false;
+  }
+};
+
+const addScannedMedicine = async () => {
+  if (!scannedMedicine.value) return;
+
+  const { maThuoc } = scannedMedicine.value;
+
+  // Find medicine in list
+  let medicine = medicines.value.find(m => m.maThuoc === maThuoc);
+  
+  // If not in list, try to load it
+  if (!medicine) {
+    try {
+      const resp = await api.thuoc.getById(maThuoc);
+      const r = resp && resp.data ? resp.data : resp;
+      const m = r && r.data ? r.data : r;
+      medicine = {
+        maThuoc: m.maThuoc || m.MaThuoc || '',
+        tenThuoc: m.tenThuoc || m.TenThuoc || '',
+        thanhPhan: m.thanhPhan || m.ThanhPhan || '',
+        tenLoaiDonVi: m.tenLoaiDonVi || '',
+        soLuongCon: m.soLuongCon ?? 0,
+        giaBan: m.giaBan || 0,
+        hanSuDung: m.hanSuDung || '',
+        raw: m
+      };
+    } catch (e) {
+      console.error('load medicine err', e);
+      ElMessage.error('Không thể tải thông tin thuốc');
+      return;
+    }
+  }
+
+  // Create new row
+  const newRow = {
+    maThuoc: medicine.maThuoc,
+    tenThuoc: medicine.tenThuoc || '',
+    thanhPhan: medicine.thanhPhan || '',
+    tenLoaiDonVi: medicine.tenLoaiDonVi || '',
+    soLuongCon: medicine.soLuongCon ?? 0,
+    hanSuDung: medicine.hanSuDung || '',
+    soLuong: 1,
+    donGia: medicine.giaBan || 0,
+    thanhTien: medicine.giaBan || 0,
+    maGiaThuoc: null,
+    tenLD: '',
+    giaThuocs: [],
+    raw: medicine.raw
+  };
+
+  // Load giaThuocs for this medicine
+  await loadGiaThuocsForMedicine(medicine);
+  newRow.giaThuocs = medicine.giaThuocs || [];
+
+  // Auto-select default unit
+  const sel = newRow.giaThuocs.find(g => g.trangThai) || newRow.giaThuocs[0] || null;
+  if (sel) {
+    newRow.maGiaThuoc = sel.maGiaThuoc;
+    newRow.tenLoaiDonVi = sel.tenLoaiDonVi || '';
+    newRow.soLuongCon = sel.soLuongCon ?? sel.soLuong ?? 0;
+    newRow.donGia = sel.donGia || 0;
+    newRow.hanSuDung = sel.nearestHanSuDung || '';
+  }
+
+  recalcRow(newRow);
+  items.value.push(newRow);
+
+  // Clear after add
+  ElMessage.success(`Thêm ${medicine.tenThuoc} vào danh sách`);
+  scanCodeValue.value = '';
+  scannedMedicine.value = null;
+  scanError.value = '';
+};
 
 // Tach (quick-split) flow: open dialog to choose new unit and expiry, call API then split locally
 const tachIndex = ref(-1);
@@ -984,6 +1126,54 @@ onMounted(async () => {
     await loadInvoice(maHDq);
     confirmMode.value = (route.query.confirm === '1' || route.query.confirm === 'true' || route.query.confirm === 1 || route.query.confirm === true);
   }
+
+  // Global keyboard listener for barcode scanner
+  // Scanner sends data followed by Enter key
+  let scannedBuffer = '';
+  const scannerTimeout = ref(null);
+  
+  const handleGlobalKeyPress = (e) => {
+    // Ignore if confirmMode
+    if (confirmMode.value) return;
+    
+    // Check if target is not an input/textarea (to avoid interference)
+    const target = e.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+      // If it's our scan input, let it handle normally
+      if (target === document.activeElement && target.placeholder?.includes('Quét')) {
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && scannedBuffer.trim()) {
+      // Scanner data complete
+      scanCodeValue.value = scannedBuffer.trim();
+      processScanCode();
+      scannedBuffer = '';
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      // Clear buffer on Enter if empty
+      scannedBuffer = '';
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // Collect printable characters
+      scannedBuffer += e.key;
+      
+      // Clear buffer if no Enter within 2 seconds (timeout)
+      if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
+      scannerTimeout.value = setTimeout(() => {
+        scannedBuffer = '';
+      }, 2000);
+    }
+  };
+
+  // Add global listener
+  window.addEventListener('keypress', handleGlobalKeyPress);
+
+  // Cleanup on unmount
+  onUnmounted(() => {
+    window.removeEventListener('keypress', handleGlobalKeyPress);
+    if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
+  });
 });
 
 const confirmInvoiceOnline = async () => {
@@ -1839,6 +2029,27 @@ const loadInvoice = async (maHD) => {
 }
 .action-buttons :deep(.el-button) {
   padding: 6px;
+}
+
+/* Scan Dialog Styles */
+.scan-input-field {
+  margin: 20px 0;
+}
+.scan-input-field :deep(.el-input__inner),
+.scan-input-field :deep(.el-input__wrapper) {
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.is-loading {
+  animation: spin 2s linear infinite;
 }
 
 </style>

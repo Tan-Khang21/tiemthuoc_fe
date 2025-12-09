@@ -290,6 +290,7 @@ const currentPageName = computed(() => {
     '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí',
     '/admin/chat': 'Trò chuyện với khách',
     '/admin/khachhang': 'Quản Lý Khách Hàng',
+    '/admin/qr-scanner': 'Quét Mã Vạch / QR Code',
     '/admin/nhanvien': 'Quản Lý Nhân Viên'
   };
   

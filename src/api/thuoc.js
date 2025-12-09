@@ -41,6 +41,11 @@ export default {
     return axios.get(`/Thuoc/${maThuoc}/GiaThuocs`);
   },
 
+  // Tìm thuốc theo code (barcode)
+  getByCode(code) {
+    return axios.get(`/Thuoc/ByCode/${code}`);
+  },
+
   // Tạo thuốc mới
   create(formData) {
     // Let the browser/axios set the Content-Type (with boundary) for FormData
