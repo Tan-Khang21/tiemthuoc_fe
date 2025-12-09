@@ -622,9 +622,6 @@ watch(createDialog, (val) => {
   overflow: hidden;
 }
 
-.drug-card:hover {
-  /* no transform to prevent layout shift */
-}
 
 .drug-card-inner {
   background: white;
@@ -659,9 +656,7 @@ watch(createDialog, (val) => {
   object-fit: cover;
 }
 
-.drug-card:hover .drug-image {
-  /* no transform to prevent layout shift */
-}
+
 
 .drug-image-placeholder {
   width: 100%;

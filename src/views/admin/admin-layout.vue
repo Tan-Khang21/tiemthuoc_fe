@@ -113,6 +113,11 @@
               <span>Trò chuyện</span>
             </el-menu-item>
             
+            <el-menu-item index="/admin/khachhang">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </el-menu-item>
+            
             <el-menu-item index="/admin/thuoc">
               <i class="fas fa-pills"></i>
               <span>Quản Lý Thuốc</span>
@@ -284,6 +289,7 @@ const currentPageName = computed(() => {
     '/admin/binhluan': 'Bình Luận & Hỏi Đáp',
     '/admin/thong-ke': 'Thống Kê Doanh Thu & Chi Phí',
     '/admin/chat': 'Trò chuyện với khách',
+    '/admin/khachhang': 'Quản Lý Khách Hàng',
     '/admin/nhanvien': 'Quản Lý Nhân Viên'
   };
   

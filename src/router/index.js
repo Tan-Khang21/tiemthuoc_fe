@@ -186,6 +186,11 @@ const routes = [
         component: () => import("@/views/admin/chat.vue"),
       },
       {
+        path: "khachhang",
+        name: "admin-khachhang",
+        component: () => import("@/views/admin/khachhang.vue"),
+      },
+      {
         path: "nhanvien",
         name: "admin-nhanvien",
         component: () => import("@/views/admin/NhanVien.vue"),
