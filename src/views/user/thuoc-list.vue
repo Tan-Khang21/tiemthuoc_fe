@@ -52,31 +52,6 @@
               </button>
             </div>
 
-            <!-- Sales Widget -->
-            <div class="shop-widget">
-              <h4 class="shop-widget-title">Trạng thái</h4>
-              <ul class="shop-checkbox-list">
-                <li>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="sale1" v-model="filters.onSale">
-                    <label class="form-check-label" for="sale1">Đang giảm giá</label>
-                  </div>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="sale2" v-model="filters.inStock">
-                    <label class="form-check-label" for="sale2">Còn hàng</label>
-                  </div>
-                </li>
-                <li>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="sale3" v-model="filters.outOfStock">
-                    <label class="form-check-label" for="sale3">Hết hàng</label>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
             <!-- Ratings Widget -->
             <div class="shop-widget">
               <h4 class="shop-widget-title">Đánh giá</h4>
@@ -167,14 +142,18 @@
                       </router-link>
                     </h3>
                     <div class="product-rating">
-                      <div class="stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
+                      <div class="stars" v-if="getProductRating(thuoc.maThuoc).count > 0">
+                        <i v-for="n in renderStars(getProductRating(thuoc.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                        <i v-if="renderStars(getProductRating(thuoc.maThuoc).average).half" class="fas fa-star-half-alt"></i>
+                        <i v-for="n in renderStars(getProductRating(thuoc.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
                       </div>
-                      <span class="rating-count">(4.5)</span>
+                      <div class="stars" v-else>
+                        <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
+                      </div>
+                      <span class="rating-count" v-if="getProductRating(thuoc.maThuoc).count > 0">
+                        ({{ getProductRating(thuoc.maThuoc).average.toFixed(1) }})
+                      </span>
+                      <span class="rating-count" v-else>(Chưa có đánh giá)</span>
                     </div>
                     
                     <div class="product-price-box" v-if="thuoc.giaThuocs && thuoc.giaThuocs.length > 0">
@@ -242,18 +221,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
 import { useCartStore } from '@/store';
 import { ElMessage } from 'element-plus';
 
 const router = useRouter();
+const route = useRoute();
 const cartStore = useCartStore();
 
 const loading = ref(false);
 const thuocList = ref([]);
 const categories = ref([]);
+const productRatings = ref({}); // Store ratings for each product
 const searchKeyword = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('');
@@ -291,6 +272,16 @@ const filteredThuocList = computed(() => {
   }
   if (filters.value.outOfStock) {
     result = result.filter(thuoc => getStockQuantity(thuoc) === 0);
+  }
+  
+  // Filter by ratings
+  if (filters.value.ratings && filters.value.ratings.length > 0) {
+    result = result.filter(thuoc => {
+      const rating = getProductRating(thuoc.maThuoc);
+      if (rating.count === 0) return false;
+      const avgRating = Math.floor(rating.average);
+      return filters.value.ratings.includes(avgRating);
+    });
   }
   
   // Sort
@@ -340,8 +331,57 @@ const displayPages = computed(() => {
 });
 
 onMounted(async () => {
+  // Đọc search query từ URL nếu có
+  if (route.query.search) {
+    searchKeyword.value = route.query.search;
+  }
   await loadCategories();
   await loadThuocList();
+});
+
+const loadProductRatings = async (products) => {
+  for (const product of products) {
+    try {
+      const response = await api.danhgiathuoc.getByThuoc(product.maThuoc)
+      
+      if (response.data && response.data.status === 1 && response.data.data && response.data.data.length > 0) {
+        const ratings = response.data.data
+        const avgRating = ratings.reduce((sum, r) => sum + (r.soSao || 0), 0) / ratings.length
+        productRatings.value[product.maThuoc] = {
+          average: avgRating,
+          count: ratings.length
+        }
+      } else {
+        productRatings.value[product.maThuoc] = { average: 0, count: 0 }
+      }
+    } catch (error) {
+      console.error(`Error loading ratings for ${product.maThuoc}:`, error)
+      productRatings.value[product.maThuoc] = { average: 0, count: 0 }
+    }
+  }
+}
+
+const getProductRating = (maThuoc) => {
+  return productRatings.value[maThuoc] || { average: 0, count: 0 }
+}
+
+const renderStars = (rating) => {
+  const fullStars = Math.floor(rating)
+  const hasHalfStar = rating % 1 >= 0.5
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+  
+  return {
+    full: fullStars,
+    half: hasHalfStar ? 1 : 0,
+    empty: emptyStars
+  }
+}
+
+// Watch route query changes
+watch(() => route.query.search, (newSearch) => {
+  if (newSearch) {
+    searchKeyword.value = newSearch;
+  }
 });
 
 const loadCategories = async () => {
@@ -410,6 +450,11 @@ const loadThuocList = async () => {
     });
     
     currentPage.value = 1;
+    
+    // Load ratings for displayed products
+    if (thuocList.value.length > 0) {
+      await loadProductRatings(thuocList.value);
+    }
   } catch (error) {
     console.error('Load thuoc error:', error);
     ElMessage.error('Lỗi khi tải danh sách thuốc');

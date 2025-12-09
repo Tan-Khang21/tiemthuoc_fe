@@ -32,12 +32,17 @@ export default {
   },
 
   // Gửi hóa đơn cho khách hàng
-  sendToCustomer(data) {
-    return axios.post('/HoaDon/SendToCustomer', data);
+  sendToCustomer(maHd) {
+    return axios.post(`/HoaDon/SendToCustomer/${maHd}`);
   },
 
   // Hủy hóa đơn
   cancel(maHd) {
     return axios.post(`/HoaDon/Cancel/${maHd}`);
+  },
+
+  // Lấy hóa đơn theo nhân viên
+  getByNhanVien(maNV) {
+    return axios.get(`/HoaDon/nhanvien/${maNV}`);
   },
 };

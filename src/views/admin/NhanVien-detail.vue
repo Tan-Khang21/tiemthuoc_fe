@@ -313,7 +313,7 @@ const formatDeliveryStatus = (row, column, cellValue) => {
     '2': 'Đã giao',
     '3': 'Đã nhận'
   };
-  return statuses[cellValue] || 'Không xác định';
+  return statuses[cellValue] || 'Đã hủy';
 };
 
 const fetchStaffDetail = async () => {

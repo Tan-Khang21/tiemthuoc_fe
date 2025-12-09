@@ -9,14 +9,10 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAdmin: (state) => {
-      // Only admin if ChucVu === 1 (not just having MaNV which staff also have)
+      // ChucVu is the source of truth: 1 = admin, 0 = staff
+      // Ignore conflicting IsAdmin/VaiTro fields from backend as they're unreliable
       if (!state.user) return false;
-      return (
-        state.user.ChucVu === 1 ||
-        state.user.ChucVu === '1' ||
-        state.user.IsAdmin === true ||
-        state.user.VaiTro === 'Admin'
-      );
+      return state.user.ChucVu === 1 || state.user.ChucVu === '1';
     },
     hasCustomerInfo: (state) => {
       return state.user && state.user.HasCustomerInfo === true;
@@ -49,15 +45,16 @@ export const useAuthStore = defineStore('auth', {
         if (response.data) {
           // Lấy hoTen từ employee data hoặc từ response trực tiếp
           const employeeData = response.data.nhanVien || response.data.employee || response.data;
+          const tenDangNhap = response.data.tenDangNhap || response.data.TenDangNhap;
           const userData = {
             MaTK: response.data.maTK || response.data.MaTK,
-            TenDangNhap: response.data.tenDangNhap || response.data.TenDangNhap,
-            HoTen: employeeData.hoTen || employeeData.HoTen || response.data.hoTen || response.data.HoTen || 'Không xác định',
+            TenDangNhap: tenDangNhap,
+            HoTen: employeeData.hoTen || employeeData.HoTen || response.data.hoTen || response.data.HoTen || tenDangNhap,
             Email: response.data.email || response.data.Email,
             MaKH: response.data.maKH || response.data.MaKH,
             MaNV: response.data.maNV || response.data.MaNV || employeeData.maNV || employeeData.MaNV,
             VaiTro: response.data.vaiTro || response.data.VaiTro,
-            ChucVu: response.data.chucVu || response.data.ChucVu || employeeData.chucVu || employeeData.ChucVu,
+            ChucVu: response.data.chucVu !== undefined ? response.data.chucVu : (response.data.ChucVu !== undefined ? response.data.ChucVu : (employeeData.chucVu !== undefined ? employeeData.chucVu : employeeData.ChucVu)),
             HasCustomerInfo: response.data.hasCustomerInfo || response.data.HasCustomerInfo,
             IsAdmin: response.data.isAdmin || response.data.IsAdmin
           };
@@ -81,12 +78,25 @@ export const useAuthStore = defineStore('auth', {
         let errorMsg = 'Có lỗi xảy ra khi đăng nhập';
         
         if (error.response) {
-          if (typeof error.response.data === 'string') {
-            errorMsg = error.response.data;
-          } else if (error.response.data?.message) {
-            errorMsg = error.response.data.message;
-          } else if (error.response.data?.Message) {
-            errorMsg = error.response.data.Message;
+          // Xử lý các dạng response khác nhau từ backend
+          const data = error.response.data;
+          
+          if (typeof data === 'string') {
+            errorMsg = data;
+          } else if (data?.message) {
+            errorMsg = data.message;
+          } else if (data?.Message) {
+            errorMsg = data.Message;
+          } else if (data?.errors) {
+            // Validation errors
+            const firstError = Object.values(data.errors)[0];
+            errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+          } else if (error.response.status === 401) {
+            errorMsg = 'Tên đăng nhập hoặc mật khẩu không đúng!';
+          } else if (error.response.status === 404) {
+            errorMsg = 'Tài khoản không tồn tại!';
+          } else if (error.response.status === 400) {
+            errorMsg = 'Thông tin đăng nhập không hợp lệ!';
           }
         } else if (error.message) {
           errorMsg = error.message;
