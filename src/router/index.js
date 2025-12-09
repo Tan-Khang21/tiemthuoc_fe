@@ -179,8 +179,13 @@ const routes = [
         path: "thong-ke",
         name: "admin-thong-ke",
         component: () => import("@/views/admin/ThongKe.vue"),
-        },
-        {
+      },
+      {
+        path: "theme-settings",
+        name: "admin-theme-settings",
+        component: () => import("@/views/admin/ThemeSettings.vue"),
+      },
+      {
         path: "chat",
         name: "admin-chat",
         component: () => import("@/views/admin/chat.vue"),

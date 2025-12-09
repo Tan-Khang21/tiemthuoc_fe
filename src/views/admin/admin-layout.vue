@@ -173,6 +173,12 @@
             <i class="fas fa-users"></i>
             <span>Nhân Viên</span>
           </div>
+          
+          <!-- Quản Lý Giao Diện Menu Item -->
+          <div class="menu-item-custom" @click="goToPage('/admin/theme-settings')" :class="{ 'is-active': activeMenu === '/admin/theme-settings' }">
+            <i class="fas fa-palette"></i>
+            <span>Quản Lý Giao Diện</span>
+          </div>
         </div>
           <div class="sidebar-footer">
             <div class="user-info" @click="viewMyProfile" style="cursor: pointer;">

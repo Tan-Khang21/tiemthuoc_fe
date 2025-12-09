@@ -1,5 +1,11 @@
 <template>
   <div class="user-layout">
+    <!-- Seasonal Effects -->
+    <SnowEffect />
+    <SpringPetals />
+    <SummerBubbles />
+    <AutumnLeaves />
+    
     <!-- Header Area -->
     <header class="header">
       <!-- Navbar -->
@@ -120,13 +126,28 @@
 
     <!-- Footer Area -->
     <footer class="footer-area ft-bg">
+      <!-- Google Maps Section -->
+      <div class="map-section">
+        <div class="container-fluid p-0">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1276244126966!2d106.62567931533432!3d10.806412861656704!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752be1853ec007%3A0x3a97e863d018f3a4!2s140%20L%C3%AA%20Tr%E1%BB%8Dng%20T%E1%BA%A5n%2C%20T%C3%A2y%20Th%E1%BA%A1nh%2C%20T%C3%A2n%20Ph%C3%BA%2C%20Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh!5e0!3m2!1svi!2s!4v1733734800000!5m2!1svi!2s"
+            width="100%" 
+            height="400" 
+            style="border:0; display: block;" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>
+      </div>
+      
       <div class="copyright">
         <div class="container">
           <div class="copyright-wrap">
             <div class="row">
               <div class="col-12 col-lg-6 align-self-center">
                 <p class="copyright-text">
-                  &copy; Copyright 2025 <a href="#"> Nhà Thuốc MEDION </a> - Sức khỏe là vàng.
+                  &copy; Copyright 2025 <a href="#"> Nhà Thuốc MELON </a> - Sức khỏe là vàng.
                 </p>
               </div>
               <div class="col-12 col-lg-6 align-self-center">
@@ -154,6 +175,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore, useCartStore } from '@/store';
 import { ElMessage } from 'element-plus';
 import ChatWidget from '@/components/ChatWidget.vue';
+import SnowEffect from '@/components/SnowEffect.vue';
+import SpringPetals from '@/components/SpringPetals.vue';
+import SummerBubbles from '@/components/SummerBubbles.vue';
+import AutumnLeaves from '@/components/AutumnLeaves.vue';
 import thuocApi from '@/api/thuoc';
 import loaithuocApi from '@/api/loaithuoc';
 
@@ -962,6 +987,89 @@ const loadTestData = () => {
   margin-top: auto;
 }
 
+/* Map Section */
+.map-section {
+  position: relative;
+  width: 100%;
+}
+
+.map-section iframe {
+  width: 100%;
+  height: 400px;
+  display: block;
+}
+
+.store-info-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.store-info-card {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 25px 35px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  pointer-events: auto;
+  max-width: 600px;
+  border: 2px solid rgba(14, 207, 224, 0.2);
+}
+
+.info-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #0ecfe0 0%, #0ab3c2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(14, 207, 224, 0.4);
+}
+
+.info-content h3 {
+  color: #0ecfe0;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.info-content .address {
+  color: #333;
+  font-size: 15px;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.contact-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.contact-info span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-info i {
+  color: #0ecfe0;
+  font-size: 13px;
+}
+
 .copyright {
   padding: 30px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -1039,6 +1147,43 @@ const loadTestData = () => {
 
   .navbar-collapse.show {
     display: block;
+  }
+
+  /* Map responsive */
+  .map-section iframe {
+    height: 300px;
+  }
+
+  .store-info-card {
+    flex-direction: column;
+    padding: 20px;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .info-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+
+  .info-content h3 {
+    font-size: 18px;
+  }
+
+  .info-content .address {
+    font-size: 13px;
+  }
+
+  .contact-info {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .footer-social {
+    justify-content: center;
+    margin-top: 15px;
   }
 
   .navbar-nav {
