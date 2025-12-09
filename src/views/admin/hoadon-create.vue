@@ -160,19 +160,28 @@
               <el-icon><List /></el-icon>
               Danh sách mặt hàng
             </h3>
-            <el-button 
-              v-if="!confirmMode" 
-              type="primary" 
-              size="small" 
-              @click="openScanDialog"
-              :icon="Search">
-              Quét Mã Vạch
-            </el-button>
           </div>
         </template>
 
+        <!-- Scan Input Row - HIDDEN -->
+        <div style="display: none;">
+          <el-input
+            v-model="scanCodeValue"
+            placeholder="Quét mã vạch hoặc nhập tay..."
+            size="large"
+            @keyup.enter="processScanCode"
+            clearable
+            autofocus
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div v-if="scanError" style="display: none; padding: 12px 16px; background: #fff1f0; color: #c41d7f; border-bottom: 1px solid #ffccc7; display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 16px;">❌</span>
+          <span>{{ scanError }}</span>
+        </div>
+
         <el-table :data="items" class="modern-table" stripe style="width:100%">
-        <!-- "Mã thuốc" column removed per request -->
         <el-table-column label="Tên thuốc" min-width="200">
           <template #default="{ row, $index }">
             <div v-if="!confirmMode">
@@ -310,61 +319,6 @@
         </div>
     </el-card>
 
-    <!-- Scan Dialog -->
-    <el-dialog 
-      title="Quét Mã Vạch Thuốc" 
-      v-model="scanDialog" 
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Instructions -->
-        <div style="padding: 12px; background: #e6f7ff; border-radius: 8px; border-left: 3px solid #1890ff;">
-          <p style="margin: 0; color: #0050b3; font-size: 14px;">
-            📍 Đặt con trỏ vào ô dưới và quét mã vạch từ máy
-          </p>
-        </div>
-
-        <!-- Input Field -->
-        <div style="display: flex; gap: 8px;">
-          <el-input
-            v-model="scanCodeValue"
-            placeholder="Quét mã vạch..."
-            size="large"
-            @keyup.enter="processScanCode"
-            autofocus
-            clearable
-          />
-          <el-button type="primary" :loading="scanLoading" @click="processScanCode">
-            Tìm
-          </el-button>
-        </div>
-
-        <!-- Scanned Result -->
-        <div v-if="scannedMedicine" style="padding: 12px; background: #f6ffed; border-radius: 8px; border-left: 3px solid #52c41a;">
-          <div style="color: #274e2b; font-size: 14px;">
-            <p style="margin: 0 0 8px 0; font-weight: 600;">✅ Tìm thấy thuốc:</p>
-            <div style="margin-left: 12px;">
-              <p style="margin: 4px 0;"><strong>Mã:</strong> {{ scannedMedicine.maThuoc }}</p>
-              <p style="margin: 4px 0;"><strong>Tên:</strong> {{ scannedMedicine.tenThuoc }}</p>
-              <p style="margin: 4px 0;"><strong>Barcode:</strong> {{ scannedMedicine.code }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error Message -->
-        <div v-if="scanError" style="padding: 12px; background: #fff1f0; border-radius: 8px; border-left: 3px solid #ff4d4f;">
-          <p style="margin: 0; color: #5f0f1b; font-size: 14px;">❌ {{ scanError }}</p>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="scanLoading" style="display: flex; justify-content: center; gap: 8px; padding: 12px;">
-          <el-icon class="is-loading" style="font-size: 20px;"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="2" r="1" fill="currentColor" opacity="0.27"/><circle cx="19" cy="5" r="1" fill="currentColor" opacity="0.27"/><circle cx="22" cy="12" r="1" fill="currentColor" opacity="0.27"/><circle cx="19" cy="19" r="1" fill="currentColor" opacity="0.27"/><circle cx="12" cy="22" r="1" fill="currentColor" opacity="0.27"/><circle cx="5" cy="19" r="1" fill="currentColor" opacity="0.27"/><circle cx="2" cy="12" r="1" fill="currentColor" opacity="0.27"/><circle cx="5" cy="5" r="1" fill="currentColor"/></svg></el-icon>
-          <span>Đang tìm kiếm...</span>
-        </div>
-      </div>
-    </el-dialog>
-
     <!-- Footer Summary -->
     <el-card class="footer-card" shadow="hover">
       <div class="footer-content">
@@ -416,7 +370,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Document, Calendar, User, Avatar, InfoFilled, Printer, List, Search, Plus, Close, Delete, EditPen, Check, Phone, CopyDocument, Upload, FullScreen } from '@element-plus/icons-vue';
@@ -445,9 +399,8 @@ const items = ref([]);
 const newItemSearch = ref('');
 
 // Scan medicine by code
-const scanDialog = ref(false);
 const scanLoading = ref(false);
-const scanCodeValue = ref('');  // Separate ref for the input value
+const scanCodeValue = ref('');
 const scannedMedicine = ref(null);
 const scanError = ref('');
 
@@ -561,13 +514,6 @@ const addEmptyItem = () => {
 const removeItem = (idx) => { items.value.splice(idx, 1); };
 
 // Scan by barcode code
-const openScanDialog = () => {
-  scanDialog.value = true;
-  scanCodeValue.value = '';
-  scannedMedicine.value = null;
-  scanError.value = '';
-};
-
 const processScanCode = async () => {
   const code = (scanCodeValue.value || '').trim();
   if (!code) {
@@ -600,7 +546,6 @@ const processScanCode = async () => {
     };
 
     scanError.value = '';
-    ElMessage.success(`Tìm thấy: ${found.tenThuoc}`);
     
     // Auto add to items after 500ms
     setTimeout(() => {
@@ -680,11 +625,11 @@ const addScannedMedicine = async () => {
   recalcRow(newRow);
   items.value.push(newRow);
 
-  // Close dialog
+  // Clear after add
   ElMessage.success(`Thêm ${medicine.tenThuoc} vào danh sách`);
-  scanDialog.value = false;
   scanCodeValue.value = '';
   scannedMedicine.value = null;
+  scanError.value = '';
 };
 
 // Tach (quick-split) flow: open dialog to choose new unit and expiry, call API then split locally
@@ -1181,6 +1126,54 @@ onMounted(async () => {
     await loadInvoice(maHDq);
     confirmMode.value = (route.query.confirm === '1' || route.query.confirm === 'true' || route.query.confirm === 1 || route.query.confirm === true);
   }
+
+  // Global keyboard listener for barcode scanner
+  // Scanner sends data followed by Enter key
+  let scannedBuffer = '';
+  const scannerTimeout = ref(null);
+  
+  const handleGlobalKeyPress = (e) => {
+    // Ignore if confirmMode
+    if (confirmMode.value) return;
+    
+    // Check if target is not an input/textarea (to avoid interference)
+    const target = e.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+      // If it's our scan input, let it handle normally
+      if (target === document.activeElement && target.placeholder?.includes('Quét')) {
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && scannedBuffer.trim()) {
+      // Scanner data complete
+      scanCodeValue.value = scannedBuffer.trim();
+      processScanCode();
+      scannedBuffer = '';
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      // Clear buffer on Enter if empty
+      scannedBuffer = '';
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // Collect printable characters
+      scannedBuffer += e.key;
+      
+      // Clear buffer if no Enter within 2 seconds (timeout)
+      if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
+      scannerTimeout.value = setTimeout(() => {
+        scannedBuffer = '';
+      }, 2000);
+    }
+  };
+
+  // Add global listener
+  window.addEventListener('keypress', handleGlobalKeyPress);
+
+  // Cleanup on unmount
+  onUnmounted(() => {
+    window.removeEventListener('keypress', handleGlobalKeyPress);
+    if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
+  });
 });
 
 const confirmInvoiceOnline = async () => {

@@ -69,6 +69,10 @@
         </el-row>
 
         <el-divider>Danh sách mặt hàng</el-divider>
+        <!-- Hidden input for barcode scanner -->
+        <div style="display: none;">
+          <el-input v-model="scanCodeValue" @keyup.enter="processScanCode" autofocus />
+        </div>
         <div class="items-section">
           <el-table
             :data="form.items"
@@ -258,7 +262,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import api from '@/api';
 import { ElMessage } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
@@ -280,6 +284,12 @@ const nccList = ref([]);
 const medicines = ref([]);
 const filteredMedicines = ref([]);
 const medLoading = ref(false);
+
+// Scan-related state
+const scanCodeValue = ref('');
+const scanLoading = ref(false);
+const scannedMedicine = ref(null);
+const scanError = ref('');
 
 const form = ref({
   maPN: '',
@@ -768,9 +778,79 @@ const printPhieu = () => {
   }
 };
 
+// Barcode scan functions
+const processScanCode = async () => {
+  const code = (scanCodeValue.value || '').trim();
+  if (!code) return;
+
+  scanLoading.value = true;
+  scanError.value = '';
+  
+  try {
+    const resp = await api.thuoc.getByCode(code);
+    const results = resp?.data?.data || [];
+    
+    if (results.length > 0) {
+      scannedMedicine.value = results[0];
+      setTimeout(() => addScannedMedicine(), 200);
+    } else {
+      scanError.value = 'Không tìm thấy thuốc với mã này';
+      ElMessage.warning(`Không tìm thấy thuốc với mã: ${code}`);
+    }
+  } catch (err) {
+    console.error('Scan error:', err);
+    scanError.value = 'Lỗi khi tìm kiếm thuốc';
+    ElMessage.error('Lỗi khi tìm kiếm thuốc');
+  } finally {
+    scanLoading.value = false;
+    scanCodeValue.value = '';
+  }
+};
+
+const addScannedMedicine = () => {
+  if (!scannedMedicine.value) return;
+
+  const medicine = scannedMedicine.value;
+  const maThuoc = medicine.maThuoc || medicine.MaThuoc;
+  
+  // Try to find in current items
+  let existingItem = form.value.items.find(item => item.maThuoc === maThuoc);
+  
+  if (existingItem) {
+    // Increment quantity if already exists
+    existingItem.soLuong = (existingItem.soLuong || 1) + 1;
+    ElMessage.success(`Tăng số lượng ${medicine.tenThuoc || medicine.TenThuoc}`);
+  } else {
+    // Add new item
+    const newItem = {
+      maCTPN: '',
+      maThuoc: maThuoc,
+      soLuong: 1,
+      donGia: 0,
+      donGiaBan: null,
+      thanhTien: 0,
+      hanSuDung: null,
+      maLoaiDonViNhap: '',
+      ghiChu: ''
+    };
+    form.value.items.push(newItem);
+    form.value.items = [...form.value.items];
+    
+    // Call onMedicineChange to load pricing info
+    setTimeout(() => {
+      onMedicineChange(newItem);
+    }, 100);
+    
+    ElMessage.success(`Thêm ${medicine.tenThuoc || medicine.TenThuoc} vào danh sách`);
+  }
+
+  scannedMedicine.value = null;
+};
+
 onMounted(async () => {
   // load reference data first
   await Promise.all([loadSuppliers(), loadMedicines(), loadTenNhanVien()]);
+
 
   // if page loaded with maPN (edit mode) load details and prefill form
   const maPN = route.query.maPN;
@@ -878,6 +958,29 @@ onMounted(async () => {
       ElMessage.error('Không tải được chi tiết phiếu nhập');
     }
   }
+
+  // Setup global barcode scanner listener
+  let scannedBuffer = '';
+  const handleGlobalKeyPress = (e) => {
+    // On Enter key, process the accumulated buffer
+    if (e.key === 'Enter' && scannedBuffer.trim()) {
+      scanCodeValue.value = scannedBuffer.trim();
+      processScanCode();
+      scannedBuffer = '';
+      e.preventDefault();
+    } 
+    // For regular printable characters, accumulate into buffer
+    else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      scannedBuffer += e.key;
+    }
+  };
+
+  window.addEventListener('keypress', handleGlobalKeyPress);
+
+  // Store the listener reference for cleanup
+  onUnmounted(() => {
+    window.removeEventListener('keypress', handleGlobalKeyPress);
+  });
 });
 </script>
 

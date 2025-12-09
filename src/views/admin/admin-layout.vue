@@ -118,11 +118,6 @@
               <span>Khách hàng</span>
             </el-menu-item>
             
-            <el-menu-item index="/admin/qr-scanner">
-              <i class="fas fa-qrcode"></i>
-              <span>Quét Mã Vạch</span>
-            </el-menu-item>
-            
             <el-menu-item index="/admin/thuoc">
               <i class="fas fa-pills"></i>
               <span>Quản Lý Thuốc</span>
