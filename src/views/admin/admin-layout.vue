@@ -174,8 +174,8 @@
             <span>Nhân Viên</span>
           </div>
           
-          <!-- Quản Lý Giao Diện Menu Item -->
-          <div class="menu-item-custom" @click="goToPage('/admin/theme-settings')" :class="{ 'is-active': activeMenu === '/admin/theme-settings' }">
+          <!-- Quản Lý Giao Diện Menu Item - Admin only -->
+          <div v-if="isAdmin" class="menu-item-custom" @click="goToPage('/admin/theme-settings')" :class="{ 'is-active': activeMenu === '/admin/theme-settings' }">
             <i class="fas fa-palette"></i>
             <span>Quản Lý Giao Diện</span>
           </div>
@@ -231,7 +231,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import logoImg from '@/assets/img/logo/logo.png';
 // Load logo images from `src/assets/img/logo/` if present.
 const logoModules = import.meta.glob('../../assets/img/logo/*', { eager: true, as: 'url' });
@@ -244,6 +244,9 @@ import { ElMessage } from 'element-plus';
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+
+// Sidebar collapse state key for localStorage
+const SIDEBAR_COLLAPSED_KEY = 'admin_sidebar_collapsed';
 
 const activeMenu = computed(() => route.path);
 
@@ -329,11 +332,13 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// Sidebar collapse state
-const collapsed = ref(false);
+// Sidebar collapse state - load from localStorage
+const collapsed = ref(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true');
 const sidebarWidth = computed(() => (collapsed.value ? '70px' : '280px'));
 const toggleCollapse = () => {
   collapsed.value = !collapsed.value;
+  // Save to localStorage
+  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed.value.toString());
 };
 
 // Summary toggle state

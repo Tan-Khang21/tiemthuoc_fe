@@ -39,7 +39,7 @@
             </div>
 
             <div style="display:flex; gap:8px; align-items:center; min-width:260px">
-              <el-input v-model="khoQuery" size="small" placeholder="Tìm mã lô / tên thuốc / đơn vị" clearable />
+              <el-input ref="khoQueryRef" v-model="khoQuery" size="small" placeholder="Tìm mã lô / code / tên thuốc / đơn vị" clearable />
             </div>
             <el-button type="primary" @click="openCreateCancelDialog" size="small" style="margin-left:auto">Tạo phiếu yêu cầu huỷ</el-button>
           </div>
@@ -57,7 +57,8 @@
                   <el-tag size="small" type="warning">{{ row.maThuoc }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="250">
+              <el-table-column prop="code" label="Code" width="160" />
+              <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="200">
                 <template #default="{ row }">
                   <div class="drug-name">{{ row.tenThuoc }}</div>
                 </template>
@@ -81,10 +82,10 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="Hành động" width="120" align="center" fixed="right">
+              <el-table-column label="" width="80" align="center" fixed="right">
                 <template #default="{ row }">
                   <el-button type="danger" size="small" @click="quickCancel(row)">
-                    <i class="fas fa-times"></i> Huỷ nhanh
+                    <i class="fas fa-times"></i> Huỷ 
                   </el-button>
                 </template>
               </el-table-column>
@@ -605,7 +606,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import api from '@/api/axios';
 import hoadonApi from '@/api/hoadon';
 import phieuxulyApi from '@/api/phieuxulyhoanhuy';
@@ -646,6 +647,7 @@ const khoItems = ref([]);
 const khoLoading = ref(false);
 const khoCurrentPage = ref(1);
 const khoQuery = ref('');
+const khoQueryRef = ref(null);
 
 const pageSize = 10;
 const currentPage = ref(1);
@@ -1297,9 +1299,10 @@ const khoDisplayedItems = computed(() => {
   return list.filter(i => {
     try {
       const maLo = (i.maLo || i.MaLo || '').toString().toLowerCase();
+      const code = (i.code || i.Code || '').toString().toLowerCase();
       const ten = (i.tenThuoc || i.TenThuoc || '').toString().toLowerCase();
       const donvi = (i.tenLoaiDonViGoc || i.tenLoaiDonVi || i.donVi || '').toString().toLowerCase();
-      return maLo.includes(q) || ten.includes(q) || donvi.includes(q);
+      return maLo.includes(q) || code.includes(q) || ten.includes(q) || donvi.includes(q);
     } catch (e) {
       return false;
     }
@@ -1472,7 +1475,69 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load employee list:', error);
   }
+  
+  // Barcode scanner listener
+  document.addEventListener('keydown', handleBarcodeScanner);
 });
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleBarcodeScanner);
+});
+
+// Barcode scanner variables
+let barcodeBuffer = '';
+let barcodeTimeout = null;
+
+const handleBarcodeScanner = (event) => {
+  // Bỏ qua nếu đang focus vào input, textarea
+  const activeElement = document.activeElement;
+  const isInputFocused = activeElement && (
+    activeElement.tagName === 'INPUT' || 
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  );
+  
+  // Nếu đang focus vào input thì không xử lý
+  if (isInputFocused) {
+    return;
+  }
+  
+  // Nếu dialog đang mở thì không xử lý
+  if (createCancelDialog.value || cancelDialog.value || invoiceCancelDialog.value) {
+    return;
+  }
+  
+  // Barcode scanner thường gửi ký tự rất nhanh và kết thúc bằng Enter
+  if (event.key === 'Enter') {
+    if (barcodeBuffer.length >= 3) {
+      const scannedCode = barcodeBuffer;
+      // Chỉ xử lý khi đang ở tab kho
+      if (activeTab.value === 'kho') {
+        khoQuery.value = '';
+        nextTick(() => {
+          khoQuery.value = scannedCode;
+          // Blur khỏi ô tìm kiếm
+          document.activeElement?.blur();
+        });
+      }
+      console.debug('[BarcodeScanner] Scanned code:', scannedCode);
+    }
+    barcodeBuffer = '';
+    clearTimeout(barcodeTimeout);
+    return;
+  }
+  
+  // Chỉ nhận ký tự có thể in được
+  if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    barcodeBuffer += event.key;
+    
+    // Reset buffer sau 100ms
+    clearTimeout(barcodeTimeout);
+    barcodeTimeout = setTimeout(() => {
+      barcodeBuffer = '';
+    }, 100);
+  }
+};
 
 watch([start, end], () => {
   if (start.value && end.value) fetchList();

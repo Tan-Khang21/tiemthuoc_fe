@@ -10,7 +10,7 @@
           <el-input
             class="search-input"
             v-model="searchKeyword"
-            placeholder=" Nhập tên hoặc mã thuốc..."
+            placeholder=" Nhập tên, mã thuốc hoặc code..."
             clearable
             size="medium"
             style="width:100%"
@@ -45,6 +45,7 @@
       <div style="background: #fff; border-radius: 8px; overflow: hidden">
       <el-table :data="pagedThuocList" v-loading="loading" stripe style="border: 1px solid #e5e7eb">
         <el-table-column prop="maThuoc" label="Mã thuốc" width="100" />
+        <el-table-column prop="code" label="Code" width="160" />
         <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="200" />
         <el-table-column label="Ảnh" width="80">
           <template #default="{ row }">
@@ -121,13 +122,16 @@
           <div style="flex:1">
             <!-- Basic info fields - render differently for Add vs Edit -->
             <template v-if="!editingThuoc">
-              <!-- Add mode: two columns, labels on top so inputs can use full width -->
-              <div style="display:grid; grid-template-columns: 3fr 1fr; gap:16px; margin-bottom:16px">
+              <!-- Add mode: three columns, labels on top so inputs can use full width -->
+              <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:16px; margin-bottom:16px">
                 <el-form-item label="Tên thuốc" label-width="0" label-position="top">
                   <el-input v-model="formData.tenThuoc" size="small" style="width:100%" />
                 </el-form-item>
+                <el-form-item label="Code" label-width="0" label-position="top">
+                  <el-input v-model="formData.code" placeholder="Mã vạch" size="small" style="width:100%" />
+                </el-form-item>
                 <el-form-item label="Loại thuốc" label-width="0" label-position="top">
-                  <el-select v-model="formData.maLoaiThuoc" placeholder="Chọn loại thuốc" size="small" style="width:100%">
+                  <el-select v-model="formData.maLoaiThuoc" placeholder="Chọn loại" size="small" style="width:100%">
                     <el-option
                       v-for="cat in categories"
                       :key="cat.maLoaiThuoc"
@@ -139,13 +143,16 @@
               </div>
             </template>
             <template v-else>
-              <!-- Edit mode: show Ma, Ten, Loai inline as before -->
-              <div :style="basicInfoGridStyle">
+              <!-- Edit mode: show Ma, Ten, Code, Loai inline -->
+              <div style="display:grid; grid-template-columns: 1fr 2fr 1.2fr 1.2fr; gap:16px; margin-bottom:16px">
                 <el-form-item label=" Mã thuốc" label-width="100px">
                   <el-input v-model="formData.maThuoc" disabled size="small" style="width:100%" />
                 </el-form-item>
                 <el-form-item label=" Tên thuốc" label-width="100px">
                   <el-input v-model="formData.tenThuoc" size="small" style="width:100%" />
+                </el-form-item>
+                <el-form-item label=" Code" label-width="100px">
+                  <el-input v-model="formData.code" size="small" style="width:100%" />
                 </el-form-item>
                 <el-form-item label=" Loại thuốc" label-width="100px">
                   <el-select v-model="formData.maLoaiThuoc" style="width: 100%" size="small">
@@ -308,7 +315,17 @@
           </div>
 
           <div style="flex:1">
-            <div class="detail-meta" style="background:#e3f2fd; color:#1976d2; padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600; display:inline-block">Mã: {{ detailsThuoc.maThuoc }}</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+              <div class="detail-meta" style="background:#e3f2fd; color:#1976d2; padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600; display:inline-block">Mã: {{ detailsThuoc.maThuoc }}</div>
+              <div class="detail-meta" style="background:#fef3c7; color:#d97706; padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600; display:inline-block" v-if="detailsThuoc.tenLoaiThuoc || getCategoryName(detailsThuoc.maLoaiThuoc)">
+                <el-icon style="margin-right:4px; vertical-align:middle"><Collection /></el-icon>
+                {{ detailsThuoc.tenLoaiThuoc || getCategoryName(detailsThuoc.maLoaiThuoc) }}
+              </div>
+              <div class="detail-meta" style="background:#d1fae5; color:#059669; padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600; display:inline-block" v-if="detailsThuoc.code">
+                <el-icon style="margin-right:4px; vertical-align:middle"><Stamp /></el-icon>
+                Code: {{ detailsThuoc.code }}
+              </div>
+            </div>
 
             <div style="margin-top:16px">
               <div class="supplier-url-grid">
@@ -445,10 +462,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import api from '@/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { View, Edit, Delete } from '@element-plus/icons-vue';
+import { View, Edit, Delete, Collection, Stamp } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/store/auth';
 
 const loading = ref(false);
@@ -483,6 +500,7 @@ const suppliers = ref([]);
 const formData = ref({
   maThuoc: '',
   tenThuoc: '',
+  code: '',
   maLoaiThuoc: '',
   hoatChat: '',
   nuocSanXuat: '',
@@ -502,7 +520,8 @@ const filteredThuocList = computed(() => {
   if (searchKeyword.value) {
     list = list.filter(t =>
       t.tenThuoc.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      t.maThuoc.toLowerCase().includes(searchKeyword.value.toLowerCase())
+      t.maThuoc.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+      (t.code && t.code.toLowerCase().includes(searchKeyword.value.toLowerCase()))
     );
   }
   
@@ -543,7 +562,67 @@ onMounted(async () => {
   await loadExistingImages();
   await loadLoaiDonVi();
   await loadSuppliers();
+  
+  // Barcode scanner listener - nhận quét mã khi không focus vào input
+  document.addEventListener('keydown', handleBarcodeScanner);
 });
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleBarcodeScanner);
+});
+
+// Barcode scanner variables
+let barcodeBuffer = '';
+let barcodeTimeout = null;
+
+const handleBarcodeScanner = (event) => {
+  // Bỏ qua nếu đang focus vào input, textarea, hoặc có dialog mở
+  const activeElement = document.activeElement;
+  const isInputFocused = activeElement && (
+    activeElement.tagName === 'INPUT' || 
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  );
+  
+  // Nếu đang focus vào input thì không xử lý (để input tự nhận)
+  if (isInputFocused) {
+    return;
+  }
+  
+  // Nếu dialog đang mở thì không xử lý
+  if (showAddDialog.value || showDetailsDialog.value) {
+    return;
+  }
+  
+  // Barcode scanner thường gửi ký tự rất nhanh và kết thúc bằng Enter
+  if (event.key === 'Enter') {
+    if (barcodeBuffer.length >= 3) {
+      // Clear ô tìm kiếm cũ trước khi đặt mã mới
+      searchKeyword.value = '';
+      // Đặt giá trị mới vào ô tìm kiếm
+      searchKeyword.value = barcodeBuffer;
+      console.debug('[BarcodeScanner] Scanned code:', barcodeBuffer);
+    }
+    barcodeBuffer = '';
+    clearTimeout(barcodeTimeout);
+    return;
+  }
+  
+  // Chỉ nhận ký tự có thể in được (không phải Shift, Ctrl, etc.)
+  if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    // Nếu bắt đầu quét mới, clear buffer cũ
+    if (barcodeBuffer === '') {
+      // Đây là ký tự đầu tiên của lần quét mới
+    }
+    barcodeBuffer += event.key;
+    
+    // Reset buffer sau 100ms nếu không có ký tự mới (người dùng gõ tay chậm)
+    clearTimeout(barcodeTimeout);
+    barcodeTimeout = setTimeout(() => {
+      barcodeBuffer = '';
+    }, 100);
+  }
+};
 
 const loadSuppliers = async () => {
   try {
@@ -722,6 +801,7 @@ const addNewThuoc = () => {
   formData.value = {
     maThuoc: '',
     tenThuoc: '',
+    code: '',
     maLoaiThuoc: '',
     maNCC: '',
     hoatChat: '',
@@ -890,6 +970,7 @@ const saveThuoc = async () => {
     const fd = new FormData();
     fd.append('MaLoaiThuoc', formData.value.maLoaiThuoc || '');
     fd.append('TenThuoc', formData.value.tenThuoc || '');
+    fd.append('Code', formData.value.code || '');
     fd.append('ThanhPhan', formData.value.thanhPhan || '');
     fd.append('MoTa', formData.value.moTa || '');
     fd.append('CongDung', formData.value.congDung || '');

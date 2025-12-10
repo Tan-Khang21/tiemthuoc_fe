@@ -1091,31 +1091,34 @@ onMounted(async () => {
   // Load medicines and dosages
   await Promise.all([loadMedicines(), loadLieuDung()]);
   
-  // populate current employee name from auth store (fallback to localStorage)
+  // populate current employee name from auth store - always fetch from API by MaNV like them-phieunhap.vue
   try {
     if (!auth.user) auth.initAuth();
     const u = auth.currentUser || auth.user || null;
     let name = null;
-    if (u) {
-      name = u.HoTen || u.hoTen || u.tenNV || u.TenNV || null;
-      const ma = u.MaNV || u.maNV;
-      // if name missing or a placeholder, fetch authoritative name from API
-      if (ma && ( !name || isPlaceholderName(name) )) {
-        const fetched = await fetchEmployeeById(ma);
-        if (fetched) name = fetched;
+    const maNV = u?.MaNV || u?.maNV;
+    
+    // Always fetch from API by MaNV to get actual employee name (not TenDangNhap)
+    if (maNV) {
+      const fetched = await fetchEmployeeById(maNV);
+      if (fetched) {
+        name = fetched;
       }
-    } else {
+    }
+    
+    // Fallback to localStorage if auth.user not available
+    if (!name) {
       const ustr = localStorage.getItem('user');
       if (ustr) {
         const uu = JSON.parse(ustr);
-        name = uu?.hoTen || uu?.HoTen || uu?.tenNV || uu?.TenNV || null;
         const ma = uu?.MaNV || uu?.maNV;
-        if (ma && ( !name || isPlaceholderName(name) )) {
+        if (ma) {
           const fetched = await fetchEmployeeById(ma);
           if (fetched) name = fetched;
         }
       }
     }
+    
     if (name) form.value.tenNV = name;
     console.log('hoadon-create init auth.user ->', auth.user, 'form.tenNV ->', form.value.tenNV);
   } catch (e) { console.error('hoadon-create init auth error', e); }

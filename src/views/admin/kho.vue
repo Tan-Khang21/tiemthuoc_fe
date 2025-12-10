@@ -69,9 +69,10 @@
             <div class="control-with-label">
               <div class="control-label">Tìm kiếm</div>
               <el-input
+                ref="searchChuaRef"
                 class="search-input"
                 v-model="searchChua"
-                placeholder="Tìm theo tên / mã / mã lô / loại thuốc"
+                placeholder="Tìm theo tên / mã / code / mã lô / loại thuốc"
                 clearable
                 size="small"
                 @clear="searchChua = ''"
@@ -99,6 +100,7 @@
           <el-table :data="paginatedChua" style="width: 100%" v-loading="loadingChua" stripe :row-style="tableRowStyle">
           <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
+          <el-table-column prop="code" label="Code" width="150" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
           <el-table-column label="Tên Thuốc" min-width="420">
             <template #default="{ row }">
@@ -209,9 +211,10 @@
            <div class="control-with-label">
              <div class="control-label">Tìm kiếm</div>
              <el-input
+               ref="searchDaRef"
                class="search-input"
                v-model="searchDa"
-               placeholder="Tìm theo tên / mã / mã lô / loại thuốc"
+               placeholder="Tìm theo tên / mã / code / mã lô / loại thuốc"
                clearable
                size="small"
                @clear="searchDa = ''"
@@ -241,6 +244,7 @@
         <el-table :data="paginatedDa" style="width: 100%" v-loading="loadingDa" stripe :row-style="tableRowStyle">
           <el-table-column prop="maLo" label="Mã Lô" width="180" fixed="left" show-overflow-tooltip />
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
+          <el-table-column prop="code" label="Code" width="160" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
           <el-table-column label="Tên Thuốc" min-width="420">
             <template #default="{ row }">
@@ -660,7 +664,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import api from '@/api/axios';
 import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/store';
@@ -710,6 +714,10 @@ const selectedTypeDa = ref('all');
 // Text search per tab (search by tên thuốc / mã / loại)
 const searchChua = ref('');
 const searchDa = ref('');
+
+// Refs cho ô tìm kiếm (để focus khi quét barcode)
+const searchChuaRef = ref(null);
+const searchDaRef = ref(null);
 
 // Derive unique drug options from the lists
 const chuaDrugs = computed(() => {
@@ -813,6 +821,7 @@ const filteredChuaList = computed(() => {
       return (
         (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.code || '').toString().toLowerCase().includes(q) ||
         (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maLoaiThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maLo || '').toString().toLowerCase().includes(q)
@@ -848,6 +857,7 @@ const filteredDaList = computed(() => {
       return (
         (r.tenThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maThuoc || '').toString().toLowerCase().includes(q) ||
+        (r.code || '').toString().toLowerCase().includes(q) ||
         (r.tenLoaiThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maLoaiThuoc || '').toString().toLowerCase().includes(q) ||
         (r.maLo || '').toString().toLowerCase().includes(q)
@@ -1016,9 +1026,84 @@ onMounted(() => {
   } catch (e) {
     // ignore
   }
+  
+  // Barcode scanner listener - nhận quét mã khi không focus vào input
+  document.addEventListener('keydown', handleBarcodeScanner);
 });
 
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleBarcodeScanner);
+});
 
+// Barcode scanner variables
+let barcodeBuffer = '';
+let barcodeTimeout = null;
+
+const handleBarcodeScanner = (event) => {
+  // Bỏ qua nếu đang focus vào input, textarea
+  const activeElement = document.activeElement;
+  const isInputFocused = activeElement && (
+    activeElement.tagName === 'INPUT' || 
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  );
+  
+  // Nếu đang focus vào input thì không xử lý (để input tự nhận)
+  if (isInputFocused) {
+    return;
+  }
+  
+  // Nếu dialog đang mở thì không xử lý
+  if (quickDialog.value || viewDialog.value || splitDialog.value) {
+    return;
+  }
+  
+  // Barcode scanner thường gửi ký tự rất nhanh và kết thúc bằng Enter
+  if (event.key === 'Enter') {
+    if (barcodeBuffer.length >= 3) {
+      const scannedCode = barcodeBuffer;
+      // Clear mã cũ trước, sau đó điền mã mới
+      if (activeTab.value === 'chuaTachLe') {
+        searchChua.value = '';
+        nextTick(() => {
+          searchChua.value = scannedCode;
+          // Blur khỏi ô tìm kiếm để lần quét sau không bị nối tiếp
+          if (searchChuaRef.value && searchChuaRef.value.blur) {
+            searchChuaRef.value.blur();
+          }
+          // Blur input element bên trong
+          document.activeElement?.blur();
+        });
+      } else if (activeTab.value === 'daTachLe') {
+        searchDa.value = '';
+        nextTick(() => {
+          searchDa.value = scannedCode;
+          // Blur khỏi ô tìm kiếm để lần quét sau không bị nối tiếp
+          if (searchDaRef.value && searchDaRef.value.blur) {
+            searchDaRef.value.blur();
+          }
+          // Blur input element bên trong
+          document.activeElement?.blur();
+        });
+      }
+      console.debug('[BarcodeScanner] Scanned code:', scannedCode);
+    }
+    barcodeBuffer = '';
+    clearTimeout(barcodeTimeout);
+    return;
+  }
+  
+  // Chỉ nhận ký tự có thể in được (không phải Shift, Ctrl, etc.)
+  if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    barcodeBuffer += event.key;
+    
+    // Reset buffer sau 100ms nếu không có ký tự mới (người dùng gõ tay chậm)
+    clearTimeout(barcodeTimeout);
+    barcodeTimeout = setTimeout(() => {
+      barcodeBuffer = '';
+    }, 100);
+  }
+};
 
 // Quick change and view dialogs
 const quickDialog = ref(false);

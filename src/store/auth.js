@@ -25,28 +25,41 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     // Khởi tạo auth state từ localStorage
     initAuth() {
-      const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
-      
-      if (token && userData) {
+      try {
+        const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
+        
+        if (!token || !userData) {
+          // Không có token hoặc user data - clear cả hai và đặt trạng thái mặc định
+          this.logout();
+          return;
+        }
+        
+        // Kiểm tra token còn hạn không
         try {
-          // Kiểm tra token còn hạn không
           const payload = JSON.parse(atob(token.split('.')[1]));
           const isExpired = payload.exp * 1000 < Date.now();
           
           if (isExpired) {
             // Token hết hạn - logout
+            console.log('Token expired, logging out...');
             this.logout();
             return;
           }
-          
-          this.user = JSON.parse(userData);
-          this.isAuthenticated = true;
-        } catch (e) {
+        } catch (tokenError) {
+          // Token không hợp lệ
+          console.error('Invalid token format:', tokenError);
           this.logout();
+          return;
         }
-      } else {
-        // Không có token hoặc user data - clear cả hai
+        
+        // Token hợp lệ - khôi phục user data
+        const parsedUser = JSON.parse(userData);
+        this.user = parsedUser;
+        this.isAuthenticated = true;
+        
+      } catch (e) {
+        console.error('Error initializing auth:', e);
         this.logout();
       }
     },
