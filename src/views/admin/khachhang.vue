@@ -32,8 +32,8 @@
         <el-table-column prop="hoTen" label="Họ Tên" min-width="180" />
         <el-table-column prop="dienThoai" label="Số Điện Thoại" width="140" />
         <el-table-column prop="diaChi" label="Địa Chỉ" min-width="250" />
-        <el-table-column prop="email" label="Email" min-width="200" />
-        <el-table-column label="Hành Động" width="280" align="center" fixed="right">
+        <el-table-column prop="email" label="Email" min-width="250" />
+        <el-table-column label="Hành Động" width="130" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -49,7 +49,7 @@
               @click="handleViewPurchaseHistory(row)"
               link
             >
-              <i class="fas fa-history"></i> Xem Mua Hàng
+              <i class="fas fa-history"></i> Xem
             </el-button>
           </template>
         </el-table-column>

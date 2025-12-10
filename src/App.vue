@@ -7,16 +7,15 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
 import { useAuthStore, useCartStore } from '@/store';
 
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 
-onMounted(() => {
-  authStore.initAuth();
-  cartStore.initCart();
-});
+// Initialize auth and cart immediately (not in onMounted) to avoid race conditions
+// where components render before auth state is initialized
+authStore.initAuth();
+cartStore.initCart();
 
 const getTransitionName = (route) => {
   // Áp dụng hiệu ứng slide cho các trang auth

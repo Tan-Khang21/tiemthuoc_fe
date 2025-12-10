@@ -1,24 +1,5 @@
 <template>
-  <div class="add-phieunhap-container">
     <el-card class="main-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><Plus /></el-icon>
-            <div>
-              <h3>{{ form.maPN ? 'Sửa Phiếu Nhập' : 'Thêm Phiếu Nhập Hàng' }}</h3>
-              <p class="header-desc">{{ form.maPN ? 'Chỉnh sửa phiếu nhập' : 'Tạo phiếu nhập mới cho nhà thuốc' }}</p>
-            </div>
-          </div>
-          <div class="header-right">
-            <el-tag type="info" size="small">
-              <el-icon><User /></el-icon>
-              {{ tenNhanVien || 'Chưa xác định' }}
-            </el-tag>
-          </div>
-        </div>
-      </template>
-
       <el-form :model="form" ref="formRef" label-width="120px" class="phieu-form">
         <el-divider>Thông tin phiếu nhập</el-divider>
         <el-row :gutter="20">
@@ -258,7 +239,6 @@
         </div>
       </el-form>
     </el-card>
-  </div>
 </template>
 
 <script setup>
@@ -1066,6 +1046,32 @@ onMounted(async () => {
 .items-section .el-table td {
   padding: 6px 8px;
 }
+
+/* Làm đậm các đường kẻ bảng */
+.items-section :deep(.el-table) {
+  border: 2px solid #909399;
+}
+.items-section :deep(.el-table th),
+.items-section :deep(.el-table td) {
+  border: 1px solid #909399;
+}
+.items-section :deep(.el-table--border .el-table__inner-wrapper::after),
+.items-section :deep(.el-table--border::before),
+.items-section :deep(.el-table--border::after) {
+  background-color: #909399;
+}
+.items-section :deep(.el-table__border-left-patch) {
+  background-color: #909399;
+}
+.items-section :deep(.el-table--border .el-table__cell) {
+  border-right: 1px solid #909399;
+  border-bottom: 1px solid #909399;
+}
+.items-section :deep(.el-table thead th) {
+  border-bottom: 2px solid #606266 !important;
+  background-color: #f5f7fa;
+}
+
 .items-section .el-input,
 .items-section .el-input .el-input__inner,
 .items-section .el-input-number,
