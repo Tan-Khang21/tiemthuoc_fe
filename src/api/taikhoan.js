@@ -6,6 +6,11 @@ export default {
     return axios.post('/TaiKhoan/Login', data);
   },
 
+  // Đăng nhập bằng Google
+  loginWithGoogle(data) {
+    return axios.post('/TaiKhoan/LoginWithGoogle', data);
+  },
+
   // Đăng ký
   register(data) {
     return axios.post('/TaiKhoan', data);
