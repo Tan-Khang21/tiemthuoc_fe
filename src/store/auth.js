@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import api from '@/api';
+import { auth, googleProvider } from '@/config/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -118,6 +120,116 @@ export const useAuthStore = defineStore('auth', {
             errorMsg = 'Tài khoản không tồn tại!';
           } else if (error.response.status === 400) {
             errorMsg = 'Thông tin đăng nhập không hợp lệ!';
+          }
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        return { 
+          success: false, 
+          message: errorMsg
+        };
+      }
+    },
+
+    // Đăng nhập bằng Google
+    async loginWithGoogle() {
+      try {
+        // Hiển thị popup Google Sign-in
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        
+        // Lấy ID Token từ Firebase
+        const idToken = await user.getIdToken();
+        
+        // Gửi ID Token đến backend để xác thực
+        const response = await api.taikhoan.loginWithGoogle({
+          idToken: idToken,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        });
+        
+        console.log('Google login response:', response);
+        
+        if (response.data) {
+          // Lưu JWT Token vào localStorage
+          if (response.data.Token || response.data.token) {
+            const token = response.data.Token || response.data.token;
+            localStorage.setItem('token', token);
+          }
+          
+          // Lấy thông tin user từ response
+          const employeeData = response.data.nhanVien || response.data.employee || response.data;
+          const tenDangNhap = response.data.tenDangNhap || response.data.TenDangNhap || user.email;
+          const userData = {
+            MaTK: response.data.maTK || response.data.MaTK,
+            TenDangNhap: tenDangNhap,
+            HoTen: employeeData.hoTen || employeeData.HoTen || response.data.hoTen || response.data.HoTen || user.displayName,
+            Email: response.data.email || response.data.Email || user.email,
+            MaKH: response.data.maKH || response.data.MaKH,
+            MaNV: response.data.maNV || response.data.MaNV || employeeData.maNV || employeeData.MaNV,
+            VaiTro: response.data.vaiTro || response.data.VaiTro,
+            ChucVu: response.data.chucVu !== undefined ? response.data.chucVu : (response.data.ChucVu !== undefined ? response.data.ChucVu : (employeeData.chucVu !== undefined ? employeeData.chucVu : employeeData.ChucVu)),
+            HasCustomerInfo: response.data.hasCustomerInfo || response.data.HasCustomerInfo,
+            IsAdmin: response.data.isAdmin || response.data.IsAdmin,
+            PhotoURL: user.photoURL
+          };
+          
+          console.log('User data to save:', userData);
+          
+          this.user = userData;
+          this.isAuthenticated = true;
+          localStorage.setItem('user', JSON.stringify(userData));
+          
+          return { 
+            success: true, 
+            data: userData,
+            message: response.data.message || response.data.Message || 'Đăng nhập thành công!'
+          };
+        }
+        return { success: false, message: 'Đăng nhập thất bại' };
+      } catch (error) {
+        console.error('Google login error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        
+        let errorMsg = 'Có lỗi xảy ra khi đăng nhập bằng Google';
+        
+        // Xử lý lỗi từ Firebase
+        if (error.code) {
+          switch (error.code) {
+            case 'auth/popup-closed-by-user':
+              errorMsg = 'Đăng nhập bị hủy';
+              break;
+            case 'auth/cancelled-popup-request':
+              errorMsg = 'Yêu cầu đăng nhập bị hủy';
+              break;
+            case 'auth/popup-blocked':
+              errorMsg = 'Popup bị chặn bởi trình duyệt';
+              break;
+            default:
+              errorMsg = error.message;
+          }
+        } else if (error.response) {
+          // Xử lý lỗi từ backend
+          const data = error.response.data;
+          
+          console.log('Backend error data type:', typeof data);
+          console.log('Backend error data:', data);
+          
+          if (typeof data === 'string') {
+            errorMsg = data;
+          } else if (data?.message) {
+            errorMsg = data.message;
+          } else if (data?.Message) {
+            errorMsg = data.Message;
+          } else if (data?.title) {
+            errorMsg = data.title;
+          } else if (data?.errors) {
+            // Validation errors from ASP.NET
+            const firstError = Object.values(data.errors)[0];
+            errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
           }
         } else if (error.message) {
           errorMsg = error.message;
