@@ -821,7 +821,7 @@ const addScannedMedicine = () => {
       onMedicineChange(newItem);
     }, 100);
     
-    ElMessage.success(`Thêm ${medicine.tenThuoc || medicine.TenThuoc} vào danh sách`);
+    ElMessage.success(`${medicine.tenThuoc || medicine.TenThuoc}`);
   }
 
   scannedMedicine.value = null;
@@ -940,27 +940,28 @@ onMounted(async () => {
   }
 
   // Setup global barcode scanner listener
-  let scannedBuffer = '';
-  const handleGlobalKeyPress = (e) => {
-    // On Enter key, process the accumulated buffer
-    if (e.key === 'Enter' && scannedBuffer.trim()) {
-      scanCodeValue.value = scannedBuffer.trim();
-      processScanCode();
-      scannedBuffer = '';
-      e.preventDefault();
-    } 
-    // For regular printable characters, accumulate into buffer
-    else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      scannedBuffer += e.key;
-    }
-  };
+  window.addEventListener('keypress', handleGlobalKeyPressPhieuNhap);
+});
 
-  window.addEventListener('keypress', handleGlobalKeyPress);
+// Global keyboard listener for barcode scanner - defined at script level for proper cleanup
+let scannedBufferPN = '';
+const handleGlobalKeyPressPhieuNhap = (e) => {
+  // On Enter key, process the accumulated buffer
+  if (e.key === 'Enter' && scannedBufferPN.trim()) {
+    scanCodeValue.value = scannedBufferPN.trim();
+    processScanCode();
+    scannedBufferPN = '';
+    e.preventDefault();
+  } 
+  // For regular printable characters, accumulate into buffer
+  else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    scannedBufferPN += e.key;
+  }
+};
 
-  // Store the listener reference for cleanup
-  onUnmounted(() => {
-    window.removeEventListener('keypress', handleGlobalKeyPress);
-  });
+// Cleanup on unmount - must be at script level
+onUnmounted(() => {
+  window.removeEventListener('keypress', handleGlobalKeyPressPhieuNhap);
 });
 </script>
 
@@ -1102,23 +1103,6 @@ onMounted(async () => {
   gap: 12px;
   align-items: flex-start;
 }
-:deep(.medicine-option-name) {
-  font-weight: 600;
-  color: #111827;
-  flex: 0 0 40%;
-  max-width: 40%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-:deep(.medicine-option-ingredient) {
-  font-size: 13px;
-  color: #6b7280;
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* Two-line item in table cell: top is control, bottom is small meta line */
 .item-two-lines {
@@ -1128,26 +1112,6 @@ onMounted(async () => {
 }
 .item-two-lines .item-top-select {
   width: 100%;
-}
-.item-bottom-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.item-bottom-info .bottom-name {
-  font-weight: 600;
-  font-size: 13px;
-  color: #111827;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.item-bottom-info .bottom-meta {
-  font-size: 12px;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .bottom-controls {
@@ -1193,11 +1157,6 @@ onMounted(async () => {
   display: none !important;
 }
 
-.price-text {
-  font-weight: 600;
-  color: #1f2937;
-}
-
 .total-section {
   margin-top: 20px;
 }
@@ -1211,17 +1170,6 @@ onMounted(async () => {
   font-size: 16px;
 }
 
-.total-label {
-  font-weight: 600;
-  color: #374151;
-}
-
-.total-amount {
-  font-weight: 700;
-  font-size: 18px;
-  color: #dc2626;
-}
-
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -1233,12 +1181,109 @@ onMounted(async () => {
 /* Bold table headers and form labels for clarity */
 :deep(.col-header) {
   font-weight: 700;
-  color: #0f172a;
+  color: #000;
 }
 
 .phieu-form :deep(.el-form-item__label) {
   font-weight: 700;
-  color: #111827;
+  color: #000;
+}
+
+/* Make all text black and bolder */
+.phieu-form {
+  color: #000;
+}
+
+.phieu-form :deep(.el-input__inner),
+.phieu-form :deep(.el-textarea__inner),
+.phieu-form :deep(.el-select .el-input__inner),
+.phieu-form :deep(.el-input-number__decrease),
+.phieu-form :deep(.el-input-number__increase) {
+  color: #000;
+  font-weight: 500;
+}
+
+.phieu-form :deep(.el-table) {
+  color: #000;
+}
+
+.phieu-form :deep(.el-table th) {
+  color: #000;
+  font-weight: 700;
+}
+
+.phieu-form :deep(.el-table td) {
+  color: #000;
+  font-weight: 500;
+}
+
+.phieu-form :deep(.el-divider__text) {
+  color: #000;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.remaining-text {
+  display: block;
+  text-align: center;
+  color: #000;
+  font-weight: 600;
+}
+
+.price-text {
+  font-weight: 700;
+  color: #000;
+}
+
+.total-label {
+  font-weight: 700;
+  color: #000;
+}
+
+.total-amount {
+  font-weight: 800;
+  font-size: 20px;
+  color: #dc2626;
+}
+
+/* Medicine option styling */
+:deep(.medicine-option-name) {
+  font-weight: 700;
+  color: #000;
+  flex: 0 0 40%;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.medicine-option-ingredient) {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Item info styling */
+.item-bottom-info .bottom-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-bottom-info .bottom-meta {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

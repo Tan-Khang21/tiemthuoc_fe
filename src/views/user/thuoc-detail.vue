@@ -195,7 +195,7 @@
             <el-tab-pane label="Mô tả sản phẩm" name="description">
               <div class="tab-content">
                 <h3>Mô tả chi tiết</h3>
-                <p v-if="thuoc.moTa" class="description-text">{{ thuoc.moTa }}</p>
+                <p v-if="thuoc.moTa" class="description-text" v-html="formatTextWithLineBreaks(thuoc.moTa)"></p>
                 <p v-else class="no-data">Đang cập nhật thông tin mô tả sản phẩm...</p>
               </div>
             </el-tab-pane>
@@ -204,7 +204,7 @@
               <div class="tab-content">
                 <h3>Công dụng</h3>
                 <div class="uses-content">
-                  <p v-if="thuoc.congDung" class="description-text">{{ thuoc.congDung }}</p>
+                  <p v-if="thuoc.congDung" class="description-text" v-html="formatTextWithLineBreaks(thuoc.congDung)"></p>
                   <p v-else class="no-data">Đang cập nhật thông tin công dụng...</p>
                 </div>
               </div>
@@ -214,7 +214,7 @@
               <div class="tab-content">
                 <h3>Cách dùng</h3>
                 <div class="usage-content">
-                  <p v-if="thuoc.cachDung" class="description-text">{{ thuoc.cachDung }}</p>
+                  <p v-if="thuoc.cachDung" class="description-text" v-html="formatTextWithLineBreaks(thuoc.cachDung)"></p>
                   <p v-else class="no-data">Đang cập nhật thông tin cách dùng...</p>
                 </div>
               </div>
@@ -226,7 +226,7 @@
                 <div class="notes-content">
                   <div v-if="thuoc.luuY" class="alert-box">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p class="description-text">{{ thuoc.luuY }}</p>
+                    <p class="description-text" v-html="formatTextWithLineBreaks(thuoc.luuY)"></p>
                   </div>
                   <p v-else class="no-data">Đang cập nhật thông tin lưu ý...</p>
                 </div>
@@ -376,76 +376,91 @@
 
                 <!-- Questions List -->
                 <div class="qa-list">
-                    <div v-if="comments.length === 0" class="no-qa">
-                        <i class="fas fa-question-circle"></i>
-                        <p>Chưa có câu hỏi nào. Hãy là người đầu tiên đặt câu hỏi!</p>
-                    </div>
-                    <div v-else class="qa-items">
-                        <!-- Iterate over threads (each 'comment' is a thread with flattened items) -->
-                        <div v-for="thread in comments" :key="thread.root.maBL" class="qa-thread">
-                            <div class="qa-thread-items">
-                                <div v-for="(item, index) in thread.items" :key="item.maBL" class="qa-item" :class="{'is-reply': index > 0, 'is-root': index === 0}">
-                                    <div class="qa-main">
-                                        <div class="qa-avatar" :class="{'is-staff': item.maNV}">
-                                            <i class="fas fa-user-shield" v-if="item.maNV"></i>
-                                            <span v-else>{{ (item.tenNguoiBinhLuan || 'K').charAt(0).toUpperCase() }}</span>
-                                        </div>
-                                        <div class="qa-content-wrapper">
-                                            <div class="qa-meta">
-                                                <span class="qa-author" :class="{'is-staff-name': item.maNV}">
-                                                    {{ item.tenNguoiBinhLuan || (item.maNV ? 'Nhân viên' : 'Khách hàng') }}
-                                                    <span v-if="item.maNV" class="staff-badge">QTV</span>
-                                                </span>
-                                                <span class="qa-time">{{ formatTimeAgo(item.ngayBinhLuan) }}</span>
-                                            </div>
-                                            <div v-if="!isCommentHidden(item.maBL)" class="qa-text">{{ item.noiDung }}</div>
-                                            <div v-else class="qa-text-hidden">
-                                                <i class="fas fa-eye-slash"></i> Bình luận đã bị ẩn
-                                            </div>
-                                            
-                                            <div class="qa-actions" v-if="authStore.isAuthenticated">
-                                                <!-- Only show reply button on the last item of the thread -->
-                                                <button 
-                                                    class="btn-reply-text" 
-                                                    @click="toggleReplyForm(item.maBL)"
-                                                    v-if="index === thread.items.length - 1 && !isCommentHidden(item.maBL)"
-                                                >
-                                                    Trả lời
-                                                </button>
-                                                <button 
-                                                    class="btn-hide-text" 
-                                                    @click="toggleHideComment(item.maBL)"
-                                                >
-                                                    {{ isCommentHidden(item.maBL) ? 'Hiện' : 'Ẩn' }}
-                                                </button>
-                                                <button 
-                                                    class="btn-delete-text" 
-                                                    v-if="canDeleteComment(item)"
-                                                    @click="deleteComment(item.maBL)"
-                                                >
-                                                    Xóa
-                                                </button>
-                                            </div>
-
-                                            <!-- Reply Form -->
-                                            <div v-if="replyingTo === item.maBL" class="reply-form">
-                                                <el-input 
-                                                    v-model="replyContent" 
-                                                    placeholder="Viết câu trả lời..." 
-                                                    size="small"
-                                                    @keyup.enter="submitReply(item.maBL)"
-                                                >
-                                                    <template #append>
-                                                        <el-button @click="submitReply(item.maBL)" :loading="submittingComment">Gửi</el-button>
-                                                    </template>
-                                                </el-input>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                  <div v-if="comments.length === 0" class="no-qa">
+                    <i class="fas fa-question-circle"></i>
+                    <p>Chưa có câu hỏi nào. Hãy là người đầu tiên đặt câu hỏi!</p>
+                  </div>
+                  <div v-else class="qa-items">
+                    <!-- Iterate over threads (each 'comment' is a thread with flattened items) -->
+                    <div v-for="thread in comments" :key="thread.root.maBL" class="qa-thread">
+                      <div class="qa-thread-items">
+                        <!-- Render root comment explicitly -->
+                        <div class="qa-item is-root" :id="'comment-'+thread.root.maBL" :data-ma-bl="thread.root.maBL">
+                          <div class="qa-main">
+                            <div class="qa-avatar" :class="{'is-staff': thread.root.maNV}">
+                              <i class="fas fa-user-shield" v-if="thread.root.maNV"></i>
+                              <span v-else>{{ (thread.root.tenNguoiBinhLuan || 'K').charAt(0).toUpperCase() }}</span>
                             </div>
+                            <div class="qa-content-wrapper">
+                              <div class="qa-meta">
+                                <span class="qa-author" :class="{'is-staff-name': thread.root.maNV}">
+                                  {{ thread.root.maNV ? 'Nhân viên' : (thread.root.tenKH || 'Khách hàng') }}
+                                  <span v-if="thread.root.maNV" class="staff-badge">QTV</span>
+                                </span>
+                                <span class="qa-time">{{ formatTimeAgo(thread.root.thoiGian) }}</span>
+                              </div>
+                              <div class="qa-text">{{ thread.root.noiDung }}</div>
+                              <div class="qa-actions" v-if="authStore.isAuthenticated">
+                                <button class="btn-hide-text" @click="toggleHideComment(thread.root.maBL)">
+                                  {{ isThreadHidden(thread.root.maBL) ? 'Hiện' : 'Ẩn' }}
+                                </button>
+                                <!-- Show reply on root only when there are no replies -->
+                                <button class="btn-reply-text" v-if="thread.items.length <= 1 && canReplyToThread(thread.root)" @click="toggleReplyForm(thread.root.maBL)">Trả lời</button>
+                                <button class="btn-delete-text" v-if="canDeleteComment(thread.root)" @click="deleteComment(thread.root.maBL)">Xóa</button>
+                              </div>
+
+                              <div v-if="isThreadHidden(thread.root.maBL)" class="replies-collapsed">
+                                <span>{{ Math.max(0, (thread.items.length - 1)) }} trả lời đã bị ẩn</span>
+                                <button class="btn-show-replies" @click="toggleHideComment(thread.root.maBL)">Hiển thị</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
+
+                        <!-- Replies: render only when thread is not hidden -->
+                          <template v-if="!isThreadHidden(thread.root.maBL)">
+                          <div v-for="(reply, rIndex) in thread.items.slice(1)" :key="reply.maBL" class="qa-item is-reply" :id="'comment-'+reply.maBL" :data-ma-bl="reply.maBL">
+                            <div class="qa-main">
+                              <div class="qa-avatar" :class="{'is-staff': reply.maNV}">
+                                <i class="fas fa-user-shield" v-if="reply.maNV"></i>
+                                <span v-else>{{ (reply.tenNguoiBinhLuan || 'K').charAt(0).toUpperCase() }}</span>
+                              </div>
+                              <div class="qa-content-wrapper">
+                                <div class="qa-meta">
+                                  <span class="qa-author" :class="{'is-staff-name': reply.maNV}">{{ reply.maNV ? 'Nhân viên' : (reply.tenKH || 'Khách hàng') }}<span v-if="reply.maNV" class="staff-badge">QTV</span></span>
+                                  <span class="qa-time">{{ formatTimeAgo(reply.thoiGian) }}</span>
+                                </div>
+                                <div class="qa-text">{{ reply.noiDung }}</div>
+                                <div class="qa-actions" v-if="authStore.isAuthenticated">
+                                  <button class="btn-delete-text" v-if="canDeleteComment(reply)" @click="deleteComment(reply.maBL)">Xóa</button>
+                                  <!-- If this reply is the latest in the thread, show the reply button here -->
+                                  <button class="btn-reply-text" v-if="getLatestMaBL(thread) === reply.maBL && canReplyToThread(thread.root)" @click="toggleReplyForm(thread.root.maBL)">Trả lời</button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Reply form directly under this reply if replyingTo matches -->
+                            <div v-if="replyingTo === reply.maBL" class="reply-form" style="margin-left:50px;">
+                              <el-input type="textarea" v-model="replyContent" :rows="3" placeholder="Viết trả lời..." />
+                              <div class="form-actions" style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
+                                <button class="btn-cancel" @click="replyingTo = null">Hủy</button>
+                                <button class="btn-submit" @click="submitReply(reply.maBL)" :disabled="submittingComment">Gửi</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- If there are no replies yet, show form under root when replyingTo matches root -->
+                          <div v-if="thread.items.length <= 1 && replyingTo === thread.root.maBL" class="reply-form" style="margin-top:8px;">
+                            <el-input type="textarea" v-model="replyContent" :rows="3" placeholder="Viết trả lời..." />
+                            <div class="form-actions" style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
+                              <button class="btn-cancel" @click="replyingTo = null">Hủy</button>
+                              <button class="btn-submit" @click="submitReply(thread.root.maBL)" :disabled="submittingComment">Gửi</button>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
                     </div>
+                  </div>
                 </div>
               </div>
             </el-tab-pane>
@@ -454,7 +469,16 @@
 
         <!-- Related Products -->
         <div class="related-products" v-if="relatedProducts.length > 0">
-          <h2 class="section-title">Sản phẩm liên quan</h2>
+          <div class="section-header">
+            <h2 class="section-title">Sản phẩm liên quan</h2>
+            <router-link 
+              :to="`/user/thuoc?loai=${thuoc?.maLoaiThuoc}`" 
+              class="view-all-link"
+              v-if="thuoc?.maLoaiThuoc"
+            >
+              Xem tất cả <i class="fas fa-arrow-right"></i>
+            </router-link>
+          </div>
           <div class="products-grid">
             <div v-for="product in relatedProducts.slice(0, 4)" :key="product.maThuoc" class="product-card">
               <router-link :to="`/user/thuoc/${product.maThuoc}`" class="product-link">
@@ -485,7 +509,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/api';
 import { useCartStore, useAuthStore } from '@/store';
@@ -589,10 +613,27 @@ const loadThuocDetail = async () => {
 
 const loadRelatedProducts = async () => {
   try {
-    const response = await api.thuoc.getAll();
-    relatedProducts.value = (response.data || [])
-      .filter(p => p && p.maThuoc && p.maThuoc !== route.params.maThuoc)
-      .slice(0, 4);
+    const currentMaThuoc = route.params.maThuoc;
+    const currentLoaiThuoc = thuoc.value?.maLoaiThuoc;
+    
+    if (!currentLoaiThuoc) {
+      console.log('No loaiThuoc found, skipping related products');
+      return;
+    }
+    
+    // Dùng API lấy thuốc theo loại có tồn kho
+    const response = await api.thuoc.getByLoaiTonKho(currentLoaiThuoc);
+    // API trả về { status, message, data: [...] }
+    const allProducts = response.data?.data || response.data || [];
+    
+    // Lọc bỏ thuốc hiện tại
+    let related = allProducts.filter(p => {
+      if (!p || !p.maThuoc || p.maThuoc === currentMaThuoc) return false;
+      return true;
+    });
+    
+    relatedProducts.value = related.slice(0, 4);
+    console.log('Related products loaded:', relatedProducts.value.length, relatedProducts.value);
   } catch (error) {
     console.error('Load related products error:', error);
   }
@@ -696,6 +737,17 @@ const formatDate = (dateString) => {
     month: '2-digit',
     year: 'numeric'
   }).format(date);
+};
+
+// Format text: mỗi câu (kết thúc bằng . ! ?) xuống dòng 1 lần
+const formatTextWithLineBreaks = (text) => {
+  if (!text) return '';
+  // Thay thế dấu kết thúc câu + khoảng trắng bằng dấu + <br>
+  return text
+    .replace(/\.\s+/g, '.<br>')
+    .replace(/\!\s+/g, '!<br>')
+    .replace(/\?\s+/g, '?<br>')
+    .replace(/\n/g, '<br>');
 };
 
 // Review methods
@@ -815,6 +867,27 @@ const deleteReview = async () => {
 };
 
 // QA Methods
+// Helper: get timestamp (ms) for a comment item using known fields
+const getItemTimeMs = (item) => {
+  if (!item) return 0;
+  const t = item.thoiGian || item.ngayBinhLuan || item.createdAt || item.created_at || item.created || null;
+  const dt = t ? new Date(t) : null;
+  return dt && !isNaN(dt.getTime()) ? dt.getTime() : 0;
+};
+
+// Return the maBL of the latest item in a thread (by timestamp). Falls back to root.maBL.
+const getLatestMaBL = (thread) => {
+  if (!thread) return null;
+  if (Array.isArray(thread.items) && thread.items.length > 0) {
+    let latest = thread.items[0];
+    for (let i = 1; i < thread.items.length; i++) {
+      if (getItemTimeMs(thread.items[i]) > getItemTimeMs(latest)) latest = thread.items[i];
+    }
+    return latest?.maBL || thread.root?.maBL || null;
+  }
+  return thread.root?.maBL || null;
+};
+
 const loadComments = async () => {
   try {
     const maThuoc = route.params.maThuoc;
@@ -831,8 +904,8 @@ const loadComments = async () => {
           }
         };
         traverse(root);
-        // Sort items by time
-        items.sort((a, b) => new Date(a.ngayBinhLuan) - new Date(b.ngayBinhLuan));
+        // Sort items by time (use available timestamp fields)
+        items.sort((a, b) => getItemTimeMs(a) - getItemTimeMs(b));
         return { root, items };
       });
     }
@@ -868,28 +941,71 @@ const submitQuestion = async () => {
   }
 };
 
-const toggleReplyForm = (maBL) => {
-  if (replyingTo.value === maBL) {
+const toggleReplyForm = async (rootMaBL) => {
+  // Find thread and target the latest comment in that thread by timestamp
+  const thread = comments.value.find(t => t.root && t.root.maBL === rootMaBL);
+  let targetMaBL = rootMaBL;
+  if (thread && Array.isArray(thread.items) && thread.items.length > 0) {
+    let latest = thread.items[0];
+    for (let i = 1; i < thread.items.length; i++) {
+      if (getItemTimeMs(thread.items[i]) > getItemTimeMs(latest)) latest = thread.items[i];
+    }
+    if (latest && latest.maBL) targetMaBL = latest.maBL;
+  }
+
+  if (replyingTo.value === targetMaBL) {
     replyingTo.value = null;
     replyContent.value = '';
   } else {
-    replyingTo.value = maBL;
+    replyingTo.value = targetMaBL;
     replyContent.value = '';
+    // After DOM updates, scroll the target comment into view so form is visible
+    await nextTick();
+    try {
+      const el = document.getElementById('comment-' + targetMaBL);
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 };
 
-const submitReply = async (parentMaBL) => {
+const submitReply = async (targetMaBL) => {
   if (!replyContent.value.trim()) return;
-  
+
   submittingComment.value = true;
   try {
+    // If targetMaBL is a reply id (exists in any thread.items), use it directly as parent.
+    // Otherwise, if it's a root id, find the newest item in that thread and use its id.
+    let parentMaBL = targetMaBL;
+
+    // Search for a thread that contains this id as any item
+    const containingThread = comments.value.find(t => t.items && t.items.some(i => i.maBL === targetMaBL));
+    if (containingThread) {
+      // If the id is not the root's id but an item id, we use it directly.
+      // parentMaBL already equals targetMaBL in this case.
+    } else {
+      // Treat targetMaBL as a root id: find thread by root and pick the latest item by timestamp
+      const thread = comments.value.find(t => t.root && t.root.maBL === targetMaBL);
+      if (thread && Array.isArray(thread.items) && thread.items.length > 0) {
+        // pick latest by timestamp
+        let latest = thread.items[0];
+        for (let i = 1; i < thread.items.length; i++) {
+          if (getItemTimeMs(thread.items[i]) > getItemTimeMs(latest)) latest = thread.items[i];
+        }
+        if (latest && latest.maBL) parentMaBL = latest.maBL;
+      }
+    }
+
     const data = {
       maThuoc: route.params.maThuoc,
       maKH: authStore.user.MaKH,
       noiDung: replyContent.value,
       traLoiChoBinhLuan: parentMaBL
     };
-    
+
     const response = await api.binhluan.create(data);
     if (response.data && response.data.status === 1) {
       ElMessage.success('Đã gửi câu trả lời');
@@ -900,6 +1016,7 @@ const submitReply = async (parentMaBL) => {
       ElMessage.error(response.data?.message || 'Có lỗi xảy ra');
     }
   } catch (error) {
+    console.error('submitReply error:', error);
     ElMessage.error('Có lỗi xảy ra');
   } finally {
     submittingComment.value = false;
@@ -929,24 +1046,48 @@ const deleteComment = async (maBL) => {
 };
 
 const canDeleteComment = (comment) => {
-    // User can delete their own comments
-    if (authStore.user?.MaKH && comment.maKH === authStore.user.MaKH) return true;
-    // Admin can delete any
-    if (authStore.isAdmin) return true;
-    return false;
+  // Only allow delete if the comment belongs to the current authenticated customer
+  if (authStore.user?.MaKH && comment?.maKH && comment.maKH === authStore.user.MaKH) return true;
+  return false;
+};
+
+// Compute the newest root comments (replyable). Only these will show a reply action.
+const latestReplyableSet = computed(() => {
+  const N = 5; // show reply action for the latest 5 root comments
+  const roots = comments.value
+    .slice()
+    .sort((a, b) => getItemTimeMs(b.root) - getItemTimeMs(a.root))
+    .slice(0, N)
+    .map(t => t.root?.maBL)
+    .filter(Boolean);
+  return new Set(roots);
+});
+
+const canReplyToThread = (comment) => {
+  if (!authStore.isAuthenticated) return false;
+  if (!authStore.user?.MaKH) return false;
+  if (!comment || !comment.maBL) return false;
+  // Only allow replying to comments that belong to the logged-in customer and are among the newest
+  return comment.maKH === authStore.user.MaKH && latestReplyableSet.value.has(comment.maBL);
 };
 
 const toggleHideComment = (maBL) => {
-    if (hiddenComments.value.has(maBL)) {
-        hiddenComments.value.delete(maBL);
-    } else {
-        hiddenComments.value.add(maBL);
-    }
+  // Use Set cloning + reassignment so Vue reactivity detects the change
+  const s = new Set(hiddenComments.value);
+  if (s.has(maBL)) {
+    s.delete(maBL);
+  } else {
+    s.add(maBL);
+  }
+  hiddenComments.value = s;
 };
 
-const isCommentHidden = (maBL) => {
-    return hiddenComments.value.has(maBL);
+const isThreadHidden = (rootMaBL) => {
+  return hiddenComments.value.has(rootMaBL);
 };
+
+// Backwards-compatible alias (not used in template anymore)
+const isCommentHidden = (maBL) => hiddenComments.value.has(maBL);
 
 const formatTimeAgo = (dateString) => {
   if (!dateString) return '';
@@ -1731,13 +1872,51 @@ const formatTimeAgo = (dateString) => {
   margin-top: 50px;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #0ecfe0;
+}
+
 .section-title {
   font-size: 28px;
   font-weight: 700;
   color: #17181c;
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #0ecfe0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0ecfe0;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.3s;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+}
+
+.view-all-link:hover {
+  background: linear-gradient(135deg, #0ecfe0, #0bb5c4);
+  color: #fff;
+  transform: translateX(5px);
+}
+
+.view-all-link i {
+  font-size: 12px;
+  transition: transform 0.3s;
+}
+
+.view-all-link:hover i {
+  transform: translateX(3px);
 }
 
 .products-grid {
@@ -2329,6 +2508,34 @@ const formatTimeAgo = (dateString) => {
 .reply-form {
   margin: 10px 0 15px;
   animation: fadeIn 0.3s;
+}
+
+.replies-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-top: 8px;
+  background: #fff;
+  border-left: 4px solid #f0f0f0;
+  color: #666;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.btn-show-replies {
+  margin-left: 8px;
+  background: transparent;
+  border: 1px solid #0ecfe0;
+  color: #0ecfe0;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.btn-show-replies:hover {
+  background: #0ecfe0;
+  color: #fff;
 }
 
 .no-qa {

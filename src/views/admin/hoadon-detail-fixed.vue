@@ -151,13 +151,13 @@
               <span v-else>{{ row.maThuoc }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="220" show-overflow-tooltip>
+          <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="190" show-overflow-tooltip>
             <template #default="{ row }">
               <span v-if="row._rtype === 'dose'">&nbsp;</span>
               <span v-else>{{ row.tenThuoc }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="maLo" label="Mã lô" width="120">
+          <el-table-column prop="maLo" label="Mã lô" width="150">
             <template #default="{ row }">
               <span v-if="row._rtype === 'dose'">&nbsp;</span>
               <span v-else>{{ row.maLo }}</span>

@@ -28,7 +28,9 @@
 
       <div class="register-box">
         <div class="logo">
-          <img src="/src/assets/img/logo/logo.png" alt="Medion Logo" />
+          <router-link to="/">
+            <img src="/src/assets/img/logo/logo.png" alt="Medion Logo" />
+          </router-link>
         </div>
 
         <h2>Đăng Ký</h2>
