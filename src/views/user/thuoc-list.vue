@@ -142,16 +142,16 @@
                       </router-link>
                     </h3>
                     <div class="product-rating">
-                      <div class="stars" v-if="getProductRating(thuoc.maThuoc).count > 0">
-                        <i v-for="n in renderStars(getProductRating(thuoc.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
-                        <i v-if="renderStars(getProductRating(thuoc.maThuoc).average).half" class="fas fa-star-half-alt"></i>
-                        <i v-for="n in renderStars(getProductRating(thuoc.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
+                      <div class="stars" v-if="getProductRating(thuoc).count > 0">
+                        <i v-for="n in renderStars(getProductRating(thuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                        <i v-if="renderStars(getProductRating(thuoc).average).half" class="fas fa-star-half-alt"></i>
+                        <i v-for="n in renderStars(getProductRating(thuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
                       </div>
                       <div class="stars" v-else>
                         <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
                       </div>
-                      <span class="rating-count" v-if="getProductRating(thuoc.maThuoc).count > 0">
-                        ({{ getProductRating(thuoc.maThuoc).average.toFixed(1) }})
+                      <span class="rating-count" v-if="getProductRating(thuoc).count > 0">
+                        ({{ getProductRating(thuoc).average.toFixed(1) }} - {{ getProductRating(thuoc).count }} đánh giá)
                       </span>
                       <span class="rating-count" v-else>(Chưa có đánh giá)</span>
                     </div>
@@ -224,6 +224,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
+import http from '@/api/axios';
 import { useCartStore } from '@/store';
 import { ElMessage } from 'element-plus';
 
@@ -234,7 +235,6 @@ const cartStore = useCartStore();
 const loading = ref(false);
 const thuocList = ref([]);
 const categories = ref([]);
-const productRatings = ref({}); // Store ratings for each product
 const searchKeyword = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('');
@@ -277,7 +277,7 @@ const filteredThuocList = computed(() => {
   // Filter by ratings
   if (filters.value.ratings && filters.value.ratings.length > 0) {
     result = result.filter(thuoc => {
-      const rating = getProductRating(thuoc.maThuoc);
+      const rating = getProductRating(thuoc);
       if (rating.count === 0) return false;
       const avgRating = Math.floor(rating.average);
       return filters.value.ratings.includes(avgRating);
@@ -335,35 +335,22 @@ onMounted(async () => {
   if (route.query.search) {
     searchKeyword.value = route.query.search;
   }
+  // Đọc loại thuốc từ URL nếu có
+  if (route.query.loai) {
+    selectedCategory.value = route.query.loai;
+  }
   await loadCategories();
   await loadThuocList();
 });
 
-const loadProductRatings = async (products) => {
-  for (const product of products) {
-    try {
-      const response = await api.danhgiathuoc.getByThuoc(product.maThuoc)
-      
-      if (response.data && response.data.status === 1 && response.data.data && response.data.data.length > 0) {
-        const ratings = response.data.data
-        const avgRating = ratings.reduce((sum, r) => sum + (r.soSao || 0), 0) / ratings.length
-        productRatings.value[product.maThuoc] = {
-          average: avgRating,
-          count: ratings.length
-        }
-      } else {
-        productRatings.value[product.maThuoc] = { average: 0, count: 0 }
-      }
-    } catch (error) {
-      console.error(`Error loading ratings for ${product.maThuoc}:`, error)
-      productRatings.value[product.maThuoc] = { average: 0, count: 0 }
-    }
-  }
-}
-
-const getProductRating = (maThuoc) => {
-  return productRatings.value[maThuoc] || { average: 0, count: 0 }
-}
+// Lấy đánh giá từ dữ liệu sản phẩm (đã có sẵn từ API ListThuocTonKho)
+const getProductRating = (thuoc) => {
+  if (!thuoc) return { average: 0, count: 0 };
+  return {
+    average: thuoc.soSaoTrungBinh || 0,
+    count: thuoc.soLuongDanhGia || 0
+  };
+};
 
 const renderStars = (rating) => {
   const fullStars = Math.floor(rating)
@@ -386,15 +373,8 @@ watch(() => route.query.search, (newSearch) => {
 
 const loadCategories = async () => {
   try {
-    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/TopLoaiThuoc', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      mode: 'cors'
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const result = await response.json();
+    const response = await http.get('/Thuoc/TopLoaiThuoc');
+    const result = response.data || response;
     console.log('Categories API response:', result);
     
     if (result.status === 1 && result.data) {
@@ -412,22 +392,14 @@ const loadThuocList = async () => {
   try {
     let response;
     if (selectedCategory.value) {
-      response = await fetch(`https://kltn-l679.onrender.com/api/Thuoc/ByLoai/${selectedCategory.value}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-      response = await response.json();
+      // Sử dụng API ByLoaiTonKho để lấy được thông tin đánh giá
+      response = await http.get(`/Thuoc/ByLoaiTonKho/${selectedCategory.value}`);
     } else {
-      response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/ListThuocTonKho', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-      response = await response.json();
+      response = await http.get('/Thuoc/ListThuocTonKho');
     }
     
-    let products = (response.data?.data || response.data || []).filter(p => p && p.maThuoc);
+    const result = response.data || response;
+    let products = (result.data?.data || result.data || []).filter(p => p && p.maThuoc);
     
     // Lọc sản phẩm: chỉ giữ những sản phẩm có ít nhất 1 đơn vị với soLuongCon > 0 và trangThai === true
     thuocList.value = products.filter(product => {
@@ -450,11 +422,6 @@ const loadThuocList = async () => {
     });
     
     currentPage.value = 1;
-    
-    // Load ratings for displayed products
-    if (thuocList.value.length > 0) {
-      await loadProductRatings(thuocList.value);
-    }
   } catch (error) {
     console.error('Load thuoc error:', error);
     ElMessage.error('Lỗi khi tải danh sách thuốc');
@@ -566,7 +533,7 @@ const handleImageError = (e) => {
 /* Shop Area */
 .shop-area {
   background: #f8f9fa;
-  padding: 90px 0;
+  padding: 30px 0;
 }
 
 .container {
@@ -958,6 +925,7 @@ const handleImageError = (e) => {
   padding: 20px;
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none; /* Cho phép click xuyên qua overlay */
 }
 
 .product-item:hover .product-overlay {
@@ -976,6 +944,7 @@ const handleImageError = (e) => {
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto; /* Bật lại click cho các button */
 }
 
 .quick-action-btn:hover {

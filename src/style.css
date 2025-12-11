@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* Fix scrollbar shift issue */
+html {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable !important;
+}
+
+body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+}

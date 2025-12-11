@@ -198,11 +198,15 @@
         <div class="line-chart-wrapper">
           <h3 class="chart-subtitle">Biểu đồ doanh thu hàng ngày (tháng này)</h3>
           <div class="chart-container">
-            <div v-if="loaded && lineChartData.labels && lineChartData.labels.length > 0" class="chart-wrapper">
+            <div v-if="!loaded" class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            </div>
+            <div v-else-if="lineChartData.labels && lineChartData.labels.length > 0" class="chart-wrapper">
               <Line :data="lineChartData" :options="lineChartOptions" />
             </div>
-            <div v-else class="loading-placeholder">
-              <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+            <div v-else class="empty-placeholder">
+              <i class="fas fa-file-invoice"></i>
+              <p>Chưa có hóa đơn được tạo trong tháng này</p>
             </div>
           </div>
         </div>
@@ -931,6 +935,27 @@ onMounted(() => {
 .loading-placeholder i {
   font-size: 24px;
   color: #17a2b8;
+}
+
+.empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+  gap: 15px;
+}
+
+.empty-placeholder i {
+  font-size: 60px;
+  color: #dee2e6;
+}
+
+.empty-placeholder p {
+  font-size: 16px;
+  margin: 0;
+  text-align: center;
 }
 
 /* Responsive Design */

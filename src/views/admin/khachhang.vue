@@ -27,7 +27,7 @@
         </div>
       </template>
 
-      <el-table :data="filteredCustomers" stripe style="width: 100%" v-loading="loading">
+      <el-table :data="paginatedCustomers" stripe style="width: 100%" v-loading="loading">
         <el-table-column prop="makh" label="Mã KH" width="120" />
         <el-table-column prop="hoTen" label="Họ Tên" min-width="180" />
         <el-table-column prop="dienThoai" label="Số Điện Thoại" width="140" />
@@ -54,6 +54,18 @@
           </template>
         </el-table-column>
       </el-table>
+      
+      <!-- Pagination -->
+      <div class="customer-pagination-wrapper" v-if="filteredCustomers.length > 0">
+        <el-pagination
+          v-model:current-page="customerCurrentPage"
+          v-model:page-size="customerPageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="filteredCustomers.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          background
+        />
+      </div>
     </el-card>
 
     <!-- Edit Dialog -->
@@ -277,6 +289,10 @@ const formRef = ref(null);
 const historyCurrentPage = ref(1);
 const historyPageSize = ref(10);
 
+// Pagination for customers
+const customerCurrentPage = ref(1);
+const customerPageSize = ref(10);
+
 // Form data
 const formData = ref({
   makh: '',
@@ -299,6 +315,13 @@ const filteredCustomers = computed(() => {
      c.dienThoai?.includes(q) ||
      c.email?.toLowerCase().includes(q))
   );
+});
+
+// Paginated customers
+const paginatedCustomers = computed(() => {
+  const start = (customerCurrentPage.value - 1) * customerPageSize.value;
+  const end = start + customerPageSize.value;
+  return filteredCustomers.value.slice(start, end);
 });
 
 // Paginated purchase history
@@ -386,7 +409,8 @@ const handleSave = async () => {
 };
 
 const handleSearch = () => {
-  // Computed property sẽ tự động filter
+  // Reset về trang 1 khi tìm kiếm
+  customerCurrentPage.value = 1;
 };
 
 const refreshData = async () => {
@@ -794,5 +818,37 @@ onMounted(() => {
   margin: 0;
   font-size: 14px;
   color: #999;
+}
+
+/* Customer Pagination */
+.customer-pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #eff2f5 100%);
+  border-top: 1px solid #e0e0e0;
+  margin-top: 12px;
+  border-radius: 0 0 8px 8px;
+}
+
+:deep(.customer-pagination-wrapper .el-pagination .btn-prev,
+       .customer-pagination-wrapper .el-pagination .btn-next,
+       .customer-pagination-wrapper .el-pagination .el-pager li) {
+  background: white;
+  color: #667eea;
+  border-color: #e0e0e0;
+}
+
+:deep(.customer-pagination-wrapper .el-pagination .btn-prev:hover,
+       .customer-pagination-wrapper .el-pagination .btn-next:hover,
+       .customer-pagination-wrapper .el-pagination .el-pager li:hover) {
+  color: #764ba2;
+  border-color: #667eea;
+}
+
+:deep(.customer-pagination-wrapper .el-pagination .el-pager li.is-active) {
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
 }
 </style>

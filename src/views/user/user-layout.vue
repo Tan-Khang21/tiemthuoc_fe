@@ -480,6 +480,45 @@ const loadTestData = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Fix scrollbar shift issue */
+.main-navigation .container {
+  max-width: 100%;
+  width: 100%;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+@media (min-width: 576px) {
+  .main-navigation .container {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .main-navigation .container {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 992px) {
+  .main-navigation .container {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .main-navigation .container {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .main-navigation .container {
+    max-width: 1320px;
+  }
 }
 
 /* Header Top */

@@ -563,7 +563,11 @@ const processScanCode = async () => {
 const addScannedMedicine = async () => {
   if (!scannedMedicine.value) return;
 
-  const { maThuoc } = scannedMedicine.value;
+  // Lưu lại thông tin và clear ngay để tránh gọi nhiều lần
+  const scannedInfo = { ...scannedMedicine.value };
+  scannedMedicine.value = null;
+
+  const { maThuoc } = scannedInfo;
 
   // Find medicine in list
   let medicine = medicines.value.find(m => m.maThuoc === maThuoc);
@@ -625,10 +629,9 @@ const addScannedMedicine = async () => {
   recalcRow(newRow);
   items.value.push(newRow);
 
-  // Clear after add
-  ElMessage.success(`Thêm ${medicine.tenThuoc} vào danh sách`);
+  // Clear after add - chỉ hiển thị 1 thông báo
+  ElMessage.success(`Đã thêm: ${medicine.tenThuoc}`);
   scanCodeValue.value = '';
-  scannedMedicine.value = null;
   scanError.value = '';
 };
 
@@ -903,10 +906,8 @@ const submitInvoice = async (paymentMethod = 1, orderCode = null) => {
   };
 
   try {
-    console.log('Submitting invoice with payload:', payload);
     const resp = await api.hoadon.create(payload);
     const r = (resp && resp.data) ? resp.data : resp;
-    console.log('Create invoice response:', r);
 
     if (r && (r.status === -1 || r.error)) {
       ElMessage.error(r.message || 'Tạo hóa đơn thất bại');
@@ -1021,7 +1022,6 @@ const payWithQR = async () => {
   try {
     const resp = await http.post('/SimplePayment/Create', payload);
     const r = resp.data || resp;
-    console.log('QR Create resp:', r); // Debug log
 
     // Extract URL based on observed structure: r.data.paymentUrl
     let checkoutUrl = null;
@@ -1080,12 +1080,15 @@ onMounted(async () => {
     if (route.query.paymentResult === 'success') {
       // Auto submit invoice with QR payment method (2) and orderCode
       const orderCode = route.query.orderCode || route.query.order_code || null;
+      // Đợi submitInvoice hoàn tất - nó sẽ tự redirect đến trang chi tiết hóa đơn
       await submitInvoice(2, orderCode);
+      // Không cần clean URL vì submitInvoice đã redirect
+      return; 
     } else if (route.query.paymentResult === 'cancel') {
       ElMessage.info('Đã hủy thanh toán QR. Bạn có thể tiếp tục chỉnh sửa.');
+      // Chỉ clean URL khi cancel
+      router.replace({ query: null });
     }
-    // Clean URL
-    router.replace({ query: null });
   }
 
   // Load medicines and dosages
@@ -1120,64 +1123,63 @@ onMounted(async () => {
     }
     
     if (name) form.value.tenNV = name;
-    console.log('hoadon-create init auth.user ->', auth.user, 'form.tenNV ->', form.value.tenNV);
-  } catch (e) { console.error('hoadon-create init auth error', e); }
+  } catch (e) { /* ignore */ }
 
   // If page opened with maHD (edit/view), load invoice data
   const maHDq = route.query.maHD || route.query.mahd || route.query.MaHD;
   if (maHDq) {
     await loadInvoice(maHDq);
     confirmMode.value = (route.query.confirm === '1' || route.query.confirm === 'true' || route.query.confirm === 1 || route.query.confirm === true);
+  } 
+
+  // Add global listener for barcode scanner
+  window.addEventListener('keypress', handleGlobalKeyPress);
+});
+
+// Global keyboard listener for barcode scanner - defined at script level for proper cleanup
+let scannedBuffer = '';
+let scannerTimeoutId = null;
+
+const handleGlobalKeyPress = (e) => {
+  // Ignore if confirmMode
+  if (confirmMode.value) return;
+  
+  // Check if target is not an input/textarea (to avoid interference)
+  const target = e.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+    // If it's our scan input, let it handle normally
+    if (target === document.activeElement && target.placeholder?.includes('Quét')) {
+      return;
+    }
   }
 
-  // Global keyboard listener for barcode scanner
-  // Scanner sends data followed by Enter key
-  let scannedBuffer = '';
-  const scannerTimeout = ref(null);
-  
-  const handleGlobalKeyPress = (e) => {
-    // Ignore if confirmMode
-    if (confirmMode.value) return;
+  if (e.key === 'Enter' && scannedBuffer.trim()) {
+    // Scanner data complete
+    scanCodeValue.value = scannedBuffer.trim();
+    processScanCode();
+    scannedBuffer = '';
+    e.preventDefault();
+  } else if (e.key === 'Enter') {
+    // Clear buffer on Enter if empty
+    scannedBuffer = '';
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    // Collect printable characters
+    scannedBuffer += e.key;
     
-    // Check if target is not an input/textarea (to avoid interference)
-    const target = e.target;
-    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-      // If it's our scan input, let it handle normally
-      if (target === document.activeElement && target.placeholder?.includes('Quét')) {
-        return;
-      }
-    }
-
-    if (e.key === 'Enter' && scannedBuffer.trim()) {
-      // Scanner data complete
-      scanCodeValue.value = scannedBuffer.trim();
-      processScanCode();
+    // Clear buffer if no Enter within 2 seconds (timeout)
+    if (scannerTimeoutId) clearTimeout(scannerTimeoutId);
+    scannerTimeoutId = setTimeout(() => {
       scannedBuffer = '';
-      e.preventDefault();
-    } else if (e.key === 'Enter') {
-      // Clear buffer on Enter if empty
-      scannedBuffer = '';
-    } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      // Collect printable characters
-      scannedBuffer += e.key;
-      
-      // Clear buffer if no Enter within 2 seconds (timeout)
-      if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
-      scannerTimeout.value = setTimeout(() => {
-        scannedBuffer = '';
-      }, 2000);
-    }
-  };
+    }, 2000);
+  }
+};
 
-  // Add global listener
-  window.addEventListener('keypress', handleGlobalKeyPress);
-
-  // Cleanup on unmount
-  onUnmounted(() => {
-    window.removeEventListener('keypress', handleGlobalKeyPress);
-    if (scannerTimeout.value) clearTimeout(scannerTimeout.value);
-  });
+// Cleanup on unmount - must be at script level, not inside onMounted
+onUnmounted(() => {
+  window.removeEventListener('keypress', handleGlobalKeyPress);
+  if (scannerTimeoutId) clearTimeout(scannerTimeoutId);
 });
+
 
 const confirmInvoiceOnline = async () => {
   if (!confirmMode.value) return;
@@ -1333,7 +1335,13 @@ const selectedCustomer = ref('');
 const fetchCustomers = async () => {
   try {
     const resp = await api.khachhang.getAll();
-    customers.value = resp && resp.data ? resp.data : resp || [];
+    // Đảm bảo customers.value luôn là mảng
+    let data = resp?.data ?? resp;
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // Nếu data là object với key data bên trong (nested)
+      data = data.data || data.items || data.result || [];
+    }
+    customers.value = Array.isArray(data) ? data : [];
   } catch (err) {
     console.error('fetch customers err', err);
     customers.value = [];
@@ -1350,10 +1358,12 @@ const onPhoneInput = async () => {
     return;
   }
 
-  if (!customers.value.length) await fetchCustomers();
+  if (!Array.isArray(customers.value) || !customers.value.length) await fetchCustomers();
 
+  // Đảm bảo customers.value là mảng trước khi filter
+  const customerList = Array.isArray(customers.value) ? customers.value : [];
   // match by phone contains; also allow matching by last digits
-  matchedCustomers.value = customers.value.filter(c => {
+  matchedCustomers.value = customerList.filter(c => {
     const d = (c.dienThoai || '').toString();
     return d && (d.includes(q) || d.endsWith(q) || d.replace(/\D/g, '').includes(q.replace(/\D/g, '')));
   });
@@ -1378,14 +1388,16 @@ const onSelectCustomer = (maKh) => {
 // Autocomplete fetch for el-autocomplete
 const querySearch = async (queryString, cb) => {
   const q = (queryString || '').trim();
-  if (!customers.value.length) await fetchCustomers();
+  if (!Array.isArray(customers.value) || !customers.value.length) await fetchCustomers();
   if (!q) {
     cb([]);
     return;
   }
 
+  // Đảm bảo customers.value là mảng trước khi filter
+  const customerList = Array.isArray(customers.value) ? customers.value : [];
   const lower = q.toLowerCase().replace(/\D/g, '');
-  const results = customers.value.filter(c => {
+  const results = customerList.filter(c => {
     const name = (c.hoTen || '').toLowerCase();
     const phone = (c.dienThoai || '').toString();
     return (phone && phone.includes(q)) || (name && name.includes(q.toLowerCase())) || (phone.replace(/\D/g, '').endsWith(lower));
@@ -2051,8 +2063,14 @@ const loadInvoice = async (maHD) => {
   }
 }
 
-.is-loading {
+/* Chỉ áp dụng spin cho loading icon của Element Plus, không áp dụng cho toàn bộ button */
+.el-button.is-loading .el-icon.is-loading {
   animation: spin 2s linear infinite;
+}
+
+/* Tắt animation cho các icon thường trong button khi loading */
+.el-button.is-loading > .el-icon:not(.is-loading) {
+  animation: none !important;
 }
 
 </style>

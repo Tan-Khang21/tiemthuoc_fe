@@ -1,0 +1,43 @@
+/* Override CSS - Import this last to fix layout issues */
+
+/* Fix scrollbar shift issue - prevents header from shifting when navigating */
+html {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable !important;
+}
+
+body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Reset any global styles that might be set by other layouts */
+body[style] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+#app {
+  padding-top: 0 !important;
+  margin: 0 !important;
+}
+
+/* Ensure consistent container width */
+.main-navigation .container,
+.header .container {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Fix navbar positioning for user layout */
+.user-layout .main-navigation {
+  position: relative !important;
+}
+
+.user-layout .navbar {
+  position: relative !important;
+}

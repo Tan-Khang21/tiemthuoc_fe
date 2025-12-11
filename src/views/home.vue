@@ -73,67 +73,77 @@
             <div class="col-12 wow fadeInDown" data-wow-delay=".25s">
               <div class="site-heading-inline">
                 <h2 class="site-title">Sản phẩm nổi bật</h2>
-                <router-link to="/user/thuoc">Xem thêm <i class="fas fa-angle-double-right"></i></router-link>
+                <div class="slider-nav-buttons">
+                  <button class="slider-nav-btn" @click="slideTrending(-1)" :disabled="trendingIndex === 0">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <button class="slider-nav-btn" @click="slideTrending(1)" :disabled="trendingIndex >= trendingProducts.length - 4">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                  <router-link to="/user/thuoc" class="view-all-link">Xem thêm <i class="fas fa-angle-double-right"></i></router-link>
+                </div>
               </div>
             </div>
           </div>
-          <div class="row g-4 mt-3">
-            <div 
-              v-for="product in trendingProducts.slice(0, 8)" 
-              :key="product?.maThuoc || Math.random()"
-              class="col-6 col-md-4 col-lg-3"
-            >
-              <div class="product-item" v-if="product">
-                <div class="product-img-wrapper">
-                  <router-link :to="`/user/thuoc/${product.maThuoc}`" class="product-img-link">
-                    <img :src="getProductImage(product)" :alt="product.tenThuoc" class="product-img">
-                  </router-link>
-                  <div class="product-badges">
-                    <span class="badge badge-hot">HOT</span>
-                  </div>
-                  <div class="product-overlay">
-                    <button class="quick-action-btn" @click.prevent="quickView(product)" title="Xem nhanh">
-                      <i class="far fa-eye"></i>
-                    </button>
-                    <button class="quick-action-btn" @click.prevent="addToCart(product)" title="Thêm vào giỏ">
-                      <i class="far fa-shopping-cart"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="product-info">
-                  <h3 class="product-name">
-                    <router-link :to="`/user/thuoc/${product.maThuoc}`">
-                      {{ product.tenThuoc }}
+          <div class="product-slider-container">
+            <div class="product-slider" :style="{ transform: `translateX(-${trendingIndex * 25}%)` }">
+              <div 
+                v-for="product in trendingProducts" 
+                :key="product?.maThuoc || Math.random()"
+                class="product-slide"
+              >
+                <div class="product-item" v-if="product">
+                  <div class="product-img-wrapper">
+                    <router-link :to="`/user/thuoc/${product.maThuoc}`" class="product-img-link">
+                      <img :src="getProductImage(product)" :alt="product.tenThuoc" class="product-img">
                     </router-link>
-                  </h3>
-                  <div class="product-rating">
-                    <div class="stars" v-if="getProductRating(product.maThuoc).count > 0">
-                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
-                      <i v-if="renderStars(getProductRating(product.maThuoc).average).half" class="fas fa-star-half-alt"></i>
-                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
+                    <div class="product-badges">
+                      <span class="badge badge-hot">HOT</span>
                     </div>
-                    <div class="stars" v-else>
-                      <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
-                    </div>
-                    <span class="rating-count" v-if="getProductRating(product.maThuoc).count > 0">
-                      ({{ getProductRating(product.maThuoc).average.toFixed(1) }})
-                    </span>
-                    <span class="rating-count" v-else>(Chưa có đánh giá)</span>
-                  </div>
-                  
-                  <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
-                    <div class="price-row">
-                      <div class="price-info">
-                        <span class="unit-label">{{ product.giaThuocs[0].tenLoaiDonVi }}</span>
-                        <span class="price-tag">{{ formatPriceShort(product.giaThuocs[0].donGia) }}</span>
-                      </div>
-                      <button class="add-cart-btn" @click="addToCart(product)">
-                        <i class="fas fa-plus"></i>
+                    <div class="product-overlay">
+                      <button class="quick-action-btn" @click.prevent="quickView(product)" title="Xem nhanh">
+                        <i class="far fa-eye"></i>
+                      </button>
+                      <button class="quick-action-btn" @click.prevent="addToCart(product)" title="Thêm vào giỏ">
+                        <i class="far fa-shopping-cart"></i>
                       </button>
                     </div>
-                    <div class="stock-info">
-                      <i class="fas fa-box-open"></i>
-                      <span>Còn {{ product.giaThuocs[0].soLuongCon }} sản phẩm</span>
+                  </div>
+                  <div class="product-info">
+                    <h3 class="product-name">
+                      <router-link :to="`/user/thuoc/${product.maThuoc}`">
+                        {{ product.tenThuoc }}
+                      </router-link>
+                    </h3>
+                    <div class="product-rating">
+                      <div class="stars" v-if="getProductRating(product).count > 0">
+                        <i v-for="n in renderStars(getProductRating(product).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                        <i v-if="renderStars(getProductRating(product).average).half" class="fas fa-star-half-alt"></i>
+                        <i v-for="n in renderStars(getProductRating(product).average).empty" :key="'empty-' + n" class="far fa-star"></i>
+                      </div>
+                      <div class="stars" v-else>
+                        <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
+                      </div>
+                      <span class="rating-count" v-if="getProductRating(product).count > 0">
+                        ({{ getProductRating(product).average.toFixed(1) }})
+                      </span>
+                      <span class="rating-count" v-else>(Chưa có đánh giá)</span>
+                    </div>
+                    
+                    <div class="product-price-box" v-if="product.giaThuocs && product.giaThuocs.length > 0">
+                      <div class="price-row">
+                        <div class="price-info">
+                          <span class="unit-label">{{ product.giaThuocs[0].tenLoaiDonVi }}</span>
+                          <span class="price-tag">{{ formatPriceShort(product.giaThuocs[0].donGia) }}</span>
+                        </div>
+                        <button class="add-cart-btn" @click="addToCart(product)">
+                          <i class="fas fa-plus"></i>
+                        </button>
+                      </div>
+                      <div class="stock-info">
+                        <i class="fas fa-box-open"></i>
+                        <span>Còn {{ product.giaThuocs[0].soLuongCon }} sản phẩm</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -169,7 +179,7 @@
                     <img :src="getProductImage(product)" :alt="product.tenThuoc" class="product-img">
                   </router-link>
                   <div class="product-badges">
-                    <span class="badge badge-stock">Tồn kho</span>
+                    <span class="badge badge-stock">Còn Hàng</span>
                   </div>
                   <div class="product-overlay">
                     <button class="quick-action-btn" @click.prevent="quickView(product)" title="Xem nhanh">
@@ -187,16 +197,16 @@
                     </router-link>
                   </h3>
                   <div class="product-rating">
-                    <div class="stars" v-if="getProductRating(product.maThuoc).count > 0">
-                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).full" :key="'full-' + n" class="fas fa-star"></i>
-                      <i v-if="renderStars(getProductRating(product.maThuoc).average).half" class="fas fa-star-half-alt"></i>
-                      <i v-for="n in renderStars(getProductRating(product.maThuoc).average).empty" :key="'empty-' + n" class="far fa-star"></i>
+                    <div class="stars" v-if="getProductRating(product).count > 0">
+                      <i v-for="n in renderStars(getProductRating(product).average).full" :key="'full-' + n" class="fas fa-star"></i>
+                      <i v-if="renderStars(getProductRating(product).average).half" class="fas fa-star-half-alt"></i>
+                      <i v-for="n in renderStars(getProductRating(product).average).empty" :key="'empty-' + n" class="far fa-star"></i>
                     </div>
                     <div class="stars" v-else>
                       <i v-for="n in 5" :key="'empty-' + n" class="far fa-star"></i>
                     </div>
-                    <span class="rating-count" v-if="getProductRating(product.maThuoc).count > 0">
-                      ({{ getProductRating(product.maThuoc).average.toFixed(1) }})
+                    <span class="rating-count" v-if="getProductRating(product).count > 0">
+                      ({{ getProductRating(product).average.toFixed(1) }})
                     </span>
                     <span class="rating-count" v-else>(Chưa có đánh giá)</span>
                   </div>
@@ -287,6 +297,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import http from '@/api/axios'
 import { useCartStore } from '@/store'
 
 const router = useRouter()
@@ -296,7 +307,7 @@ const cartStore = useCartStore()
 const categories = ref([])
 const trendingProducts = ref([])
 const inventoryProducts = ref([])
-const productRatings = ref({}) // Store ratings for each product
+const trendingIndex = ref(0)
 const searchForm = ref({
   category: '',
   keyword: ''
@@ -304,17 +315,15 @@ const searchForm = ref({
 const emailSubscribe = ref('')
 
 // Methods
+const slideTrending = (direction) => {
+  const maxIndex = Math.max(0, trendingProducts.value.length - 4)
+  trendingIndex.value = Math.min(Math.max(0, trendingIndex.value + direction), maxIndex)
+}
+
 const loadCategories = async () => {
   try {
-    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/TopLoaiThuoc', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      mode: 'cors'
-    })
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-    
-    const result = await response.json()
+    const response = await http.get('/Thuoc/TopLoaiThuoc')
+    const result = response.data || response
     console.log('Categories API response:', result)
     
     if (result.status === 1 && result.data) {
@@ -329,33 +338,13 @@ const loadCategories = async () => {
   }
 }
 
-const loadProductRatings = async (products) => {
-  console.log('Loading ratings for products:', products.map(p => p.maThuoc))
-  for (const product of products) {
-    try {
-      const response = await api.danhgiathuoc.getByThuoc(product.maThuoc)
-      console.log(`Rating result for ${product.maThuoc}:`, response.data)
-      
-      if (response.data && response.data.status === 1 && response.data.data && response.data.data.length > 0) {
-        const ratings = response.data.data
-        const avgRating = ratings.reduce((sum, r) => sum + (r.soSao || 0), 0) / ratings.length
-        productRatings.value[product.maThuoc] = {
-          average: avgRating,
-          count: ratings.length
-        }
-        console.log(`Set rating for ${product.maThuoc}:`, productRatings.value[product.maThuoc])
-      } else {
-        productRatings.value[product.maThuoc] = { average: 0, count: 0 }
-      }
-    } catch (error) {
-      console.error(`Error loading ratings for ${product.maThuoc}:`, error)
-      productRatings.value[product.maThuoc] = { average: 0, count: 0 }
-    }
+// Lấy đánh giá từ dữ liệu sản phẩm (đã có sẵn từ API ListThuocTonKho)
+const getProductRating = (product) => {
+  if (!product) return { average: 0, count: 0 }
+  return {
+    average: product.soSaoTrungBinh || 0,
+    count: product.soLuongDanhGia || 0
   }
-}
-
-const getProductRating = (maThuoc) => {
-  return productRatings.value[maThuoc] || { average: 0, count: 0 }
 }
 
 const renderStars = (rating) => {
@@ -372,16 +361,31 @@ const renderStars = (rating) => {
 
 const loadTrendingProducts = async () => {
   try {
-    const response = await api.thuoc.getAll()
-    trendingProducts.value = (response.data || []).filter(p => p && p.maThuoc)
-    console.log('Trending products loaded:', trendingProducts.value.length)
-    console.log('About to load ratings for trending products')
-    // Load ratings for trending products
-    if (trendingProducts.value.length > 0) {
-      console.log('Calling loadProductRatings with', trendingProducts.value.slice(0, 8).length, 'products')
-      await loadProductRatings(trendingProducts.value.slice(0, 8))
-      console.log('Ratings loaded, productRatings:', productRatings.value)
+    // Gọi API TopSelling để lấy sản phẩm bán chạy nhất
+    const response = await http.get('/Thuoc/TopSelling?top=10')
+    const result = response.data || response
+    
+    let products = []
+    if (result.status === 1 && result.data) {
+      products = result.data.filter(p => p && p.maThuoc)
+    } else if (result.data) {
+      products = result.data.filter(p => p && p.maThuoc)
     }
+    
+    // Lọc sản phẩm có đơn vị khả dụng (có giá > 0 và còn hàng)
+    trendingProducts.value = products.filter(product => {
+      if (!product.giaThuocs || product.giaThuocs.length === 0) return false
+      const availableUnits = product.giaThuocs.filter(
+        unit => unit.soLuongCon > 0 && unit.trangThai === true && unit.donGia > 0
+      )
+      if (availableUnits.length > 0) {
+        product.giaThuocs = availableUnits
+        return true
+      }
+      return false
+    })
+    
+    console.log('Trending products loaded:', trendingProducts.value.length)
   } catch (error) {
     console.error('Lỗi tải sản phẩm:', error)
     trendingProducts.value = []
@@ -390,57 +394,38 @@ const loadTrendingProducts = async () => {
 
 const loadInventoryProducts = async () => {
   try {
-    const response = await fetch('https://kltn-l679.onrender.com/api/Thuoc/ListThuocTonKho', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      mode: 'cors'
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const result = await response.json()
+    const response = await http.get('/Thuoc/ListThuocTonKho')
+    const result = response.data || response
     console.log('Inventory products response:', result)
     
-    let products = [];
+    let products = []
     if (result.status === 1 && result.data) {
-      products = result.data.filter(p => p && p.maThuoc);
+      products = result.data.filter(p => p && p.maThuoc)
     } else if (result.data) {
-      products = result.data.filter(p => p && p.maThuoc);
+      products = result.data.filter(p => p && p.maThuoc)
     }
     
     // Lọc sản phẩm: chỉ giữ những sản phẩm có ít nhất 1 đơn vị với soLuongCon > 0 và trangThai === true
     inventoryProducts.value = products.filter(product => {
       if (!product.giaThuocs || product.giaThuocs.length === 0) {
-        return false;
+        return false
       }
       
       // Lọc các đơn vị khả dụng
       const availableUnits = product.giaThuocs.filter(
         unit => unit.soLuongCon > 0 && unit.trangThai === true
-      );
+      )
       
       // Chỉ giữ sản phẩm có ít nhất 1 đơn vị khả dụng
       if (availableUnits.length > 0) {
         // Cập nhật giaThuocs chỉ với các đơn vị khả dụng
-        product.giaThuocs = availableUnits;
-        return true;
+        product.giaThuocs = availableUnits
+        return true
       }
-      return false;
-    });
+      return false
+    })
     
-    console.log('Filtered inventory products:', inventoryProducts.value.length);
-    console.log('About to load ratings for inventory products')
-    
-    // Load ratings for inventory products
-    if (inventoryProducts.value.length > 0) {
-      console.log('Calling loadProductRatings with', inventoryProducts.value.slice(0, 8).length, 'products')
-      await loadProductRatings(inventoryProducts.value.slice(0, 8));
-      console.log('Ratings loaded for inventory, productRatings:', productRatings.value)
-    }
+    console.log('Filtered inventory products:', inventoryProducts.value.length)
   } catch (error) {
     console.error('Lỗi tải sản phẩm:', error)
     inventoryProducts.value = []
@@ -1087,10 +1072,15 @@ watch(() => route.path, (newPath) => {
   padding: 20px;
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none;
 }
 
 .product-item:hover .product-overlay {
   opacity: 1;
+}
+
+.quick-action-btn {
+  pointer-events: auto;
 }
 
 .quick-action-btn {
@@ -1389,6 +1379,72 @@ watch(() => route.path, (newPath) => {
   color: #17181c;
 }
 
+/* Product Slider Styles */
+.site-heading-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.slider-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #4a90a4;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #4a90a4;
+}
+
+.slider-nav-btn:hover:not(:disabled) {
+  background: #4a90a4;
+  color: #fff;
+}
+
+.slider-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.view-all-link {
+  color: #4a90a4;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 10px;
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
+}
+
+.product-slider-container {
+  overflow: hidden;
+  margin-top: 25px;
+}
+
+.product-slider {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.product-slide {
+  flex: 0 0 25%;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
 /* Responsive */
 @media (max-width: 991px) {
   .hero-title {
@@ -1402,6 +1458,10 @@ watch(() => route.path, (newPath) => {
   
   .feature-item:last-child {
     border-bottom: none;
+  }
+  
+  .product-slide {
+    flex: 0 0 33.333%;
   }
 }
 
@@ -1434,6 +1494,21 @@ watch(() => route.path, (newPath) => {
   .subscribe-form .theme-btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  .product-slide {
+    flex: 0 0 50%;
+  }
+  
+  .slider-nav-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-slide {
+    flex: 0 0 100%;
   }
 }
 </style>
