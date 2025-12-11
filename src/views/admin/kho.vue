@@ -1,6 +1,13 @@
 <template>
   <el-card>
-    <h3> Quản lý kho</h3>
+    <div class="kho-header">
+      <h3>Quản lý kho</h3>
+      <div class="expiry-legend">
+        <div class="legend-item"><span class="dot dot-red"></span> Đã hết HSD</div>
+        <div class="legend-item"><span class="dot dot-purple"></span> HSD ≤ 2 tháng</div>
+        <div class="legend-item"><span class="dot dot-gray"></span> HSD &gt; 2 tháng</div>
+      </div>
+    </div>
 
     <el-tabs v-model="activeTab">
       <el-tab-pane label="Chưa tách lẻ" name="chuaTachLe">
@@ -102,7 +109,7 @@
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
           <el-table-column prop="code" label="Code" width="150" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
-          <el-table-column label="Tên Thuốc" min-width="420">
+          <el-table-column label="Tên Thuốc" min-width="220">
             <template #default="{ row }">
               <el-tooltip :content="row.tenThuoc" placement="top">
                 <span>{{ truncateWords(row.tenThuoc, 15) }}</span>
@@ -246,7 +253,7 @@
           <el-table-column prop="maThuoc" label="Mã Thuốc" width="90" />
           <el-table-column prop="code" label="Code" width="160" />
           <el-table-column prop="tenLoaiThuoc" label="Loại Thuốc" width="180" />
-          <el-table-column label="Tên Thuốc" min-width="420">
+          <el-table-column label="Tên Thuốc" min-width="220">
             <template #default="{ row }">
               <el-tooltip :content="row.tenThuoc" placement="top">
                 <span>{{ truncateWords(row.tenThuoc, 15) }}</span>
@@ -2380,4 +2387,36 @@ const submitSplitForm = async () => {
   padding-top: 20px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
+
+/* Header note badge for Quản lý kho */
+.kho-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.kho-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #0d3d47;
+}
+.header-note {
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.note-green { background: #28a745; }
+.note-yellow { background: #ffc107; color: #111; }
+.note-red { background: #dc3545; }
+
+/* Expiry legend dots */
+.expiry-legend { display:flex; gap:12px; align-items:center; }
+.legend-item { display:flex; gap:8px; align-items:center; color: #2c3e50; font-weight:600; font-size:13px; }
+.dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.dot-red { background:#dc3545; }
+.dot-purple { background:#6f42c1; }
+.dot-gray { background:#6c757d; }
 </style>

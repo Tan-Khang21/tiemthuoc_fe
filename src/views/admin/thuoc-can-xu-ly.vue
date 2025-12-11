@@ -7,7 +7,7 @@
         </template>
         <!-- Kho tab: Sắp hết hạn -->
         <div class="kho-tab-content" style="margin-top:12px">
-          <div class="filter-section" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f5f7fa; border-radius:8px">
+          <div class="filter-section" style="display:flex; gap:12px; align-items:center; flex-wrap:nowrap; padding:12px; background:#f5f7fa; border-radius:8px; overflow:auto">
             <div style="display:flex; gap:8px; align-items:center">
               <span style="font-weight:600">Lọc theo:</span>
               <el-radio-group v-model="khoFilterMode" size="small" @change="fetchKhoList">
@@ -38,10 +38,18 @@
               <el-date-picker v-model="khoFromDate" type="date" placeholder="Chọn ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" size="small" @change="fetchKhoList" />
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center; min-width:260px">
+            <div style="display:flex; gap:8px; align-items:center; min-width:260px; flex:1 1 260px">
               <el-input ref="khoQueryRef" v-model="khoQuery" size="small" placeholder="Tìm mã lô / code / tên thuốc / đơn vị" clearable />
             </div>
-            <el-button type="primary" @click="openCreateCancelDialog" size="small" style="margin-left:auto">Tạo phiếu yêu cầu huỷ</el-button>
+
+            <div class="right-controls" style="margin-left:auto; display:flex; gap:12px; align-items:center; flex:0 0 auto">
+              <div class="expiry-legend" style="display:flex; gap:18px; align-items:center">
+                <div class="legend-item"><span class="dot dot-red"></span><span>Đã hết HSD</span></div>
+                <div class="legend-item"><span class="dot dot-purple"></span><span>HSD ≤ 2 tháng</span></div>
+                <div class="legend-item"><span class="dot dot-gray"></span><span>HSD > 2 tháng</span></div>
+              </div>
+              <el-button type="primary" @click="openCreateCancelDialog" size="small">Tạo phiếu yêu cầu huỷ</el-button>
+            </div>
           </div>
 
           <!-- Kho list table -->
@@ -60,7 +68,7 @@
               <el-table-column prop="code" label="Code" width="160" />
               <el-table-column prop="tenThuoc" label="Tên thuốc" min-width="200">
                 <template #default="{ row }">
-                  <div class="drug-name">{{ row.tenThuoc }}</div>
+                  <div class="drug-name" :title="row.tenThuoc">{{ row.tenThuoc }}</div>
                 </template>
               </el-table-column>
               <el-table-column prop="tenLoaiDonViGoc" label="Đơn vị" width="90" />
@@ -2061,4 +2069,18 @@ const invoiceRowStyle = (arg) => {
 .expiry-tag.warning { background: #fffbeb; color: #d97706; }
 .expiry-tag.success { background: #f0fdf4; color: #16a34a; }
 .expiry-tag.info { background: #f8fafc; color: #64748b; }
+
+/* Legend for Kho filter */
+.expiry-legend { display:flex; gap:18px; align-items:center; font-size:13px; color:#374151 }
+.expiry-legend .legend-item { display:flex; gap:8px; align-items:center }
+.expiry-legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block }
+.expiry-legend .dot-red { background:#e11d48 }
+.expiry-legend .dot-purple { background:#7c3aed }
+.expiry-legend .dot-gray { background:#6b7280 }
+
+</style>
+
+<style scoped>
+.drug-name { max-width:320px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; white-space:normal; line-height:1.2; }
+.drug-name:hover { cursor:default }
 </style>
