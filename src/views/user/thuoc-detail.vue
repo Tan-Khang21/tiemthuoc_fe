@@ -42,9 +42,7 @@
                   <i class="fas fa-tag"></i>
                   {{ thuoc.tenLoaiThuoc || 'Dược phẩm' }}
                 </div>
-                <div class="product-sku">
-                  <i class="fas fa-barcode"></i> {{ thuoc.maThuoc }}
-                </div>
+                <!-- product SKU hidden per request -->
               </div>
               
               <h1 class="product-title">{{ thuoc.tenThuoc }}</h1>
@@ -239,10 +237,6 @@
                 <table class="specs-table">
                   <tbody>
                     <tr>
-                      <td>Mã sản phẩm</td>
-                      <td>{{ thuoc.maThuoc }}</td>
-                    </tr>
-                    <tr>
                       <td>Loại thuốc</td>
                       <td>{{ thuoc.tenLoaiThuoc || 'N/A' }}</td>
                     </tr>
@@ -254,10 +248,7 @@
                       <td>Nhà cung cấp</td>
                       <td>{{ thuoc.tenNCC }}</td>
                     </tr>
-                    <tr v-if="thuoc.maNCC">
-                      <td>Mã nhà cung cấp</td>
-                      <td>{{ thuoc.maNCC }}</td>
-                    </tr>
+                    <!-- Mã sản phẩm and Mã nhà cung cấp hidden per request -->
                     <tr>
                       <td>Đơn vị tính</td>
                       <td>{{ getProductUnit(thuoc) }}</td>

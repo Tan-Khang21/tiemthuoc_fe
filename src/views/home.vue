@@ -320,24 +320,6 @@ const slideTrending = (direction) => {
   trendingIndex.value = Math.min(Math.max(0, trendingIndex.value + direction), maxIndex)
 }
 
-const loadCategories = async () => {
-  try {
-    const response = await http.get('/Thuoc/TopLoaiThuoc')
-    const result = response.data || response
-    console.log('Categories API response:', result)
-    
-    if (result.status === 1 && result.data) {
-      categories.value = result.data.filter(cat => cat && cat.maLoaiThuoc)
-    } else {
-      categories.value = []
-    }
-    console.log('Categories loaded:', categories.value.length)
-  } catch (error) {
-    console.error('Lỗi tải danh mục:', error)
-    categories.value = []
-  }
-}
-
 // Lấy đánh giá từ dữ liệu sản phẩm (đã có sẵn từ API ListThuocTonKho)
 const getProductRating = (product) => {
   if (!product) return { average: 0, count: 0 }
@@ -512,7 +494,7 @@ const subscribe = () => {
 // Lifecycle
 onMounted(() => {
   console.log('Home page mounted')
-  loadCategories()
+  // TopLoaiThuoc API removed: not loading categories here
   loadTrendingProducts()
   loadInventoryProducts()
 })
@@ -521,7 +503,7 @@ const route = useRoute()
 watch(() => route.path, (newPath) => {
   if (newPath === '/' || newPath === '/home') {
     console.log('Reloading home page data')
-    loadCategories()
+    // TopLoaiThuoc API removed: not reloading categories here
     loadTrendingProducts()
     loadInventoryProducts()
   }
